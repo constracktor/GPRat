@@ -6,7 +6,9 @@ from csv import writer
 import argparse
 
 #import lib64.gprat as gprat
-import lib.gprat as gprat
+#import lib.gprat as gprat
+import gprat
+
 from config import get_config
 from hpx_logger import setup_logging
 
