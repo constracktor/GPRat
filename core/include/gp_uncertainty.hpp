@@ -1,28 +1,30 @@
 #ifndef GP_UNCERTAINTY_H
 #define GP_UNCERTAINTY_H
 #pragma once
-#include <cmath>
 #include <vector>
 
 /**
- * @brief Retrieve diagonal elements of posterior covariance matrix.
+ * @brief Compute difference of two vectors a - b
  *
- * @param A Diagonal elements matrix A
- * @param B Diagonal elements matrix B
+ * @param a Diagonal elements matrix A
+ * @param b Diagonal elements matrix B
  * @param M Number of rows in the matrix
  *
- * @return Diagonal elements of posterior covariance matrix
+ * @return Resulting vector of size M
  */
-std::vector<double> diag_posterior(const std::vector<double> &A, const std::vector<double> &B, std::size_t M);
+// Is this function really necessary? why not replace with saxpy blas a-b inside
+// NAME: compute_diagonal_difference?
+std::vector<double> diag_posterior(const std::vector<double> &a, const std::vector<double> &b, std::size_t M);
 
 /**
- * @brief Retrieve diagonal elements of posterior covariance matrix.
+ * @brief Retrieve diagonal elements of the posterior covariance matrix A.
  *
- * @param A Posterior covariance matrix
- * @param M Number of rows in the matrix
+ * @param A The posterior covariance matrix
+ * @param M The rumber of rows in the matrix
  *
- * @return Diagonal elements of posterior covariance matrix
+ * @return Diagonal element vector of the posterior covariance matrix A of size M
  */
+// NAME: get_diagonal?
 std::vector<double> diag_tile(const std::vector<double> &A, std::size_t M);
 
 #endif  // GP_UNCERTAINTY_H
