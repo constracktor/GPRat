@@ -64,7 +64,8 @@ int main(int argc, char *argv[])
                 ///// GP
                 auto start_init = std::chrono::high_resolution_clock::now();
                 std::vector<bool> trainable = { false, false, true };
-                gprat::GP gp(training_input.data, training_output.data, n_tiles, tile_size, 1.0, 1.0, 0.1, n_reg, trainable);
+                gprat::GP gp(
+                    training_input.data, training_output.data, n_tiles, tile_size, 1.0, 1.0, 0.1, n_reg, trainable);
                 auto end_init = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> init_time = end_init - start_init;
 
@@ -84,12 +85,14 @@ int main(int argc, char *argv[])
                 std::chrono::duration<double> opt_time = end_opt - start_opt;
 
                 auto start_pred_uncer = std::chrono::high_resolution_clock::now();
-                std::vector<std::vector<double>> sum = gp.predict_with_uncertainty(test_input.data, result.first, result.second);
+                std::vector<std::vector<double>> sum =
+                    gp.predict_with_uncertainty(test_input.data, result.first, result.second);
                 auto end_pred_uncer = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> pred_uncer_time = end_pred_uncer - start_pred_uncer;
 
                 auto start_pred_full_cov = std::chrono::high_resolution_clock::now();
-                std::vector<std::vector<double>> full = gp.predict_with_full_cov(test_input.data, result.first, result.second);
+                std::vector<std::vector<double>> full =
+                    gp.predict_with_full_cov(test_input.data, result.first, result.second);
                 auto end_pred_full_cov = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> pred_full_cov_time = end_pred_full_cov - start_pred_full_cov;
 
@@ -109,12 +112,13 @@ int main(int argc, char *argv[])
                 if (outfile.tellp() == 0)
                 {
                     // If file is empty, write the header
-                    outfile << "Cores,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,Cholesky_time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
+                    outfile << "Cores,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,Cholesky_time,"
+                               "Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
                 }
-                outfile << core << "," << n_train << "," << n_test << "," << n_tiles << "," << n_reg << ","
-                        << OPT_ITER << "," << total_time.count() << "," << init_time.count() << "," << cholesky_time.count() << ","
-                        << opt_time.count() << "," << pred_uncer_time.count() << "," << pred_full_cov_time.count() << "," << pred_time.count()
-                        << "," << l << "\n";
+                outfile << core << "," << n_train << "," << n_test << "," << n_tiles << "," << n_reg << "," << OPT_ITER
+                        << "," << total_time.count() << "," << init_time.count() << "," << cholesky_time.count() << ","
+                        << opt_time.count() << "," << pred_uncer_time.count() << "," << pred_full_cov_time.count()
+                        << "," << pred_time.count() << "," << l << "\n";
                 outfile.close();
             }
         }

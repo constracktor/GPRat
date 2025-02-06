@@ -13,9 +13,7 @@
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-std::vector<double> diag_posterior(const std::vector<double> &A,
-                                   const std::vector<double> &B,
-                                   std::size_t M);
+std::vector<double> diag_posterior(const std::vector<double> &A, const std::vector<double> &B, std::size_t M);
 
 /**
  * @brief Retrieve diagonal elements of posterior covariance matrix.

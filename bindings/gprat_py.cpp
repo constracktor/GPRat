@@ -11,8 +11,7 @@ namespace py = pybind11;
 void init_gprat(py::module &m)
 {
     // set training data with `GP_data` class
-    py::class_<gprat::GP_data>(
-        m, "GP_data", "Class representing Gaussian Process data.")
+    py::class_<gprat::GP_data>(m, "GP_data", "Class representing Gaussian Process data.")
         .def(py::init<std::string, int, int>(),
              py::arg("file_path"),
              py::arg("n_samples"),
@@ -25,28 +24,16 @@ void init_gprat(py::module &m)
                  n_samples (int): Number of samples in the GP data.
                  n_regressors (int): Number of regressors to offset data
              )pbdoc")
-        .def_readonly("n_samples",
-                      &gprat::GP_data::n_samples,
-                      "Number of samples in the GP data")
-        .def_readonly("n_regressors",
-                      &gprat::GP_data::n_regressors,
-                      "Number of GP regressors")
-        .def_readonly(
-            "file_path", &gprat::GP_data::file_path, "File path to the GP data")
-        .def_readonly(
-            "data", &gprat::GP_data::data, "Data in the GP data file");
+        .def_readonly("n_samples", &gprat::GP_data::n_samples, "Number of samples in the GP data")
+        .def_readonly("n_regressors", &gprat::GP_data::n_regressors, "Number of GP regressors")
+        .def_readonly("file_path", &gprat::GP_data::file_path, "File path to the GP data")
+        .def_readonly("data", &gprat::GP_data::data, "Data in the GP data file");
 
     // Set hyperparameters to default values in `Hyperparameters` class, unless
     // specified. Python object has full access to each hyperparameter and a
     // string representation `__repr__`.
     py::class_<gprat_hyper::Hyperparameters>(m, "Hyperparameters")
-        .def(py::init<double,
-                      double,
-                      double,
-                      double,
-                      int,
-                      std::vector<double>,
-                      std::vector<double>>(),
+        .def(py::init<double, double, double, double, int, std::vector<double>, std::vector<double>>(),
              py::arg("learning_rate") = 0.001,
              py::arg("beta1") = 0.9,
              py::arg("beta2") = 0.999,
@@ -54,8 +41,7 @@ void init_gprat(py::module &m)
              py::arg("opt_iter") = 0,
              py::arg("m_T") = std::vector<double>{ 0.0, 0.0, 0.0 },
              py::arg("v_T") = std::vector<double>{ 0.0, 0.0, 0.0 })
-        .def_readwrite("learning_rate",
-                       &gprat_hyper::Hyperparameters::learning_rate)
+        .def_readwrite("learning_rate", &gprat_hyper::Hyperparameters::learning_rate)
         .def_readwrite("beta1", &gprat_hyper::Hyperparameters::beta1)
         .def_readwrite("beta2", &gprat_hyper::Hyperparameters::beta2)
         .def_readwrite("epsilon", &gprat_hyper::Hyperparameters::epsilon)
@@ -116,11 +102,7 @@ Parameters:
         .def("__repr__", &gprat::GP::repr)
         .def("get_input_data", &gprat::GP::get_training_input)
         .def("get_output_data", &gprat::GP::get_training_output)
-        .def("predict",
-             &gprat::GP::predict,
-             py::arg("test_data"),
-             py::arg("m_tiles"),
-             py::arg("m_tile_size"))
+        .def("predict", &gprat::GP::predict, py::arg("test_data"), py::arg("m_tiles"), py::arg("m_tile_size"))
         .def("predict_with_uncertainty",
              &gprat::GP::predict_with_uncertainty,
              py::arg("test_data"),
@@ -132,9 +114,6 @@ Parameters:
              py::arg("m_tiles"),
              py::arg("m_tile_size"))
         .def("optimize", &gprat::GP::optimize, py::arg("hyperparams"))
-        .def("optimize_step",
-             &gprat::GP::optimize_step,
-             py::arg("hyperparams"),
-             py::arg("iter"))
+        .def("optimize_step", &gprat::GP::optimize_step, py::arg("hyperparams"), py::arg("iter"))
         .def("compute_loss", &gprat::GP::calculate_loss);
 }

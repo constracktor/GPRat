@@ -54,9 +54,7 @@ gprat_results tag_invoke(boost::json::value_to_tag<gprat_results>, const boost::
 }
 
 // This logic is basically equivalent to the GPRat C++ example (for now).
-gprat_results run_on_data(const std::string &train_path,
-                          const std::string &out_path,
-                          const std::string &test_path)
+gprat_results run_on_data(const std::string &train_path, const std::string &out_path, const std::string &test_path)
 {
     // configuration
     const std::size_t OPT_ITER = 3;
@@ -97,7 +95,8 @@ gprat_results run_on_data(const std::string &train_path,
     return results;
 }
 
-bool load_or_create_expected_results(const std::string &filename, const gprat_results &fallback_results, gprat_results &results)
+bool load_or_create_expected_results(
+    const std::string &filename, const gprat_results &fallback_results, gprat_results &results)
 {
     // First try to read our expected results file
     {
@@ -130,7 +129,9 @@ std::string get_root_directory()
 TEST_CASE("GP results match known-good values", "[integration]")
 {
     const std::string root = get_root_directory();
-    const auto results = run_on_data(root + "/data_1024/training_input.txt", root + "/data_1024/training_output.txt", root + "/data_1024/test_input.txt");
+    const auto results = run_on_data(root + "/data_1024/training_input.txt",
+                                     root + "/data_1024/training_output.txt",
+                                     root + "/data_1024/test_input.txt");
 
     gprat_results expected_results;
     if (!load_or_create_expected_results(root + "/data_1024/output.json", results, expected_results))
@@ -148,7 +149,8 @@ TEST_CASE("GP results match known-good values", "[integration]")
 
     // Now we can compare content
     // The default-constructed WithinRel() matcher has a tolerance of epsilon * 100
-    // see: https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
+    // see:
+    // https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
     using Catch::Matchers::WithinRel;
     for (std::size_t i = 0, n = results.choleksy.size(); i != n; ++i)
     {

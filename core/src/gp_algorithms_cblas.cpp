@@ -46,12 +46,13 @@ double compute_covariance_function(std::size_t i_global,
  * @param hyperparameters hyperparameters of the covariance function
  * @param input input data
  */
-std::vector<double> gen_tile_covariance(std::size_t row,
-                                        std::size_t col,
-                                        std::size_t N,
-                                        std::size_t n_regressors,
-                                        const std::vector<double> &hyperparameters,
-                                        const std::vector<double> &input)
+std::vector<double> gen_tile_covariance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    const std::vector<double> &hyperparameters,
+    const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
     double covariance_function;
@@ -66,12 +67,8 @@ std::vector<double> gen_tile_covariance(std::size_t row,
         {
             j_global = N * col + j;
             // compute covariance function
-            covariance_function = compute_covariance_function(i_global,
-                                                              j_global,
-                                                              n_regressors,
-                                                              hyperparameters,
-                                                              input,
-                                                              input);
+            covariance_function =
+                compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, input, input);
             if (i_global == j_global)
             {
                 // noise variance on diagonal
@@ -84,13 +81,13 @@ std::vector<double> gen_tile_covariance(std::size_t row,
 }
 
 // generate a tile of the prior covariance matrix
-std::vector<double>
-gen_tile_full_prior_covariance(std::size_t row,
-                               std::size_t col,
-                               std::size_t N,
-                               std::size_t n_regressors,
-                               const std::vector<double> &hyperparameters,
-                               const std::vector<double> &input)
+std::vector<double> gen_tile_full_prior_covariance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    const std::vector<double> &hyperparameters,
+    const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
     double covariance_function;
@@ -104,12 +101,8 @@ gen_tile_full_prior_covariance(std::size_t row,
         {
             j_global = N * col + j;
             // compute covariance function
-            covariance_function = compute_covariance_function(i_global,
-                                                              j_global,
-                                                              n_regressors,
-                                                              hyperparameters,
-                                                              input,
-                                                              input);
+            covariance_function =
+                compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, input, input);
             tile[i * N + j] = covariance_function;
         }
     }
@@ -117,12 +110,13 @@ gen_tile_full_prior_covariance(std::size_t row,
 }
 
 // generate a tile of the prior covariance matrix
-std::vector<double> gen_tile_prior_covariance(std::size_t row,
-                                              std::size_t col,
-                                              std::size_t N,
-                                              std::size_t n_regressors,
-                                              const std::vector<double> &hyperparameters,
-                                              const std::vector<double> &input)
+std::vector<double> gen_tile_prior_covariance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    const std::vector<double> &hyperparameters,
+    const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
     double covariance_function;
@@ -134,23 +128,23 @@ std::vector<double> gen_tile_prior_covariance(std::size_t row,
         i_global = N * row + i;
         j_global = N * col + i;
         // compute covariance function
-        covariance_function = compute_covariance_function(
-            i_global, j_global, n_regressors, hyperparameters, input, input);
+        covariance_function =
+            compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, input, input);
         tile[i] = covariance_function;
     }
     return tile;
 }
 
 // generate a tile of the cross-covariance matrix
-std::vector<double>
-gen_tile_cross_covariance(std::size_t row,
-                          std::size_t col,
-                          std::size_t N_row,
-                          std::size_t N_col,
-                          std::size_t n_regressors,
-                          const std::vector<double> &hyperparameters,
-                          const std::vector<double> &row_input,
-                          const std::vector<double> &col_input)
+std::vector<double> gen_tile_cross_covariance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N_row,
+    std::size_t N_col,
+    std::size_t n_regressors,
+    const std::vector<double> &hyperparameters,
+    const std::vector<double> &row_input,
+    const std::vector<double> &col_input)
 {
     std::size_t i_global, j_global;
     double covariance_function;
@@ -164,12 +158,8 @@ gen_tile_cross_covariance(std::size_t row,
         {
             j_global = N_col * col + j;
             // compute covariance function
-            covariance_function = compute_covariance_function(i_global,
-                                                              j_global,
-                                                              n_regressors,
-                                                              hyperparameters,
-                                                              row_input,
-                                                              col_input);
+            covariance_function =
+                compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, row_input, col_input);
             tile[i * N_col + j] = covariance_function;
         }
     }
@@ -178,9 +168,7 @@ gen_tile_cross_covariance(std::size_t row,
 
 // generate a tile of the cross-covariance matrix
 std::vector<double>
-gen_tile_cross_cov_T(std::size_t N_row,
-                     std::size_t N_col,
-                     const std::vector<double> &cross_covariance_tile)
+gen_tile_cross_cov_T(std::size_t N_row, std::size_t N_col, const std::vector<double> &cross_covariance_tile)
 {
     std::vector<double> transposed;
     transposed.resize(N_row * N_col);
@@ -195,9 +183,7 @@ gen_tile_cross_cov_T(std::size_t N_row,
 }
 
 // generate a tile containing the output observations
-std::vector<double> gen_tile_output(std::size_t row,
-                                    std::size_t N,
-                                    const std::vector<double> &output)
+std::vector<double> gen_tile_output(std::size_t row, std::size_t N, const std::vector<double> &output)
 {
     std::size_t i_global;
     // Initialize tile

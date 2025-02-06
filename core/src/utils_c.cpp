@@ -94,17 +94,16 @@ std::vector<double> load_data(const std::string &file_path, int n_samples, int o
     int scanned_elements = 0;
     for (int i = 0; i < n_samples; i++)
     {
-        scanned_elements += fscanf(input_file, "%lf", &_data[static_cast<std::size_t>(i + offset)]);  // scanned_elements++;
+        scanned_elements +=
+            fscanf(input_file, "%lf", &_data[static_cast<std::size_t>(i + offset)]);  // scanned_elements++;
     }
 
     fclose(input_file);
 
     if (scanned_elements != n_samples)
     {
-        throw std::runtime_error("Error: Data not correctly read. Expected "
-                                 + std::to_string(n_samples)
-                                 + " elements, but read "
-                                 + std::to_string(scanned_elements));
+        throw std::runtime_error("Error: Data not correctly read. Expected " + std::to_string(n_samples)
+                                 + " elements, but read " + std::to_string(scanned_elements));
     }
     return _data;
 }
@@ -158,28 +157,18 @@ void print(const std::vector<double> &vec, int start, int end, const std::string
 }
 
 // Start HPX runtime
-void start_hpx_runtime(int argc, char **argv)
-{
-    hpx::start(nullptr, argc, argv);
-}
+void start_hpx_runtime(int argc, char **argv) { hpx::start(nullptr, argc, argv); }
 
 // Resume HPX runtime
-void resume_hpx_runtime()
-{
-    hpx::resume();
-}
+void resume_hpx_runtime() { hpx::resume(); }
 
 // Wait for all tasks to finish, and suspend the HPX runtime
-void suspend_hpx_runtime()
-{
-    hpx::suspend();
-}
+void suspend_hpx_runtime() { hpx::suspend(); }
 
 // Stop HPX runtime
 void stop_hpx_runtime()
 {
-    hpx::post([]()
-              { hpx::finalize(); });
+    hpx::post([]() { hpx::finalize(); });
     hpx::stop();
 }
 }  // namespace utils

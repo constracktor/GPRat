@@ -131,16 +131,14 @@ class GP
     /**
      * @brief Predict output for test input
      */
-    std::vector<double> predict(const std::vector<double> &test_data,
-                                int m_tiles,
-                                int m_tile_size);
+    std::vector<double> predict(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Predict output for test input and additionally provide
      * uncertainty for the predictions.
      */
-    std::vector<std::vector<double>> predict_with_uncertainty(
-        const std::vector<double> &test_data, int m_tiles, int m_tile_size);
+    std::vector<std::vector<double>>
+    predict_with_uncertainty(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Predict output for test input and additionally compute full
@@ -152,8 +150,8 @@ class GP
      *
      * @return Full covariance matrix
      */
-    std::vector<std::vector<double>> predict_with_full_cov(
-        const std::vector<double> &test_data, int m_tiles, int m_tile_size);
+    std::vector<std::vector<double>>
+    predict_with_full_cov(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Optimize hyperparameters
@@ -163,8 +161,7 @@ class GP
      *
      * @return losses
      */
-    std::vector<double>
-    optimize(const gprat_hyper::Hyperparameters &hyperparams);
+    std::vector<double> optimize(const gprat_hyper::Hyperparameters &hyperparams);
 
     /**
      * @brief Perform a single optimization step
@@ -175,8 +172,7 @@ class GP
      *
      * @return loss
      */
-    double optimize_step(gprat_hyper::Hyperparameters &hyperparams,
-                         int iter);
+    double optimize_step(gprat_hyper::Hyperparameters &hyperparams, int iter);
 
     /**
      * @brief Calculate loss for given data and Gaussian process model
