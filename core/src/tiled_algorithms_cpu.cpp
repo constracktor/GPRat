@@ -282,15 +282,15 @@ void compute_loss_tiled(std::vector<hpx::shared_future<std::vector<double>>> &ft
                         std::size_t n_tiles)
 {
     std::vector<hpx::shared_future<double>> loss_tiled;
-    loss_tiled.resize(n_tiles);
+    loss_tiled.reserve(n_tiles);
     for (std::size_t k = 0; k < n_tiles; k++)
     {
-        loss_tiled[k] = hpx::dataflow(
+        loss_tiled.push_back(hpx::dataflow(
             hpx::annotated_function(hpx::unwrapping(&compute_loss), "loss_tiled"),
             ft_tiles[k * n_tiles + k],
             ft_alpha[k],
             ft_y[k],
-            N);
+            N));
     }
 
     loss = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&add_losses), "loss_tiled"), loss_tiled, N, n_tiles);

@@ -219,25 +219,38 @@ double gen_beta_T(int t, const std::vector<double> &hyperparameters, std::size_t
 }
 
 /**
- * @brief Compute negative-log likelihood tiled.
+ * @brief Compute negative-log likelihood on one tile
+ *
+ * @param K_diag_tile The Cholesky factor
+ * @param alpha_tile The tiled solution of K * alpha = y
+ * @param y_tile The output tile
+ *
+ * @return Return l = y^T * alpha + \sum_i^N log(L_ii^2)
  */
 double compute_loss(const std::vector<double> &K_diag_tile,
                     const std::vector<double> &alpha_tile,
                     const std::vector<double> &y_tile,
                     std::size_t N)
 {
-    double l = 0.0;
-    l += dot(y_tile, alpha_tile, static_cast<int>(N));
+    double l;
+    // Compute y^T * alpha
+    l = dot(y_tile, alpha_tile, static_cast<int>(N));
+    // Compute \sum_i^N log(L_ii^2)
     for (std::size_t i = 0; i < N; i++)
     {
-        // Add the squared difference to the error
         l += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
     }
     return l;
 }
 
 /**
- * @brief Compute negative-log likelihood.
+ * @brief Add up negative-log likelihood for all tiles
+ *
+ * @param losses A vector contianing the loss per tile
+ * @param N The size of a tile ??
+ * @param n The number of tiles ??
+ *
+ * @return The added up loss
  */
 double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n)
 {
@@ -249,7 +262,7 @@ double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t 
         l += losses[i];
     }
 
-    l += Nn * log(2.0 * M_PI);
+    l += Nn * log(2.0 * M_PI);  // remove?
     return 0.5 * l / Nn;
 }
 
