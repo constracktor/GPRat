@@ -64,23 +64,13 @@ class GP
     int _n_tile_size;
 
   public:
-    /** @brief Lengthscale parameter `l` of squared exponential kernel */
-    double lengthscale;
-
-    /**
-     * @brief Vertical lengthscale parameter `v` of squared exponential
-     * kernel
-     */
-    double vertical_lengthscale;
-
-    /**
-     * @brief Noise variance parameter `sigma` / `n` of squared exponential
-     * kernel
-     */
-    double noise_variance;
-
     /** @brief Number of regressors */
     int n_regressors;
+
+    /**
+     * @brief Hyperarameters of the covariance matrix kernel
+     */
+    std::vector<double> kernel_hyperparams;
 
     /**
      * @brief List of bools indicating trainable parameters: lengthscale,
@@ -107,10 +97,8 @@ class GP
        std::vector<double> output,
        int n_tiles,
        int n_tile_size,
-       double l,
-       double v,
-       double n,
        int n_regressors,
+       std::vector<double> hyperparams,
        std::vector<bool> trainable_bool);
 
     /**

@@ -100,7 +100,7 @@ std::vector<double> gen_tile_prior_covariance(
  *
  * @return A tile of the cross covariance matrix of size N_row x N_col
  * @note Does NOT apply noise variance
-*/
+ */
 std::vector<double> gen_tile_cross_covariance(
     std::size_t row,
     std::size_t col,

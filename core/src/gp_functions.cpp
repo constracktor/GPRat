@@ -12,17 +12,6 @@
 namespace gprat_hyper
 {
 
-/**
- * @brief Initialize hyperparameters
- *
- * @param lr learning rate
- * @param b1 beta1
- * @param b2 beta2
- * @param eps epsilon
- * @param opt_i number of optimization iterations
- * @param M_T_init initial values for first moment vector
- * @param V_T_init initial values for second moment vector
- */
 Hyperparameters::Hyperparameters(
     double lr,
     double b1,
@@ -40,9 +29,6 @@ Hyperparameters::Hyperparameters(
     V_T(V_T_init)
 { }
 
-/**
- * @brief Returns a string representation of the hyperparameters
- */
 std::string Hyperparameters::repr() const
 {
     std::ostringstream oss;
@@ -54,40 +40,17 @@ std::string Hyperparameters::repr() const
 
 }  // namespace gprat_hyper
 
-/**
- * @brief Compute the predictions and uncertainties.
- *
- * @param training_input training input data
- * @param training_output training output data
- * @param test_input test input data
- * @param n_tiles number of tiles
- * @param n_tile_size size of each tile
- * @param m_tiles number of test tiles
- * @param m_tile_size size of each test tile
- * @param lengthscale lengthscale hyperparameter
- * @param vertical_lengthscale vertical lengthscale hyperparameter
- * @param noise_variance noise variance hyperparameter
- * @param n_regressors number of regressors
- */
-std::vector<double> predict_hpx(
-    const std::vector<double> &training_input,
-    const std::vector<double> &training_output,
-    const std::vector<double> &test_input,
-    int n_tiles,
-    int n_tile_size,
-    int m_tiles,
-    int m_tile_size,
-    double lengthscale,
-    double vertical_lengthscale,
-    double noise_variance,
-    int n_regressors)
+std::vector<double>
+predict_hpx(const std::vector<double> &training_input,
+            const std::vector<double> &training_output,
+            const std::vector<double> &test_input,
+            const std::vector<double> &hyperparameters,
+            int n_tiles,
+            int n_tile_size,
+            int m_tiles,
+            int m_tile_size,
+            int n_regressors)
 {
-    std::vector<double> hyperparameters(3);
-    hyperparameters[0] = lengthscale;           // variance of training_output
-    hyperparameters[1] = vertical_lengthscale;  // standard deviation of
-                                                // training_input
-    hyperparameters[2] = noise_variance;        // some small value
-
     // declare data structures
     // tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -175,20 +138,13 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
+    const std::vector<double> &hyperparameters,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
     int m_tile_size,
-    double lengthscale,
-    double vertical_lengthscale,
-    double noise_variance,
     int n_regressors)
 {
-    std::vector<double> hyperparameters(3);
-    hyperparameters[0] = lengthscale;           // lengthscale = variance of training_output
-    hyperparameters[1] = vertical_lengthscale;  // vertical_lengthscale = standard deviation of
-                                                // training_input
-    hyperparameters[2] = noise_variance;        // noise_variance = small value
     // declare data structures
     // tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -344,20 +300,15 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
+    const std::vector<double> &hyperparameters,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
     int m_tile_size,
-    double lengthscale,
-    double vertical_lengthscale,
-    double noise_variance,
+
     int n_regressors)
 {
-    std::vector<double> hyperparameters(3);
-    hyperparameters[0] = lengthscale;           // lengthscale = variance of training_output
-    hyperparameters[1] = vertical_lengthscale;  // vertical_lengthscale = standard deviation of
-                                                // training_input
-    hyperparameters[2] = noise_variance;        // noise_variance = small value
+    // noise_variance = small value
     // declare data structures
     // tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -513,10 +464,10 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
 // Compute loss for given data and Gaussian process model
 double compute_loss_hpx(const std::vector<double> &training_input,
                         const std::vector<double> &training_output,
+                        const std::vector<double> &hyperparameters,
                         int n_tiles,
                         int n_tile_size,
-                        int n_regressors,
-                        const std::vector<double> &hyperparameters)
+                        int n_regressors)
 {
     // declare data structures
     // tiled future data structures
@@ -571,22 +522,20 @@ double compute_loss_hpx(const std::vector<double> &training_input,
 }
 
 // Perform optimization for a given number of iterations
-std::vector<double> optimize_hpx(
-    const std::vector<double> &training_input,
-    const std::vector<double> &training_output,
-    int n_tiles,
-    int n_tile_size,
-    double &lengthscale,
-    double &vertical_lengthscale,
-    double &noise_variance,
-    int n_regressors,
-    const gprat_hyper::Hyperparameters &hyperparams,
-    std::vector<bool> trainable_params)
+std::vector<double>
+optimize_hpx(const std::vector<double> &training_input,
+             const std::vector<double> &training_output,
+             int n_tiles,
+             int n_tile_size,
+             int n_regressors,
+             const gprat_hyper::Hyperparameters &hyperparams,
+             std::vector<double> &kernel_hyperparams,
+             std::vector<bool> trainable_params)
 {
     std::vector<double> hyperparameters(7);
-    hyperparameters[0] = lengthscale;                // lengthscale
-    hyperparameters[1] = vertical_lengthscale;       // vertical_lengthscale
-    hyperparameters[2] = noise_variance;             // noise_variance
+    hyperparameters[0] = kernel_hyperparams[0];      // lengthscale
+    hyperparameters[1] = kernel_hyperparams[1];      // vertical_lengthscale
+    hyperparameters[2] = kernel_hyperparams[2];      // noise_variance
     hyperparameters[3] = hyperparams.learning_rate;  // learning rate
     hyperparameters[4] = hyperparams.beta1;          // beta1
     hyperparameters[5] = hyperparams.beta2;          // beta2
@@ -812,9 +761,9 @@ std::vector<double> optimize_hpx(
         }
     }
     // Update hyperparameter attributes in Gaussian process model
-    lengthscale = hyperparameters[0];
-    vertical_lengthscale = hyperparameters[1];
-    noise_variance = hyperparameters[2];
+    kernel_hyperparams[0] = hyperparameters[0];
+    kernel_hyperparams[1] = hyperparameters[1];
+    kernel_hyperparams[2] = hyperparameters[2];
     // Return losses
     return losses;
 }
@@ -825,18 +774,16 @@ double optimize_step_hpx(
     const std::vector<double> &training_output,
     int n_tiles,
     int n_tile_size,
-    double &lengthscale,
-    double &vertical_lengthscale,
-    double &noise_variance,
     int n_regressors,
     gprat_hyper::Hyperparameters &hyperparams,
+    std::vector<double> &kernel_hyperparams,
     std::vector<bool> trainable_params,
     int iter)
 {
     std::vector<double> hyperparameters(7);
-    hyperparameters[0] = lengthscale;                // lengthscale
-    hyperparameters[1] = vertical_lengthscale;       // vertical_lengthscale
-    hyperparameters[2] = noise_variance;             // noise_variance
+    hyperparameters[0] = kernel_hyperparams[0];      // lengthscale
+    hyperparameters[1] = kernel_hyperparams[1];      // vertical_lengthscale
+    hyperparameters[2] = kernel_hyperparams[2];      // noise_variance
     hyperparameters[3] = hyperparams.learning_rate;  // learning rate
     hyperparameters[4] = hyperparams.beta1;          // beta1
     hyperparameters[5] = hyperparams.beta2;          // beta2
@@ -1035,10 +982,9 @@ double optimize_step_hpx(
     }
 
     // Update hyperparameter attributes in Gaussian process model
-    lengthscale = hyperparameters[0];
-    // printf("lengthscale: %.12lf\n", lengthscale);
-    vertical_lengthscale = hyperparameters[1];
-    noise_variance = hyperparameters[2];
+    kernel_hyperparams[0] = hyperparameters[0];
+    kernel_hyperparams[1] = hyperparameters[1];
+    kernel_hyperparams[2] = hyperparameters[2];
     // Update hyperparameter attributes (first and second moment) for Adam
     for (std::size_t i = 0; i < 3; i++)
     {
@@ -1051,24 +997,11 @@ double optimize_step_hpx(
 
 std::vector<std::vector<double>>
 cholesky_hpx(const std::vector<double> &training_input,
+             const std::vector<double> &hyperparameters,
              int n_tiles,
              int n_tile_size,
-             double lengthscale,
-             double vertical_lengthscale,
-             double noise_variance,
              int n_regressors)
 {
-    std::vector<double> hyperparameters(3);
-
-    // Lengthscale: variance of training_output
-    hyperparameters[0] = lengthscale;
-
-    // Vertical Lengthscale: standard deviation of training_input
-    hyperparameters[1] = vertical_lengthscale;
-
-    // Noise Variance: some small value
-    hyperparameters[2] = noise_variance;
-
     // Tiled future data structure is matrix represented as vector of tiles.
     // Tiles are represented as vector, each wrapped in a shared_future.
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;

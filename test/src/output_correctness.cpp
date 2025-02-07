@@ -77,8 +77,8 @@ gprat_results run_on_data(const std::string &train_path, const std::string &out_
     gprat::GP_data test_input(test_path, n_test, n_reg);
 
     // GP
-    const std::vector<bool> trainable = { true, true, true };
-    gprat::GP gp(training_input.data, training_output.data, n_tiles, tile_size, 1.0, 1.0, 0.1, n_reg, trainable);
+    const std::vector<bool> trainable = { false, false, true };
+    gprat::GP gp(training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable);
 
     // Initialize HPX with no arguments, don't run hpx_main
     utils::start_hpx_runtime(0, nullptr);

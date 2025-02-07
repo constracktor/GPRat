@@ -59,25 +59,16 @@ void init_gprat(py::module &m)
     // GPU support is disabled by default and may only be enabled on
     // initialization.
     py::class_<gprat::GP>(m, "GP")
-        .def(py::init<std::vector<double>,
-                      std::vector<double>,
-                      int,
-                      int,
-                      double,
-                      double,
-                      double,
-                      int,
-                      std::vector<bool>>(),
-             py::arg("input_data"),
-             py::arg("output_data"),
-             py::arg("n_tiles"),
-             py::arg("n_tile_size"),
-             py::arg("lengthscale") = 1.0,
-             py::arg("v_lengthscale") = 1.0,
-             py::arg("noise_var") = 0.1,
-             py::arg("n_reg") = 8,
-             py::arg("trainable") = std::vector<bool>{ true, true, true },
-             R"pbdoc(
+        .def(
+            py::init<std::vector<double>, std::vector<double>, int, int, int, std::vector<double>, std::vector<bool>>(),
+            py::arg("input_data"),
+            py::arg("output_data"),
+            py::arg("n_tiles"),
+            py::arg("n_tile_size"),
+            py::arg("n_reg") = 8,
+            py::arg("kernel_params") = std::vector<double>{ 1.0, 1.0, 0.1 },
+            py::arg("trainable") = std::vector<bool>{ true, true, true },
+            R"pbdoc(
 Create Gaussian Process including its data, hyperparameters.
 
 Parameters:
@@ -85,20 +76,13 @@ Parameters:
     output_data (list): Output data for the GP.
     n_tiles (int): Number of tiles to split the input data.
     n_tile_size (int): Size of each tile.
-    lengthscale (float): Lengthscale hyperparameter for the squared exponential
-        kernel. Default is 1.
-    v_lengthscale (float): Vertical lengthscale for the squared exponential
-        kernel. Default is 1.
-    noise_var (float): Noise variance for the squared exponential kernel.
-        Default is 0.1.
     n_reg (int): Number of regressors. Default is 100.
+    kernel_params (list): List of kernel hyperparameters. Default is {1.0, 1.0, 0.1}
     trainable (list): List of booleans for trainable hyperparameters. Default is
         {true, true, true}.
              )pbdoc")
-        .def_readwrite("lengthscale", &gprat::GP::lengthscale)
-        .def_readwrite("v_lengthscale", &gprat::GP::vertical_lengthscale)
-        .def_readwrite("noise_var", &gprat::GP::noise_variance)
         .def_readwrite("n_reg", &gprat::GP::n_regressors)
+        .def_readwrite("kernel_params", &gprat::GP::kernel_hyperparams)
         .def("__repr__", &gprat::GP::repr)
         .def("get_input_data", &gprat::GP::get_training_input)
         .def("get_output_data", &gprat::GP::get_training_output)

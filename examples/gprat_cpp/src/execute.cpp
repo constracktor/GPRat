@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
                 auto start_init = std::chrono::high_resolution_clock::now();
                 std::vector<bool> trainable = { false, false, true };
                 gprat::GP gp(
-                    training_input.data, training_output.data, n_tiles, tile_size, 1.0, 1.0, 0.1, n_reg, trainable);
+                    training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable);
                 auto end_init = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> init_time = end_init - start_init;
 

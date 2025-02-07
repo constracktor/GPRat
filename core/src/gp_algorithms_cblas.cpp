@@ -78,7 +78,8 @@ std::vector<double> gen_tile_full_prior_covariance(
         {
             j_global = N * col + j;
             // compute covariance function
-            tile.push_back(compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, input, input));
+            tile.push_back(
+                compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, input, input));
         }
     }
     return tile;
@@ -93,7 +94,7 @@ std::vector<double> gen_tile_prior_covariance(
     const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
-     // Preallocate required memory
+    // Preallocate required memory
     std::vector<double> tile;
     tile.reserve(N);
     // Compute entries
@@ -129,7 +130,8 @@ std::vector<double> gen_tile_cross_covariance(
         {
             j_global = N_col * col + j;
             // compute covariance function
-            tile.push_back(compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, row_input, col_input));
+            tile.push_back(
+                compute_covariance_function(i_global, j_global, n_regressors, hyperparameters, row_input, col_input));
         }
     }
     return tile;
@@ -154,11 +156,13 @@ gen_tile_cross_cov_T(std::size_t N_row, std::size_t N_col, const std::vector<dou
 
 std::vector<double> gen_tile_output(std::size_t row, std::size_t N, const std::vector<double> &output)
 {
-     // Preallocate required memory
+    // Preallocate required memory
     std::vector<double> tile;
     tile.reserve(N);
     // Copy entries
-    std::copy(output.begin() + static_cast<long int>(N * row), output.begin() + static_cast<long int>(N * (row + 1)), std::back_inserter(tile));
+    std::copy(output.begin() + static_cast<long int>(N * row),
+              output.begin() + static_cast<long int>(N * (row + 1)),
+              std::back_inserter(tile));
     return tile;
 }
 
@@ -170,7 +174,7 @@ double compute_error_norm(std::size_t n_tiles,
     double error = 0.0;
     for (std::size_t k = 0; k < n_tiles; k++)
     {
-        const std::vector<double> & a = tiles[k];
+        const std::vector<double> &a = tiles[k];
         for (std::size_t i = 0; i < tile_size; i++)
         {
             std::size_t i_global = tile_size * k + i;
@@ -181,7 +185,4 @@ double compute_error_norm(std::size_t n_tiles,
     return sqrt(error);
 }
 
-std::vector<double> gen_tile_zeros(std::size_t N)
-{
-    return std::vector<double>(N, 0.0);
-}
+std::vector<double> gen_tile_zeros(std::size_t N) { return std::vector<double>(N, 0.0); }
