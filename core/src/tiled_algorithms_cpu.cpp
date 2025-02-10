@@ -3,6 +3,7 @@
 #include "../include/adapter_cblas_fp64.hpp"
 #include "../include/gp_optimizer.hpp"
 #include "../include/gp_uncertainty.hpp"
+#include "../include/gp_algorithms_cpu.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 
@@ -446,7 +447,7 @@ void update_hyperparameter(
         diag_tiles.resize(n_tiles);
         for (std::size_t d = 0; d < n_tiles; d++)
         {
-            diag_tiles[d] = hpx::async(hpx::annotated_function(gen_tile_zeros_diag, "assemble_tiled"), N);
+            diag_tiles[d] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), N);
         }
 
         // Compute diagonal elements of inv(K) * grad_hyperparam
@@ -477,7 +478,7 @@ void update_hyperparameter(
         inter_alpha.resize(n_tiles);
         for (std::size_t d = 0; d < n_tiles; d++)
         {
-            inter_alpha[d] = hpx::async(hpx::annotated_function(gen_tile_zeros_diag, "assemble_tiled"), N);
+            inter_alpha[d] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), N);
         }
 
         for (std::size_t k = 0; k < n_tiles; k++)

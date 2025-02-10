@@ -112,18 +112,16 @@ std::vector<double> gen_tile_cross_covariance(
     const std::vector<double> &col_input);
 
 /**
- * @brief Transpose a tile of the cross-covariance matrix
+ * @brief Transpose a tile of size N_row x N_col
  *
  * @param N_row The row-wise dimension of the tile
  * @param N_col The column-wise dimension of the tile
- * @param cross_covariance_tile The tile to transpose
+ * @param tile The tile to transpose
  *
- * @return A tile of the transposed cross covariance matrix of size N_col x N_row
+ * @return The transposed tile of size N_col x N_row
  */
-// NAME: transpose_tile_cross_covariance
-// or more efficient: write a gen_tile_cross_covariance_transposed function
 std::vector<double>
-gen_tile_cross_cov_T(std::size_t N_row, std::size_t N_col, const std::vector<double> &cross_covariance_tile);
+gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile);
 
 /**
  * @brief Generate a tile of the output data
@@ -158,5 +156,13 @@ double compute_error_norm(std::size_t n_tiles,
  * @return A tile filled with zeros of size N
  */
 std::vector<double> gen_tile_zeros(std::size_t N);
+
+/**
+ * @brief Generate an identity tile (i==j?1:0)
+ *
+ * @param N The dimension of the quadratic tile
+ * @return A NxN identity tile
+ */
+std::vector<double> gen_tile_identity(std::size_t N);
 
 #endif  // end of GP_ALGORITHMS_CPU_H

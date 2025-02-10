@@ -138,7 +138,7 @@ std::vector<double> gen_tile_cross_covariance(
 }
 
 std::vector<double>
-gen_tile_cross_cov_T(std::size_t N_row, std::size_t N_col, const std::vector<double> &cross_covariance_tile)
+gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile)
 {
     // Preallocate required memory
     std::vector<double> transposed;
@@ -148,7 +148,8 @@ gen_tile_cross_cov_T(std::size_t N_row, std::size_t N_col, const std::vector<dou
     {
         for (std::size_t i = 0; i < N_row; ++i)
         {
-            transposed.push_back(cross_covariance_tile[i * N_col + j]);
+            // Mapping (i, j) in the original tile to (j, i) in the transposed tile
+            transposed.push_back(tile[i * N_col + j]);
         }
     }
     return transposed;
@@ -186,3 +187,15 @@ double compute_error_norm(std::size_t n_tiles,
 }
 
 std::vector<double> gen_tile_zeros(std::size_t N) { return std::vector<double>(N, 0.0); }
+
+std::vector<double> gen_tile_identity(std::size_t N)
+{
+    // Initialize zero tile
+    std::vector<double> tile(N * N, 0.0);
+    // Fill diagonal with ones
+    for (std::size_t i = 0; i < N; i++)
+    {
+        tile[i * N + i] = 1.0;
+    }
+    return tile;
+}

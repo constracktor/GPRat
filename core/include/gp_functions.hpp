@@ -47,6 +47,25 @@ struct Hyperparameters
 }  // namespace gprat_hyper
 
 /**
+ * @brief Perform Cholesky decompositon (+Assebmly)
+ *
+ * @param training_input The training input data
+ * @param hyperparameters The kernel hyperparameters
+ *
+ * @param n_tiles The number of training tiles
+ * @param n_tile_size The size of each training tile
+ * @param n_regressors The number of regressors
+ *
+ * @return The tiled Cholesky factor
+ */
+std::vector<std::vector<double>>
+cholesky_hpx(const std::vector<double> &training_input,
+             const std::vector<double> &hyperparamaters,
+             int n_tiles,
+             int n_tile_size,
+             int n_regressors);
+
+/**
  * @brief Compute the predictions without uncertainties.
  *
  * @param training_input The training input data
@@ -197,23 +216,4 @@ double optimize_step_hpx(
     std::vector<double> &hyperparameters,
     std::vector<bool> trainable_params,
     int iter);
-
-/**
- * @brief Perform Cholesky decompositon (+Assebmly)
- *
- * @param training_input The training input data
- * @param hyperparameters The kernel hyperparameters
- *
- * @param n_tiles The number of training tiles
- * @param n_tile_size The size of each training tile
- * @param n_regressors The number of regressors
- *
- * @return The tiled Cholesky factor
- */
-std::vector<std::vector<double>>
-cholesky_hpx(const std::vector<double> &training_input,
-             const std::vector<double> &hyperparamaters,
-             int n_tiles,
-             int n_tile_size,
-             int n_regressors);
 #endif

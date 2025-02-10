@@ -335,7 +335,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
         for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
         {
             t_cross_covariance_tiles.push_back(hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&gen_tile_cross_cov_T), "assemble_pred"),
+                hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_pred"),
                 m_tile_size,
                 n_tile_size,
                 cross_covariance_tiles[i * static_cast<std::size_t>(n_tiles) + j]));
@@ -345,7 +345,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
         prior_inter_tiles.push_back(
-            hpx::async(hpx::annotated_function(gen_tile_zeros_diag, "assemble_prior_inter"), m_tile_size));
+            hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_prior_inter"), m_tile_size));
     }
 
     // Prediction
@@ -533,7 +533,8 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
             if (i != j)
             {
                 prior_K_tiles[j * static_cast<std::size_t>(m_tiles) + i] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l_trans), "assemble_prior_tiled"),
+                    hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_prior_tiled"),
+                    m_tile_size,
                     m_tile_size,
                     prior_K_tiles[i * static_cast<std::size_t>(m_tiles) + j]);
             }
@@ -545,7 +546,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
         for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
         {
             t_cross_covariance_tiles.push_back(hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&gen_tile_cross_cov_T), "assemble_pred"),
+                hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_pred"),
                 m_tile_size,
                 n_tile_size,
                 cross_covariance_tiles[i * static_cast<std::size_t>(n_tiles) + j]));
@@ -863,12 +864,14 @@ optimize_hpx(const std::vector<double> &training_input,
                 if (i != j)
                 {
                     grad_v_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_v_trans), "assemble_gradv_t"),
+                        hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradv_t"),
+                        n_tile_size,
                         n_tile_size,
                         grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
 
                     grad_l_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l_trans), "assemble_gradl_t"),
+                        hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradl_t"),
+                        n_tile_size,
                         n_tile_size,
                         grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
                 }
@@ -885,8 +888,16 @@ optimize_hpx(const std::vector<double> &training_input,
         {
             for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
             {
-                K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                    hpx::annotated_function(gen_tile_identity, "assemble_identity_matrix"), i, j, n_tile_size);
+                if (i == j)
+                {
+                    K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
+                    hpx::annotated_function(gen_tile_identity, "assemble_identity_matrix"), n_tile_size);
+                }
+                else
+                {
+                    K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
+                    hpx::annotated_function(gen_tile_zeros, "assemble_identity_matrix"), n_tile_size * n_tile_size);
+                }
             }
         }
 
