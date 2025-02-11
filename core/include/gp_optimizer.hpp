@@ -1,6 +1,7 @@
 #ifndef GP_OPTIMIZER_H
 #define GP_OPTIMIZER_H
 
+#include "gp_hyperparameters.hpp"
 #include "gp_kernels.hpp"
 #include <vector>
 
@@ -115,10 +116,6 @@ gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
 std::vector<double>
 gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &cov_dists);
 
-/**
- * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
- */
-double gen_beta_T(int t, double parameter);
 
 /**
  * @brief Update biased first raw moment estimate.
@@ -133,12 +130,10 @@ double update_second_moment(double gradient, double v_T, double beta_2);
 /**
  * @brief Update hyperparameter using gradient decent.
  */
-double update_param(double unconstrained_hyperparam,
-                    const std::vector<double> &hyperparameters,
+double adam_step(const double unconstrained_hyperparam,
+                    const gprat_hyper::AdamParams adam_params,
                     double m_T,
                     double v_T,
-                    const std::vector<double> &beta1_T,
-                    const std::vector<double> &beta2_T,
                     std::size_t iter);
 
 /**
@@ -176,23 +171,10 @@ double compute_trace(const std::vector<double> &diagonal, double trace);
 double
 compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result);
 
-/**
- * @brief Compute trace for noise variance.
- *
- * Same function as compute_trace with() the only difference that we only use
- * diag tiles multiplied by derivative of noise_variance.
- */
-double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
-                              const std::vector<double> &hyperparameters,
-                              std::size_t N,
-                              std::size_t n_tiles);
+double compute_trace_noise(
+    const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N);
 
-
-
-double sum_noise_gradleft(
-    const std::vector<double> &ft_invK, double grad, const std::vector<double> &hyperparameters, std::size_t N);
-
-double sum_noise_gradright(
-    const std::vector<double> &alpha, double grad, const std::vector<double> &hyperparameters, std::size_t N);
+double compute_dot_noise(
+    const std::vector<double> &vector, double result, const double noise_variance);
 
 #endif  // end of GP_OPTIMIZER_H

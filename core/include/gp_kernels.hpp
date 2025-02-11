@@ -1,7 +1,7 @@
 #ifndef GP_KERNELS_H
 #define GP_KERNELS_H
-
-#include <cstddef>
+#include <vector>
+//#include <cstddef>
 
 namespace gprat_hyper
 {
@@ -31,6 +31,11 @@ struct SEKParams
      */
     double noise_variance;
 
+
+    std::vector<double> m_T;
+
+    std::vector<double> w_T;
+
     /**
      * @brief Construct a new SEKParams object
      *
@@ -39,14 +44,19 @@ struct SEKParams
      * of training input
      * @param noise_variance Noise Variance: small value
      */
-    SEKParams(double lengthscale,
-              double vertical_lengthscale,
-              double noise_variance);
+    SEKParams(double lengthscale_,
+              double vertical_lengthscale_,
+              double noise_variance_);
 
     /**
      * @brief return the number of parameters
      */
     std::size_t size();
+
+    void set_param(std::size_t index, double value);
+
+    const double& get_param(std::size_t index) const;
+
 
 };
 

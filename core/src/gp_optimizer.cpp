@@ -182,23 +182,24 @@ double gen_zero() { return 0.0; }
 /**
  * @brief Update hyperparameter using gradient decent.
  */
-double update_param(const double unconstrained_hyperparam,
-                    const std::vector<double> &hyperparameters,
+double adam_step(const double unconstrained_hyperparam,
+                    const gprat_hyper::AdamParams adam_params,
                     double m_T,
                     double v_T,
-                    const std::vector<double> &beta1_T,
-                    const std::vector<double> &beta2_T,
                     std::size_t iter)
 {
+    // Compute decay rate
+    double beta1_T = pow(adam_params.beta1, iter + 1);
+    double beta2_T = pow(adam_params.beta2, iter + 1);
     // Option 1:
     // double mhat = m_T / (1.0 - beta1_T[iter]);
     // double vhat = v_T / (1.0 - beta2_T[iter]);
-    // return unconstrained_hyperparam - hyperparameters[3] * mhat / (sqrt(vhat)
-    // + hyperparameters[6]);
+    // return unconstrained_hyperparam - adam_params.learning_rate * mhat / (sqrt(vhat)
+    // + adam_params.epsilon);
 
     // Option 2:
-    double alpha_T = hyperparameters[3] * sqrt(1.0 - beta2_T[iter]) / (1.0 - beta1_T[iter]);
-    return unconstrained_hyperparam - alpha_T * m_T / (sqrt(v_T) + hyperparameters[6]);
+    double nu_T = adam_params.learning_rate * sqrt(1.0 - beta2_T) / (1.0 - beta1_T);
+    return unconstrained_hyperparam - nu_T * m_T / (sqrt(v_T) + adam_params.epsilon);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -258,49 +259,20 @@ compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vect
     return result + dot(vector_T, vector, static_cast<int>(vector.size()));
 }
 
-/**
- * @brief Compute trace for noise variance.
- *
- * Same function as compute_trace with() the only difference that we only use
- * diag tiles multiplied by derivative of noise_variance.
- */
-double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
-                              const std::vector<double> &hyperparameters,
-                              std::size_t N,
-                              std::size_t n_tiles)
+double compute_trace_noise(
+    const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N)
 {
-    // Initialize tile
-    double trace = 0.0;
-    double hyperparam_der = compute_sigmoid(to_unconstrained(hyperparameters[2], true));
-    for (std::size_t d = 0; d < n_tiles; d++)
-    {
-        auto tile = ft_tiles[d * n_tiles + d];
-        for (std::size_t i = 0; i < N; ++i)
-        {
-            trace += (tile[i * N + i] * hyperparam_der);
-        }
-    }
-    trace = 0.5 / static_cast<double>(N * n_tiles) * trace;
-    return trace;
-}
-
-
-
-double sum_noise_gradleft(
-    const std::vector<double> &ft_invK, double grad, const std::vector<double> &hyperparameters, std::size_t N)
-{
-    double noise_der = compute_sigmoid(to_unconstrained(hyperparameters[2], true));
+    double local_trace = 0.0;
     for (std::size_t i = 0; i < N; ++i)
     {
-        grad += (ft_invK[i * N + i] * noise_der);
+        local_trace += ft_invK[i * N + i];
     }
-    return grad;
+    return trace + local_trace * compute_sigmoid(to_unconstrained(noise_variance, true));
+
 }
 
-double sum_noise_gradright(
-    const std::vector<double> &alpha, double grad, const std::vector<double> &hyperparameters, std::size_t N)
+double compute_dot_noise(
+    const std::vector<double> &vector, double result, const double noise_variance)
 {
-    double noise_der = compute_sigmoid(to_unconstrained(hyperparameters[2], true));
-    grad += (noise_der * dot(alpha, alpha, static_cast<int>(N)));
-    return grad;
+    return result + dot(vector, vector, static_cast<int>(vector.size())) * compute_sigmoid(to_unconstrained(noise_variance, true));
 }

@@ -1,6 +1,8 @@
 #ifndef TILED_ALGORITHMS_CPU
 #define TILED_ALGORITHMS_CPU
 
+#include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -157,29 +159,12 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
 // algorithm
 void update_hyperparameter(
     const Tiled_matrix &ft_invK,
-    const Tiled_matrix &ft_gradparam,
+    const Tiled_matrix &ft_gradK_param,
     const Tiled_vector &ft_alpha,
-    std::vector<double> &hyperparameters,
+    const gprat_hyper::AdamParams &adam_params,
+    gprat_hyper::SEKParams &sek_params,
     int N,
     std::size_t n_tiles,
-    std::vector<hpx::shared_future<double>> &m_T,
-    std::vector<hpx::shared_future<double>> &v_T,
-    const std::vector<hpx::shared_future<double>> &beta1_T,
-    const std::vector<hpx::shared_future<double>> &beta2_T,
     std::size_t iter,
     std::size_t param_idx);
-
-// Update noise variance using gradient decent + Adam
-void update_noise_variance(
-    const Tiled_matrix &ft_invK,
-    const Tiled_vector &ft_alpha,
-    std::vector<double> &hyperparameters,
-    int N,
-    std::size_t n_tiles,
-    std::vector<hpx::shared_future<double>> &m_T,
-    std::vector<hpx::shared_future<double>> &v_T,
-    const std::vector<hpx::shared_future<double>> &beta1_T,
-    const std::vector<hpx::shared_future<double>> &beta2_T,
-    std::size_t iter);
-
 #endif

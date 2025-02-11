@@ -710,16 +710,6 @@ optimize_hpx(const std::vector<double> &training_input,
      * endfor
      */
 
-    // Rework that part after rebase with GPU version
-    std::vector<double> hyperparameters(7);
-    hyperparameters[0] = sek_params.lengthscale;            // lengthscale
-    hyperparameters[1] = sek_params.vertical_lengthscale;   // vertical_lengthscale
-    hyperparameters[2] = sek_params.noise_variance;         // noise_variance
-    hyperparameters[3] = adam_params.learning_rate;  // learning rate
-    hyperparameters[4] = adam_params.beta1;          // beta1
-    hyperparameters[5] = adam_params.beta2;          // beta2
-    hyperparameters[6] = adam_params.epsilon;        // epsilon
-
     // data holder for loss
     hpx::shared_future<double> loss_value;
     // data holder for computed loss values
@@ -733,28 +723,6 @@ optimize_hpx(const std::vector<double> &training_input,
     // Tiled future data structures for gradients
     Tiled_matrix grad_v_tiles;  // Tiled covariance with gradient v
     Tiled_matrix grad_l_tiles;  // Tiled covariance with gradient l
-    //////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////
-    // Adam stuff
-    // data holders for Adam
-    std::vector<hpx::shared_future<double>> m_T( sek_params.size(), hpx::make_ready_future(0.0) );
-    std::vector<hpx::shared_future<double>> v_T( sek_params.size(), hpx::make_ready_future(0.0) );
-    std::vector<hpx::shared_future<double>> beta1_T;
-    std::vector<hpx::shared_future<double>> beta2_T;
-    // can this be done more elegantly
-    // Assemble beta1_t and beta2_t
-    beta1_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
-    for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
-    {
-        beta1_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta1);
-    }
-    beta2_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
-    for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
-    {
-        beta2_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta2);
-    }
-    //////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////
 
     // Preallocate memory
     losses.reserve(static_cast<std::size_t>(adam_params.opt_iter));
@@ -890,7 +858,8 @@ optimize_hpx(const std::vector<double> &training_input,
             static_cast<std::size_t>(n_tiles));
 
         ///////////////////////////////////////////////////////////////////////////
-        // Launch asynchronous loss computation
+        // Launch asynchronous loss computation where
+        // loss(theta) = 0.5 * ( log(det(K)) - y^T * K^-1 * y - N * log(2 * pi) )
         compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, static_cast<std::size_t>(n_tiles));
 
         ///////////////////////////////////////////////////////////////////////////
@@ -901,14 +870,11 @@ optimize_hpx(const std::vector<double> &training_input,
                 K_inv_tiles,
                 grad_l_tiles,
                 alpha_tiles,
-                hyperparameters,
+                adam_params,
+                sek_params,
                 n_tile_size,
                 static_cast<std::size_t>(n_tiles),
-                m_T,
-                v_T,
-                beta1_T,
-                beta2_T,
-                0,
+                iter,
                 0);
         }
         if (trainable_params[1])
@@ -917,38 +883,29 @@ optimize_hpx(const std::vector<double> &training_input,
                 K_inv_tiles,
                 grad_v_tiles,
                 alpha_tiles,
-                hyperparameters,
+                adam_params,
+                sek_params,
                 n_tile_size,
                 static_cast<std::size_t>(n_tiles),
-                m_T,
-                v_T,
-                beta1_T,
-                beta2_T,
-                0,
+                iter,
                 1);
         }
         if (trainable_params[2])
         {  // noise_variance
-            update_noise_variance(
+             update_hyperparameter(
                 K_inv_tiles,
+                Tiled_matrix{},// no tiled gradient matrix required
                 alpha_tiles,
-                hyperparameters,
+                adam_params,
+                sek_params,
                 n_tile_size,
                 static_cast<std::size_t>(n_tiles),
-                m_T,
-                v_T,
-                beta1_T,
-                beta2_T,
-                iter);
+                iter,
+                2);
         }
-        // Synchronize after iteration - required?
+        // Synchronize after iteration
         losses.push_back(loss_value.get());
-        // Update hyperparameter attributes in Gaussian process model
-        sek_params.lengthscale = hyperparameters[0];
-        sek_params.vertical_lengthscale = hyperparameters[1];
-        sek_params.noise_variance = hyperparameters[2];
     }
-
     // Return losses
     return losses;
 }

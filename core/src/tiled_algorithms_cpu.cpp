@@ -303,24 +303,34 @@ void update_hyperparameter(
     const Tiled_matrix &ft_invK,
     const Tiled_matrix &ft_gradK_param,
     const Tiled_vector &ft_alpha,
-    std::vector<double> &hyperparameters,
+    const gprat_hyper::AdamParams &adam_params,
+    gprat_hyper::SEKParams &sek_params,
     int N,
     std::size_t n_tiles,
-    std::vector<hpx::shared_future<double>> &m_T,
-    std::vector<hpx::shared_future<double>> &v_T,
-    const std::vector<hpx::shared_future<double>> &beta1_T,
-    const std::vector<hpx::shared_future<double>> &beta2_T,
     std::size_t iter,
     std::size_t param_idx)
 {
-    // Compute: 0.5 * ( trace(inv(K) * grad(K)_param) + y^T * inv(K) * grad(K)_param * inv(K) * y )
-    // 1: Compute  trace(inv(K) * grad(K)_param)
-    // 2: Compute  y^T * inv(K) * grad(K)_param * inv(K) * y
-    // 3: Update parameter
-    //
-    //
+    /*
+     * PART 1:
+     * Compute gradient = 0.5 * ( trace(inv(K) * grad(K)_param) + y^T * inv(K) * grad(K)_param * inv(K) * y )
+     *
+     * 1: Compute   trace(inv(K) * grad(K)_param)
+     * 2: Compute   y^T * inv(K) * grad(K)_param * inv(K) * y
+     *
+     * Update parameter:
+     * 3: Update moments
+     *      - m_T = beta1 * m_T-1 + (1 - beta1) * g_T
+     *      - w_T = beta2 + w_T-1 + (1 - beta2) * g_T^2
+     * 4: Adam step:
+     *      - nu_T = nu * sqrt(1 - beta2_T) / (1 - beta1_T) 
+     *      - theta_T = theta_T-1 - nu_T * m_T / (sqrt(w_T) + epsilon)
+    */
+    hpx::shared_future<double> trace = hpx::make_ready_future(0.0);
+    hpx::shared_future<double> dot = hpx::make_ready_future(0.0);
+    bool jitter = false;
     if (param_idx == 0 || param_idx == 1)  // 0: lengthscale; 1: vertical-lengthscale
     {
+
         Tiled_vector diag_tiles;    // Diagonal tiles
         Tiled_vector inter_alpha; // Intermediate result
         // Preallocate memory
@@ -334,7 +344,8 @@ void update_hyperparameter(
         }
 
         ////////////////////////////////////
-        /// part 1: trace(inv(K)*grad_param)
+        // PART 1: Compute gradient
+        // trace(inv(K)*grad_param)
         // Compute diagonal elements of inv(K) * grad(K)_param
         for (std::size_t i = 0; i < n_tiles; ++i)
         {
@@ -350,16 +361,13 @@ void update_hyperparameter(
             }
         }
         // Compute trace(inv(K) * grad(K)_param)
-        hpx::shared_future<double> trace = hpx::make_ready_future(0.0);
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
             trace = hpx::dataflow(
                 hpx::annotated_function(hpx::unwrapping(&compute_trace), "trace"), diag_tiles[j], trace);
         }
-
-        ///////////////////////////////////////
         // Not sure if can be done this way
-        /// part 2: alpha^T * grad(K)_param * alpha (with alpha = inv(K) * y)
+        // alpha^T * grad(K)_param * alpha (with alpha = inv(K) * y)
         // Compute grad(K)_param * alpha
         for (std::size_t k = 0; k < n_tiles; k++)
         {
@@ -376,7 +384,7 @@ void update_hyperparameter(
                     Blas_no_trans);
             }
         }
-        hpx::shared_future<double> dot = hpx::make_ready_future(0.0);//.share();
+        // ??
         for (std::size_t j = 0; j < n_tiles; ++j)
         { 
             dot = hpx::dataflow(
@@ -385,128 +393,62 @@ void update_hyperparameter(
                 ft_alpha[j],
                 dot);
         }
-
-        //////////////////////////////
-        /// part 3: update parameter
-
-        // compute gradient = grad_left + grad_r
-        hpx::shared_future<double> gradient = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&compute_gradient), "gradient_tiled"),
+    }
+    else if(param_idx == 2)
+    {
+    jitter =true;
+    ///////////////////////////////////////
+    // part1: compute trace(inv(K) * )
+    for (std::size_t j = 0; j < n_tiles; ++j)
+    {
+        trace = hpx::dataflow(
+            hpx::annotated_function(hpx::unwrapping(&compute_trace_noise), "grad_left_tiled"),
+            ft_invK[j * n_tiles + j],
             trace,
+            sek_params.noise_variance,
+            N);
+    }
+    ///////////////////////////////////////
+    /// part 2: alpha^T * grad_param * alpha
+    for (std::size_t j = 0; j < n_tiles; ++j)
+    {
+        dot = hpx::dataflow(
+            hpx::annotated_function(hpx::unwrapping(&compute_dot_noise), "grad_right_tiled"),
+            ft_alpha[j],
             dot,
-            N,
-            n_tiles);
-
-        // transform hyperparameter to unconstrained form
-        hpx::shared_future<double> unconstrained_param =
-            hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&to_unconstrained), "gradient_tiled"),
-                          hyperparameters[param_idx],
-                          false);
-        // update moments
-        m_T[param_idx] = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&update_first_moment), "gradient_tiled"),
-            gradient,
-            m_T[param_idx],
-            hyperparameters[4]);
-        v_T[param_idx] = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&update_second_moment), "gradient_tiled"),
-            gradient,
-            v_T[param_idx],
-            hyperparameters[5]);
-        // update unconstrained parameter
-        hpx::shared_future<double> updated_param = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&update_param), "gradient_tiled"),
-            unconstrained_param,
-            hyperparameters,
-            m_T[param_idx],
-            v_T[param_idx],
-            beta1_T,
-            beta2_T,
-            static_cast<std::size_t>(iter));
-
-        // transform hyperparameter to constrained form
-        hyperparameters[param_idx] =
-            hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&to_constrained), "gradient_tiled"), updated_param, false)
-                .get();
+            sek_params.noise_variance);
+    }
     }
     else
     {
         // Throw an exception for invalid param_idx
         throw std::invalid_argument("Invalid param_idx");
     }
-}
 
-// Update noise variance using gradient decent + Adam
-void update_noise_variance(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
-    std::vector<double> &hyperparameters,
-    int N,
-    std::size_t n_tiles,
-    std::vector<hpx::shared_future<double>> &m_T,
-    std::vector<hpx::shared_future<double>> &v_T,
-    const std::vector<hpx::shared_future<double>> &beta1_T,
-    const std::vector<hpx::shared_future<double>> &beta2_T,
-    std::size_t iter)
-{
-    ///////////////////////////////////////
-    // part1: compute trace(inv(K) * grad_hyperparam)
-    hpx::shared_future<double> grad_left = hpx::make_ready_future(0.0).share();
-    for (std::size_t j = 0; j < n_tiles; ++j)
-    {
-        grad_left = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&sum_noise_gradleft), "grad_left_tiled"),
-            ft_invK[j * n_tiles + j],
-            grad_left,
-            hyperparameters,
-            N);
-    }
-    ///////////////////////////////////////
-    /// part 2: alpha^T * grad_param * alpha
-    hpx::shared_future<double> grad_right = hpx::make_ready_future(0.0).share();
-    for (std::size_t j = 0; j < n_tiles; ++j)
-    {  // Compute inner product to obtain diagonal elements of (K_MxN *
-       // (K^-1_NxN * K_NxM))
-        grad_right = hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&sum_noise_gradright), "grad_right_tiled"),
-            ft_alpha[j],
-            grad_right,
-            hyperparameters,
-            N);
-    }
-    ////////////////////////////
-    /// part 3: update parameter
-    hpx::shared_future<double> gradient = hpx::dataflow(
-        hpx::annotated_function(hpx::unwrapping(&compute_gradient), "gradient_tiled"),
-        grad_left,
-        grad_right,
-        N,
-        n_tiles);
-    // transform hyperparameter to unconstrained form
-    hpx::shared_future<double> unconstrained_param = hpx::dataflow(
-        hpx::annotated_function(hpx::unwrapping(&to_unconstrained), "gradient_tiled"), hyperparameters[2], true);
-    // update moments
-    m_T[2] = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&update_first_moment), "gradient_tiled"),
-                           gradient,
-                           m_T[2],
-                           hyperparameters[4]);
-    v_T[2] = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&update_second_moment), "gradient_tiled"),
-                           gradient,
-                           v_T[2],
-                           hyperparameters[5]);
-    // update unconstrained parameter
-    hpx::shared_future<double> updated_param = hpx::dataflow(
-        hpx::annotated_function(hpx::unwrapping(&update_param), "gradient_tiled"),
-        unconstrained_param,
-        hyperparameters,
-        m_T[2],
-        v_T[2],
-        beta1_T,
-        beta2_T,
-        static_cast<std::size_t>(iter));
-    // transform hyperparameter to constrained form
-    hyperparameters[2] =
-        hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&to_constrained), "gradient_tiled"), updated_param, true)
-            .get();
+          // get values and compute sequentially
+        // compute gradient = trace + dot
+        double gradient = compute_gradient(trace.get(), dot.get(), static_cast<std::size_t>(N), n_tiles);
+        ////////////////////////////////////
+        // PART 2: Update parameter
+        // Update moments
+        // m_T = beta1 * m_T-1 + (1 - beta1) * g_T
+        sek_params.m_T[param_idx] = update_first_moment(gradient,
+            sek_params.m_T[param_idx],
+            adam_params.beta1);
+        // w_T = beta2 + w_T-1 + (1 - beta2) * g_T^2
+        sek_params.w_T[param_idx] = update_second_moment(gradient,
+            sek_params.w_T[param_idx],
+            adam_params.beta2);
+
+        // Transform hyperparameter to unconstrained form
+        double unconstrained_param = to_unconstrained(sek_params.get_param(param_idx), jitter);
+        // Adam step update with unconstrained parameter
+        // compute beta_t inside
+        double updated_param = adam_step(unconstrained_param,
+            adam_params,
+            sek_params.m_T[param_idx],
+            sek_params.w_T[param_idx],
+            static_cast<std::size_t>(iter));
+        // Transform hyperparameter back to constrained form
+        sek_params.set_param(param_idx, to_constrained(updated_param, jitter));
 }
