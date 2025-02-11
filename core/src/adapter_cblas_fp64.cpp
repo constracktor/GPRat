@@ -149,19 +149,6 @@ vector_future gemv(vector_future f_A,
     return hpx::make_ready_future(b);
 }
 
-vector_future ger(vector_future f_A, vector_future f_x, vector_future f_y, const int N)
-{
-    auto A = f_A.get();
-    auto x = f_x.get();
-    auto y = f_y.get();
-    // GER constants
-    const double alpha = -1.0;
-    // GER:  A = A - x*y^T
-    cblas_dger(CblasRowMajor, N, N, alpha, x.data(), 1, y.data(), 1, A.data(), N);
-    // return updated A
-    return hpx::make_ready_future(A);
-}
-
 vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M)
 {
     auto A = f_A.get();

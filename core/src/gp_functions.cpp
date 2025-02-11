@@ -735,12 +735,13 @@ optimize_hpx(const std::vector<double> &training_input,
     Tiled_matrix grad_l_tiles;  // Tiled covariance with gradient l
     //////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
-    // adam stuff was is this ?! why future all over the place? are they necessary?
+    // Adam stuff
     // data holders for Adam
-    std::vector<hpx::shared_future<double>> m_T;
-    std::vector<hpx::shared_future<double>> v_T;
+    std::vector<hpx::shared_future<double>> m_T( sek_params.size(), hpx::make_ready_future(0.0) );
+    std::vector<hpx::shared_future<double>> v_T( sek_params.size(), hpx::make_ready_future(0.0) );
     std::vector<hpx::shared_future<double>> beta1_T;
     std::vector<hpx::shared_future<double>> beta2_T;
+    // can this be done more elegantly
     // Assemble beta1_t and beta2_t
     beta1_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
     for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
@@ -751,14 +752,6 @@ optimize_hpx(const std::vector<double> &training_input,
     for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
     {
         beta2_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta2);
-    }
-    // Assemble first and second momemnt vectors: m_T and v_T
-    m_T.resize(3);
-    v_T.resize(3);
-    for (std::size_t i = 0; i < 3; i++)
-    {
-        m_T[i] = hpx::async(hpx::annotated_function(gen_zero, "assemble_tiled"));
-        v_T[i] = hpx::async(hpx::annotated_function(gen_zero, "assemble_tiled"));
     }
     //////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
@@ -1113,17 +1106,6 @@ double optimize_step_hpx(
     //
     // // Compute loss
     // compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, static_cast<std::size_t>(n_tiles));
-    //
-    // // // Fill I-y*y^T*inv(K)
-    // // update_grad_K_tiled(grad_K_tiles, y_tiles, alpha_tiles, n_tile_size,
-    // // static_cast<std::size_t>(n_tiles));
-    //
-    // // // Compute K^-1 * (I-y*y^T*K^-1)
-    // // forward_solve_tiled_matrix(K_tiles, grad_K_tiles, n_tile_size,
-    // // n_tile_size, static_cast<std::size_t>(n_tiles), static_cast<std::size_t>(n_tiles));
-    // // backward_solve_tiled_matrix(K_tiles, grad_K_tiles, n_tile_size, n_tile_size,
-    // static_cast<std::size_t>(n_tiles),
-    // // static_cast<std::size_t>(n_tiles));
     //
     // // Update the hyperparameters
     // if (trainable_params[0])

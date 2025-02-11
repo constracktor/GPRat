@@ -153,19 +153,12 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
                         int N,
                         std::size_t n_tiles);
 
-// Compute I-y*y^T*inv(K)
-void update_grad_K_tiled_mkl(std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-                             const std::vector<hpx::shared_future<std::vector<double>>> &ft_v1,
-                             const std::vector<hpx::shared_future<std::vector<double>>> &ft_v2,
-                             int N,
-                             std::size_t n_tiles);
-
 // Perform a gradient scent step for selected hyperparameter using Adam
 // algorithm
 void update_hyperparameter(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_gradparam,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const Tiled_matrix &ft_invK,
+    const Tiled_matrix &ft_gradparam,
+    const Tiled_vector &ft_alpha,
     std::vector<double> &hyperparameters,
     int N,
     std::size_t n_tiles,
@@ -175,10 +168,11 @@ void update_hyperparameter(
     const std::vector<hpx::shared_future<double>> &beta2_T,
     std::size_t iter,
     std::size_t param_idx);
+
 // Update noise variance using gradient decent + Adam
 void update_noise_variance(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const Tiled_matrix &ft_invK,
+    const Tiled_vector &ft_alpha,
     std::vector<double> &hyperparameters,
     int N,
     std::size_t n_tiles,

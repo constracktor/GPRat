@@ -111,16 +111,6 @@ vector_future gemv(vector_future f_A,
                    const BLAS_TRANSPOSE transpose_A);
 
 /**
- * @brief FP32 General matrix rank-1 update: A = A - x*y^T
- * @param f_A base matrix
- * @param f_x first update vector
- * @param f_y second update vector
- * @param N matrix dimension
- * @return updated vector f_b
- */
-vector_future ger(vector_future f_A, vector_future f_x, vector_future f_y, const int N);
-
-/**
  * @brief FP32 Vector update with diagonal SYRK: r = r + diag(A^T * A)
  * @param f_A update matrix
  * @param f_r base vector

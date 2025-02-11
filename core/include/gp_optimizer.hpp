@@ -140,10 +140,6 @@ double update_param(double unconstrained_hyperparam,
                     const std::vector<double> &beta1_T,
                     const std::vector<double> &beta2_T,
                     std::size_t iter);
-/**
- * @brief return zero - used to initialize moment vectors
- */
-double gen_zero();
 
 /**
  * @brief Compute negative-log likelihood on one tile
@@ -171,10 +167,14 @@ double compute_loss(const std::vector<double> &K_diag_tile,
 double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n);
 
 /**
- * @brief Compute trace of (K^-1 - K^-1*y*y^T*K^-1)* del(K)/del(hyperparam) =
- *        gradient(K) w.r.t. hyperparam.
+ * @brief
  */
-double compute_gradient(double grad_l, double grad_r, std::size_t N, std::size_t n_tiles);
+double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_tiles);
+
+double compute_trace(const std::vector<double> &diagonal, double trace);
+
+double
+compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result);
 
 /**
  * @brief Compute trace for noise variance.
@@ -187,10 +187,7 @@ double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
                               std::size_t N,
                               std::size_t n_tiles);
 
-double sum_gradleft(const std::vector<double> &diagonal, double grad);
 
-double
-sum_gradright(const std::vector<double> &inter_alpha, const std::vector<double> &alpha, double grad, std::size_t N);
 
 double sum_noise_gradleft(
     const std::vector<double> &ft_invK, double grad, const std::vector<double> &hyperparameters, std::size_t N);

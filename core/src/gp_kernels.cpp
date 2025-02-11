@@ -9,4 +9,5 @@ SEKParams::SEKParams(double lengthscale,
     vertical_lengthscale(vertical_lengthscale),
     noise_variance(noise_variance) {};
 
+std::size_t SEKParams::size(){return 3;}
 }

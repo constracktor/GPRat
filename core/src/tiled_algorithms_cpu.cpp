@@ -296,30 +296,13 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
 
 ///////////////////////////////////////////////////////////////////////////////
 // optimization stuff
-// Compute I-y*y^T*inv(K)
-void update_grad_K_tiled_mkl(std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-                             const std::vector<hpx::shared_future<std::vector<double>>> &ft_v1,
-                             const std::vector<hpx::shared_future<std::vector<double>>> &ft_v2,
-                             int N,
-                             std::size_t n_tiles)
-
-{
-    for (std::size_t i = 0; i < n_tiles; i++)
-    {
-        for (std::size_t j = 0; j < n_tiles; j++)
-        {
-            ft_tiles[i * n_tiles + j] = hpx::dataflow(
-                hpx::annotated_function(ger, "gradient_tiled"), ft_tiles[i * n_tiles + j], ft_v1[i], ft_v2[j], N);
-        }
-    }
-}
 
 // Perform a gradient descent step for selected hyperparameter using Adam
 // algorithm
 void update_hyperparameter(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_gradparam,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const Tiled_matrix &ft_invK,
+    const Tiled_matrix &ft_gradK_param,
+    const Tiled_vector &ft_alpha,
     std::vector<double> &hyperparameters,
     int N,
     std::size_t n_tiles,
@@ -330,55 +313,61 @@ void update_hyperparameter(
     std::size_t iter,
     std::size_t param_idx)
 {
-    ////////////////////////////////////
-    /// part 1: trace(inv(K)*grad_param)
+    // Compute: 0.5 * ( trace(inv(K) * grad(K)_param) + y^T * inv(K) * grad(K)_param * inv(K) * y )
+    // 1: Compute  trace(inv(K) * grad(K)_param)
+    // 2: Compute  y^T * inv(K) * grad(K)_param * inv(K) * y
+    // 3: Update parameter
+    //
+    //
     if (param_idx == 0 || param_idx == 1)  // 0: lengthscale; 1: vertical-lengthscale
     {
-        std::vector<hpx::shared_future<std::vector<double>>> diag_tiles;
-        diag_tiles.resize(n_tiles);
+        Tiled_vector diag_tiles;    // Diagonal tiles
+        Tiled_vector inter_alpha; // Intermediate result
+        // Preallocate memory
+        inter_alpha.reserve(n_tiles);
+        diag_tiles.reserve(n_tiles);
+        // Asynchrnonous assembly
         for (std::size_t d = 0; d < n_tiles; d++)
         {
-            diag_tiles[d] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), N);
+            diag_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble"), N));
+            inter_alpha.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble"), N));
         }
 
-        // Compute diagonal elements of inv(K) * grad_hyperparam
+        ////////////////////////////////////
+        /// part 1: trace(inv(K)*grad_param)
+        // Compute diagonal elements of inv(K) * grad(K)_param
         for (std::size_t i = 0; i < n_tiles; ++i)
         {
             for (std::size_t j = 0; j < n_tiles; ++j)
             {
                 diag_tiles[i] = hpx::dataflow(
-                    hpx::annotated_function(dot_diag_gemm, "grad_left_tiled"),
+                    hpx::annotated_function(dot_diag_gemm, "trace"),
                     ft_invK[i * n_tiles + j],
-                    ft_gradparam[j * n_tiles + i],
+                    ft_gradK_param[j * n_tiles + i],
                     diag_tiles[i],
                     N,
                     N);
             }
         }
-
-        // compute trace(inv(K) * grad_hyperparam)
-        hpx::shared_future<double> grad_left = hpx::make_ready_future(0.0).share();
+        // Compute trace(inv(K) * grad(K)_param)
+        hpx::shared_future<double> trace = hpx::make_ready_future(0.0);
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
-            grad_left = hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&sum_gradleft), "grad_left_tiled"), diag_tiles[j], grad_left);
-        }
-        ///////////////////////////////////////
-        /// part 2: alpha^T * grad_param * alpha
-        std::vector<hpx::shared_future<std::vector<double>>> inter_alpha;
-        inter_alpha.resize(n_tiles);
-        for (std::size_t d = 0; d < n_tiles; d++)
-        {
-            inter_alpha[d] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), N);
+            trace = hpx::dataflow(
+                hpx::annotated_function(hpx::unwrapping(&compute_trace), "trace"), diag_tiles[j], trace);
         }
 
+        ///////////////////////////////////////
+        // Not sure if can be done this way
+        /// part 2: alpha^T * grad(K)_param * alpha (with alpha = inv(K) * y)
+        // Compute grad(K)_param * alpha
         for (std::size_t k = 0; k < n_tiles; k++)
         {
             for (std::size_t m = 0; m < n_tiles; m++)
             {
                 inter_alpha[k] = hpx::dataflow(
-                    hpx::annotated_function(gemv, "prediction_tiled"),
-                    ft_gradparam[k * n_tiles + m],
+                    hpx::annotated_function(gemv, "gemv"),
+                    ft_gradK_param[k * n_tiles + m],
                     ft_alpha[m],
                     inter_alpha[k],
                     N,
@@ -387,17 +376,14 @@ void update_hyperparameter(
                     Blas_no_trans);
             }
         }
-
-        hpx::shared_future<double> grad_right = hpx::make_ready_future(0.0).share();
+        hpx::shared_future<double> dot = hpx::make_ready_future(0.0);//.share();
         for (std::size_t j = 0; j < n_tiles; ++j)
-        {  // Compute inner product to obtain diagonal elements of
-           // (K_MxN * (K^-1_NxN * K_NxM))
-            grad_right = hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&sum_gradright), "grad_right_tiled"),
+        { 
+            dot = hpx::dataflow(
+                hpx::annotated_function(hpx::unwrapping(&compute_dot), "grad_right_tiled"),
                 inter_alpha[j],
                 ft_alpha[j],
-                grad_right,
-                N);
+                dot);
         }
 
         //////////////////////////////
@@ -406,8 +392,8 @@ void update_hyperparameter(
         // compute gradient = grad_left + grad_r
         hpx::shared_future<double> gradient = hpx::dataflow(
             hpx::annotated_function(hpx::unwrapping(&compute_gradient), "gradient_tiled"),
-            grad_left,
-            grad_right,
+            trace,
+            dot,
             N,
             n_tiles);
 
@@ -437,6 +423,7 @@ void update_hyperparameter(
             beta1_T,
             beta2_T,
             static_cast<std::size_t>(iter));
+
         // transform hyperparameter to constrained form
         hyperparameters[param_idx] =
             hpx::dataflow(

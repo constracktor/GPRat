@@ -1,6 +1,8 @@
 #ifndef GP_KERNELS_H
 #define GP_KERNELS_H
 
+#include <cstddef>
+
 namespace gprat_hyper
 {
 /**
@@ -40,6 +42,12 @@ struct SEKParams
     SEKParams(double lengthscale,
               double vertical_lengthscale,
               double noise_variance);
+
+    /**
+     * @brief return the number of parameters
+     */
+    std::size_t size();
+
 };
 
 }  // namespace gprat_hyper

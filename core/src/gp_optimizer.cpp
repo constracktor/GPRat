@@ -240,12 +240,22 @@ double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t 
 /////////////////////////////////////////////////////////////
 // Gradient stuff tbd.
 /**
- * @brief Compute trace of (K^-1 - K^-1*y*y^T*K^-1)* del(K)/del(hyperparam) =
- *        gradient(K) w.r.t. hyperparam.
+ * @brief
  */
-double compute_gradient(double grad_l, double grad_r, std::size_t N, std::size_t n_tiles)
+double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_tiles)
 {
-    return 0.5 / static_cast<double>(N * n_tiles) * (grad_l - grad_r);
+    return 0.5 / static_cast<double>(N * n_tiles) * (trace - dot);
+}
+
+double compute_trace(const std::vector<double> &diagonal, double trace)
+{
+    return trace + std::reduce(diagonal.begin(), diagonal.end());
+}
+
+double
+compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result)
+{
+    return result + dot(vector_T, vector, static_cast<int>(vector.size()));
 }
 
 /**
@@ -274,18 +284,7 @@ double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
     return trace;
 }
 
-double sum_gradleft(const std::vector<double> &diagonal, double grad)
-{
-    grad += std::reduce(diagonal.begin(), diagonal.end());
-    return grad;
-}
 
-double
-sum_gradright(const std::vector<double> &inter_alpha, const std::vector<double> &alpha, double grad, std::size_t N)
-{
-    grad += dot(inter_alpha, alpha, static_cast<int>(N));
-    return grad;
-}
 
 double sum_noise_gradleft(
     const std::vector<double> &ft_invK, double grad, const std::vector<double> &hyperparameters, std::size_t N)
