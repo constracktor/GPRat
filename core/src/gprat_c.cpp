@@ -49,7 +49,7 @@ GP::GP(std::vector<double> input,
     _n_tiles(n_tiles),
     _n_tile_size(n_tile_size),
     n_regressors(n_r),
-    kernel_hyperparams(hyperparams),
+    sek_params(hyperparams[0], hyperparams[1], hyperparams[2]),
     trainable_params(trainable_bool)
 { }
 
@@ -60,9 +60,12 @@ std::string GP::repr() const
 {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(12);
-    oss << "Kernel_Params: [lengthscale=" << kernel_hyperparams[0] << ", vertical_lengthscale=" << kernel_hyperparams[1]
-        << ", noise_variance=" << kernel_hyperparams[2] << ", n_regressors=" << n_regressors
-        << ", trainable_params l=" << trainable_params[0] << ", trainable_params v=" << trainable_params[1]
+    oss << "Kernel_Params: [lengthscale=" << sek_params.lengthscale
+        << ", vertical_lengthscale=" << sek_params.vertical_lengthscale
+        << ", noise_variance=" << sek_params.noise_variance
+        << ", n_regressors=" << n_regressors
+        << ", trainable_params l=" << trainable_params[0]
+        << ", trainable_params v=" << trainable_params[1]
         << ", trainable_params n=" << trainable_params[2] << "]";
     return oss.str();
 }
@@ -95,7 +98,7 @@ std::vector<double> GP::predict(const std::vector<double> &test_input, int m_til
                        _training_input,
                        _training_output,
                        test_input,
-                       kernel_hyperparams,
+                       sek_params,
                        _n_tiles,
                        _n_tile_size,
                        m_tiles,
@@ -125,7 +128,7 @@ GP::predict_with_uncertainty(const std::vector<double> &test_input, int m_tiles,
                        _training_input,
                        _training_output,
                        test_input,
-                       kernel_hyperparams,
+                       sek_params,
                        _n_tiles,
                        _n_tile_size,
                        m_tiles,
@@ -155,7 +158,7 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, int m_tiles, in
                        _training_input,
                        _training_output,
                        test_input,
-                       kernel_hyperparams,
+                       sek_params,
                        _n_tiles,
                        _n_tile_size,
                        m_tiles,
@@ -185,7 +188,7 @@ std::vector<double> GP::optimize(const gprat_hyper::AdamParams &adam_params)
                        _n_tile_size,
                        n_regressors,
                        adam_params,
-                       kernel_hyperparams,
+                       sek_params,
                        trainable_params);
                })
         .get();
@@ -212,7 +215,7 @@ double GP::optimize_step(gprat_hyper::AdamParams &adam_params, int iter)
                        _n_tile_size,
                        n_regressors,
                        adam_params,
-                       kernel_hyperparams,
+                       sek_params,
                        trainable_params,
                        iter);
                })
@@ -228,7 +231,7 @@ double GP::calculate_loss()
                [this]()
                {
                    return compute_loss_hpx(
-                       _training_input, _training_output, kernel_hyperparams, _n_tiles, _n_tile_size, n_regressors);
+                       _training_input, _training_output, sek_params, _n_tiles, _n_tile_size, n_regressors);
                })
         .get();
 }
@@ -240,7 +243,7 @@ std::vector<std::vector<double>> GP::cholesky()
 {
     return hpx::async(
                [this]()
-               { return cholesky_hpx(_training_input, kernel_hyperparams, _n_tiles, _n_tile_size, n_regressors); })
+               { return cholesky_hpx(_training_input, sek_params, _n_tiles, _n_tile_size, n_regressors); })
         .get();
 }
 

@@ -1,6 +1,7 @@
 #ifndef GP_ALGORITHMS_CPU_H
 #define GP_ALGORITHMS_CPU_H
 
+#include "gp_kernels.hpp"
 #include <vector>
 
 /**
@@ -18,7 +19,7 @@
 double compute_covariance_function(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   const std::vector<double> &hyperparameters,
+                                   const gprat_hyper::SEKParams &sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input);
 
@@ -40,7 +41,7 @@ std::vector<double> gen_tile_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -62,7 +63,7 @@ std::vector<double> gen_tile_full_prior_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -84,7 +85,7 @@ std::vector<double> gen_tile_prior_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -107,7 +108,7 @@ std::vector<double> gen_tile_cross_covariance(
     std::size_t N_row,
     std::size_t N_col,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &row_input,
     const std::vector<double> &col_input);
 

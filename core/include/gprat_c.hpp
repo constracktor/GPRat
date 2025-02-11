@@ -3,6 +3,7 @@
 
 #include "gp_functions.hpp"
 #include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <string>
 #include <vector>
 
@@ -69,9 +70,9 @@ class GP
     int n_regressors;
 
     /**
-     * @brief Hyperarameters of the covariance matrix kernel
+     * @brief Hyperarameters of the squared exponential kernel
      */
-    std::vector<double> kernel_hyperparams;
+    gprat_hyper::SEKParams sek_params;
 
     /**
      * @brief List of bools indicating trainable parameters: lengthscale,

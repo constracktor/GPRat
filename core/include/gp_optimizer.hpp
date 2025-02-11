@@ -1,6 +1,7 @@
 #ifndef GP_OPTIMIZER_H
 #define GP_OPTIMIZER_H
 
+#include "gp_kernels.hpp"
 #include <vector>
 
 /**
@@ -11,7 +12,7 @@
  *
  * @return The constrained parameter
  */
-double to_constrained(const double &parameter, bool noise);
+double to_constrained(double parameter, bool noise);
 
 /**
  * @brief Transform hyperparmeter to entire real line using inverse of softplus.
@@ -23,7 +24,7 @@ double to_constrained(const double &parameter, bool noise);
  *
  * @return The unconstrained parameter
  */
-double to_unconstrained(const double &parameter, bool noise);
+double to_unconstrained(double parameter, bool noise);
 
 /**
  * @brief Calculate the sigmoid function for a given value
@@ -32,7 +33,7 @@ double to_unconstrained(const double &parameter, bool noise);
  *
  * @return The sigmoid value for the given parameter
  */
-double compute_sigmoid(const double &parameter);
+double compute_sigmoid(double parameter);
 
 /**
  * @brief Compute the distance between two feature vectors divided by the lengthscale
@@ -50,7 +51,7 @@ double compute_covariance_dist_func(
     std::size_t i_global,
     std::size_t j_global,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &i_input,
     const std::vector<double> &j_input);
 
@@ -72,7 +73,7 @@ std::vector<double> compute_cov_dist_vec(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &input);
 
 /* @brief Generate a tile of the covariance matrix with given distances
@@ -89,7 +90,7 @@ std::vector<double> gen_tile_covariance_opt(
     std::size_t row,
     std::size_t col,
     std::size_t N,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     const std::vector<double> &cov_dists);
 
 /* @brief  Generate a derivative tile w.r.t. vertical_lengthscale v
@@ -101,7 +102,7 @@ std::vector<double> gen_tile_covariance_opt(
  * @return A quadratic tile of the derivative of v of size N x N
  */
 std::vector<double>
-gen_tile_grad_v(std::size_t N, const std::vector<double> &hyperparameters, const std::vector<double> &cov_dists);
+gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &cov_dists);
 
 /* @brief  Generate a derivative tile w.r.t. lengthscale l
  *
@@ -112,27 +113,27 @@ gen_tile_grad_v(std::size_t N, const std::vector<double> &hyperparameters, const
  * @return A quadratic tile of the derivative of l of size N x N
  */
 std::vector<double>
-gen_tile_grad_l(std::size_t N, const std::vector<double> &hyperparameters, const std::vector<double> &cov_dists);
+gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &cov_dists);
 
 /**
  * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
  */
-double gen_beta_T(int t, const std::vector<double> &hyperparameters, std::size_t param_idx);
+double gen_beta_T(int t, double parameter);
 
 /**
  * @brief Update biased first raw moment estimate.
  */
-double update_first_moment(const double &gradient, double m_T, const double &beta_1);
+double update_first_moment(double gradient, double m_T, double beta_1);
 
 /**
  * @brief Update biased second raw moment estimate.
  */
-double update_second_moment(const double &gradient, double v_T, const double &beta_2);
+double update_second_moment(double gradient, double v_T, double beta_2);
 
 /**
  * @brief Update hyperparameter using gradient decent.
  */
-double update_param(const double &unconstrained_hyperparam,
+double update_param(double unconstrained_hyperparam,
                     const std::vector<double> &hyperparameters,
                     double m_T,
                     double v_T,
@@ -173,7 +174,7 @@ double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t 
  * @brief Compute trace of (K^-1 - K^-1*y*y^T*K^-1)* del(K)/del(hyperparam) =
  *        gradient(K) w.r.t. hyperparam.
  */
-double compute_gradient(const double &grad_l, const double &grad_r, std::size_t N, std::size_t n_tiles);
+double compute_gradient(double grad_l, double grad_r, std::size_t N, std::size_t n_tiles);
 
 /**
  * @brief Compute trace for noise variance.

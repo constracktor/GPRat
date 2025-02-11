@@ -314,7 +314,7 @@ void update_grad_K_tiled_mkl(std::vector<hpx::shared_future<std::vector<double>>
     }
 }
 
-// Perform a gradient scent step for selected hyperparameter using Adam
+// Perform a gradient descent step for selected hyperparameter using Adam
 // algorithm
 void update_hyperparameter(
     const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,

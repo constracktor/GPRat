@@ -12,7 +12,7 @@ using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 // PREDICT
 std::vector<std::vector<double>>
 cholesky_hpx(const std::vector<double> &training_input,
-             const std::vector<double> &hyperparameters,
+             const gprat_hyper::SEKParams &sek_params,
              int n_tiles,
              int n_tile_size,
              int n_regressors)
@@ -37,7 +37,7 @@ cholesky_hpx(const std::vector<double> &training_input,
                 j,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 training_input);
         }
     }
@@ -63,7 +63,7 @@ std::vector<double>
 predict_hpx(const std::vector<double> &training_input,
             const std::vector<double> &training_output,
             const std::vector<double> &test_input,
-            const std::vector<double> &hyperparameters,
+            const gprat_hyper::SEKParams &sek_params,
             int n_tiles,
             int n_tile_size,
             int m_tiles,
@@ -113,7 +113,7 @@ predict_hpx(const std::vector<double> &training_input,
                 j,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 training_input);
         }
     }
@@ -135,7 +135,7 @@ predict_hpx(const std::vector<double> &training_input,
                 m_tile_size,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 test_input,
                 training_input));
         }
@@ -180,7 +180,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -247,7 +247,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
                 j,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 training_input);
         }
     }
@@ -269,7 +269,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
                 m_tile_size,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 test_input,
                 training_input));
         }
@@ -288,7 +288,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
             i,
             m_tile_size,
             n_regressors,
-            hyperparameters,
+            sek_params,
             test_input));
     }
 
@@ -377,7 +377,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
-    const std::vector<double> &hyperparameters,
+    const gprat_hyper::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -445,7 +445,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
                 j,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 training_input);
         }
     }
@@ -467,7 +467,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
                 m_tile_size,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 test_input,
                 training_input));
         }
@@ -489,7 +489,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
                 j,
                 m_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 test_input);
 
             if (i != j)
@@ -586,7 +586,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
 // OPTIMIZATION
 double compute_loss_hpx(const std::vector<double> &training_input,
                         const std::vector<double> &training_output,
-                        const std::vector<double> &hyperparameters,
+                        const gprat_hyper::SEKParams &sek_params,
                         int n_tiles,
                         int n_tile_size,
                         int n_regressors)
@@ -634,7 +634,7 @@ double compute_loss_hpx(const std::vector<double> &training_input,
                 j,
                 n_tile_size,
                 n_regressors,
-                hyperparameters,
+                sek_params,
                 training_input);
         }
     }
@@ -674,7 +674,7 @@ optimize_hpx(const std::vector<double> &training_input,
              int n_tile_size,
              int n_regressors,
              const gprat_hyper::AdamParams &adam_params,
-             std::vector<double> &kernel_hyperparams,
+             gprat_hyper::SEKParams &sek_params,
              std::vector<bool> trainable_params)
 {
     /*
@@ -712,14 +712,14 @@ optimize_hpx(const std::vector<double> &training_input,
 
     // Rework that part after rebase with GPU version
     std::vector<double> hyperparameters(7);
-    hyperparameters[0] = kernel_hyperparams[0];      // lengthscale
-    hyperparameters[1] = kernel_hyperparams[1];      // vertical_lengthscale
-    hyperparameters[2] = kernel_hyperparams[2];      // noise_variance
+    hyperparameters[0] = sek_params.lengthscale;            // lengthscale
+    hyperparameters[1] = sek_params.vertical_lengthscale;   // vertical_lengthscale
+    hyperparameters[2] = sek_params.noise_variance;         // noise_variance
     hyperparameters[3] = adam_params.learning_rate;  // learning rate
     hyperparameters[4] = adam_params.beta1;          // beta1
     hyperparameters[5] = adam_params.beta2;          // beta2
     hyperparameters[6] = adam_params.epsilon;        // epsilon
-                                                     //
+
     // data holder for loss
     hpx::shared_future<double> loss_value;
     // data holder for computed loss values
@@ -745,12 +745,12 @@ optimize_hpx(const std::vector<double> &training_input,
     beta1_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
     for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
     {
-        beta1_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, hyperparameters, 4);
+        beta1_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta1);
     }
     beta2_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
     for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
     {
-        beta2_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, hyperparameters, 5);
+        beta2_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta2);
     }
     // Assemble first and second momemnt vectors: m_T and v_T
     m_T.resize(3);
@@ -801,7 +801,7 @@ optimize_hpx(const std::vector<double> &training_input,
                     j,
                     n_tile_size,
                     n_regressors,
-                    hyperparameters,
+                    sek_params,
                     training_input);
 
                 K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
@@ -809,19 +809,19 @@ optimize_hpx(const std::vector<double> &training_input,
                     i,
                     j,
                     n_tile_size,
-                    hyperparameters,
+                    sek_params,
                     cov_dists);
 
                 grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
                     hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_v), "assemble_gradv"),
                     n_tile_size,
-                    hyperparameters,
+                    sek_params,
                     cov_dists);
 
                 grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
                     hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l), "assemble_gradl"),
                     n_tile_size,
-                    hyperparameters,
+                    sek_params,
                     cov_dists);
 
                 if (i != j)
@@ -950,13 +950,12 @@ optimize_hpx(const std::vector<double> &training_input,
         }
         // Synchronize after iteration - required?
         losses.push_back(loss_value.get());
+        // Update hyperparameter attributes in Gaussian process model
+        sek_params.lengthscale = hyperparameters[0];
+        sek_params.vertical_lengthscale = hyperparameters[1];
+        sek_params.noise_variance = hyperparameters[2];
     }
 
-    // Rework that part after rebase with GPU version
-    // Update hyperparameter attributes in Gaussian process model
-    kernel_hyperparams[0] = hyperparameters[0];
-    kernel_hyperparams[1] = hyperparameters[1];
-    kernel_hyperparams[2] = hyperparameters[2];
     // Return losses
     return losses;
 }
@@ -968,7 +967,7 @@ double optimize_step_hpx(
     int n_tile_size,
     int n_regressors,
     gprat_hyper::AdamParams &adam_params,
-    std::vector<double> &kernel_hyperparams,
+    gprat_hyper::SEKParams &sek_params,
     std::vector<bool> trainable_params,
     int iter)
 {
