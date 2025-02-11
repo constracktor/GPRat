@@ -137,8 +137,7 @@ std::vector<double> gen_tile_cross_covariance(
     return tile;
 }
 
-std::vector<double>
-gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile)
+std::vector<double> gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile)
 {
     // Preallocate required memory
     std::vector<double> transposed;

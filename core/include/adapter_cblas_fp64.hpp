@@ -161,11 +161,21 @@ dot_diag_gemm(hpx::shared_future<std::vector<double>> f_A,
 // BLAS level 1 operations ------------------------------- {{{
 
 /**
- * @brief FP64 Dot product: a * b
- * @param f_a left vector
- * @param f_b right vector
+ * @brief FP64 AXPY: y - x
+ * @param f_y left vector
+ * @param f_x right vector
  * @param N vector length
- * @return f_a * f_b
+ * @return y - x
+ */
+hpx::shared_future<std::vector<double>>
+axpy(hpx::shared_future<std::vector<double>> f_y, hpx::shared_future<std::vector<double>> f_x, const int N);
+
+/**
+ * @brief FP64 Dot product: a * b
+ * @param a left vector
+ * @param b right vector
+ * @param N vector length
+ * @return a * b
  */
 double dot(std::vector<double> a, std::vector<double> b, const int N);
 

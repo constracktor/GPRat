@@ -120,8 +120,7 @@ std::vector<double> gen_tile_cross_covariance(
  *
  * @return The transposed tile of size N_col x N_row
  */
-std::vector<double>
-gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile);
+std::vector<double> gen_tile_transpose(std::size_t N_row, std::size_t N_col, const std::vector<double> &tile);
 
 /**
  * @brief Generate a tile of the output data

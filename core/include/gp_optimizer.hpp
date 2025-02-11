@@ -115,7 +115,6 @@ gen_tile_grad_v(std::size_t N, const std::vector<double> &hyperparameters, const
 std::vector<double>
 gen_tile_grad_l(std::size_t N, const std::vector<double> &hyperparameters, const std::vector<double> &cov_dists);
 
-
 /**
  * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
  */
@@ -187,10 +186,6 @@ double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
                               const std::vector<double> &hyperparameters,
                               std::size_t N,
                               std::size_t n_tiles);
-
-
-
-
 
 double sum_gradleft(const std::vector<double> &diagonal, double grad);
 

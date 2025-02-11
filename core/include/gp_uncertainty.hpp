@@ -1,6 +1,7 @@
 #ifndef GP_UNCERTAINTY_H
 #define GP_UNCERTAINTY_H
 #pragma once
+#include <hpx/future.hpp>
 #include <vector>
 
 /**
@@ -12,19 +13,17 @@
  *
  * @return Resulting vector of size M
  */
-// Is this function really necessary? why not replace with saxpy blas a-b inside
-// NAME: compute_diagonal_difference?
-std::vector<double> diag_posterior(const std::vector<double> &a, const std::vector<double> &b, std::size_t M);
+std::vector<double>
+compute_vector_difference(const std::vector<double> &a, const std::vector<double> &b, std::size_t M);
 
 /**
- * @brief Retrieve diagonal elements of the posterior covariance matrix A.
+ * @brief Extract diagonal elements of the matrix A.
  *
- * @param A The posterior covariance matrix
+ * @param A The matrix
  * @param M The rumber of rows in the matrix
  *
- * @return Diagonal element vector of the posterior covariance matrix A of size M
+ * @return Diagonal element vector of the matrix A of size M
  */
-// NAME: get_diagonal?
-std::vector<double> diag_tile(const std::vector<double> &A, std::size_t M);
-
+// std::vector<double> get_matrix_diagonal(const std::vector<double> &A, std::size_t M);
+hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M);
 #endif  // GP_UNCERTAINTY_H

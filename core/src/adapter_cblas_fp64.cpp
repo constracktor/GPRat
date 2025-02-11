@@ -209,6 +209,15 @@ dot_diag_gemm(hpx::shared_future<std::vector<double>> f_A,
 
 // BLAS level 1 operations ------------------------------- {{{
 
+hpx::shared_future<std::vector<double>>
+axpy(hpx::shared_future<std::vector<double>> f_y, hpx::shared_future<std::vector<double>> f_x, const int N)
+{
+    auto y = f_y.get();
+    auto x = f_x.get();
+    cblas_daxpy(N, -1.0, x.data(), 1, y.data(), 1);
+    return hpx::make_ready_future(y);
+}
+
 double dot(std::vector<double> a, std::vector<double> b, const int N)
 {
     // DOT: a * b

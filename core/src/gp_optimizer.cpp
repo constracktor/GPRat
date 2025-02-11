@@ -74,7 +74,8 @@ std::vector<double> compute_cov_dist_vec(
         {
             j_global = N * col + j;
             // compute covariance function
-            tile.push_back(compute_covariance_dist_func(i_global, j_global, n_regressors, hyperparameters, input, input));
+            tile.push_back(
+                compute_covariance_dist_func(i_global, j_global, n_regressors, hyperparameters, input, input));
         }
     }
     return tile;
@@ -142,7 +143,7 @@ gen_tile_grad_l(std::size_t N, const std::vector<double> &hyperparameters, const
         {
             // compute derivative
             tile.push_back(-2.0 * (hyperparameters[1] / hyperparameters[0]) * cov_dists[i * N + j]
-                              * exp(cov_dists[i * N + j]) * hyperparam_der);
+                           * exp(cov_dists[i * N + j]) * hyperparam_der);
         }
     }
     return tile;
@@ -179,10 +180,8 @@ double update_second_moment(const double &gradient, double v_T, const double &be
 /**
  * @brief return zero - used to initialize moment vectors
  */
-double gen_zero()
-{
-    return 0.0;
-}
+double gen_zero() { return 0.0; }
+
 /**
  * @brief Update hyperparameter using gradient decent.
  */
@@ -204,6 +203,7 @@ double update_param(const double &unconstrained_hyperparam,
     double alpha_T = hyperparameters[3] * sqrt(1.0 - beta2_T[iter]) / (1.0 - beta1_T[iter]);
     return unconstrained_hyperparam - alpha_T * m_T / (sqrt(v_T) + hyperparameters[6]);
 }
+
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 // Losses
@@ -237,7 +237,7 @@ double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t 
     }
 
     l += Nn * log(2.0 * M_PI);
-    return 0.5 * l / Nn; //why /Nn?
+    return 0.5 * l / Nn;  // why /Nn?
 }
 
 /////////////////////////////////////////////////////////////
