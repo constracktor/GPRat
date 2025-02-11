@@ -3,47 +3,10 @@
 #include "../include/gp_algorithms_cpu.hpp"
 #include "../include/gp_optimizer.hpp"
 #include "../include/tiled_algorithms_cpu.hpp"
-#include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <vector>
+#include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
-
-///////////////////////////////////////////////////////////////////////////
-// PARAMETER STRUCT
-namespace gprat_hyper
-{
-
-Hyperparameters::Hyperparameters(
-    double lr,
-    double b1,
-    double b2,
-    double eps,
-    int opt_i,
-    std::vector<double> M_T_init,
-    std::vector<double> V_T_init) :
-    learning_rate(lr),
-    beta1(b1),
-    beta2(b2),
-    epsilon(eps),
-    opt_iter(opt_i),
-    M_T(M_T_init),
-    V_T(V_T_init)
-{ }
-
-std::string Hyperparameters::repr() const
-{
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(8);
-    oss << "Hyperparameters: [learning_rate=" << learning_rate << ", beta1=" << beta1 << ", beta2=" << beta2
-        << ", epsilon=" << epsilon << ", opt_iter=" << opt_iter << "]";
-    return oss.str();
-}
-
-}  // namespace gprat_hyper
 
 ///////////////////////////////////////////////////////////////////////////
 // PREDICT
@@ -710,7 +673,7 @@ optimize_hpx(const std::vector<double> &training_input,
              int n_tiles,
              int n_tile_size,
              int n_regressors,
-             const gprat_hyper::Hyperparameters &hyperparams,
+             const gprat_hyper::AdamParams &adam_params,
              std::vector<double> &kernel_hyperparams,
              std::vector<bool> trainable_params)
 {
@@ -752,10 +715,10 @@ optimize_hpx(const std::vector<double> &training_input,
     hyperparameters[0] = kernel_hyperparams[0];      // lengthscale
     hyperparameters[1] = kernel_hyperparams[1];      // vertical_lengthscale
     hyperparameters[2] = kernel_hyperparams[2];      // noise_variance
-    hyperparameters[3] = hyperparams.learning_rate;  // learning rate
-    hyperparameters[4] = hyperparams.beta1;          // beta1
-    hyperparameters[5] = hyperparams.beta2;          // beta2
-    hyperparameters[6] = hyperparams.epsilon;        // epsilon
+    hyperparameters[3] = adam_params.learning_rate;  // learning rate
+    hyperparameters[4] = adam_params.beta1;          // beta1
+    hyperparameters[5] = adam_params.beta2;          // beta2
+    hyperparameters[6] = adam_params.epsilon;        // epsilon
                                                      //
     // data holder for loss
     hpx::shared_future<double> loss_value;
@@ -779,13 +742,13 @@ optimize_hpx(const std::vector<double> &training_input,
     std::vector<hpx::shared_future<double>> beta1_T;
     std::vector<hpx::shared_future<double>> beta2_T;
     // Assemble beta1_t and beta2_t
-    beta1_T.resize(static_cast<std::size_t>(hyperparams.opt_iter));
-    for (std::size_t i = 0; i < static_cast<std::size_t>(hyperparams.opt_iter); i++)
+    beta1_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
+    for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
     {
         beta1_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, hyperparameters, 4);
     }
-    beta2_T.resize(static_cast<std::size_t>(hyperparams.opt_iter));
-    for (std::size_t i = 0; i < static_cast<std::size_t>(hyperparams.opt_iter); i++)
+    beta2_T.resize(static_cast<std::size_t>(adam_params.opt_iter));
+    for (std::size_t i = 0; i < static_cast<std::size_t>(adam_params.opt_iter); i++)
     {
         beta2_T[i] = hpx::async(hpx::annotated_function(gen_beta_T, "assemble_tiled"), i + 1, hyperparameters, 5);
     }
@@ -801,7 +764,7 @@ optimize_hpx(const std::vector<double> &training_input,
     //////////////////////////////////////////////////////////////////////////////
 
     // Preallocate memory
-    losses.reserve(static_cast<std::size_t>(hyperparams.opt_iter));
+    losses.reserve(static_cast<std::size_t>(adam_params.opt_iter));
     y_tiles.reserve(static_cast<std::size_t>(n_tiles));
 
     alpha_tiles.resize(static_cast<std::size_t>(n_tiles));            // for now resize since reset in loop
@@ -821,7 +784,7 @@ optimize_hpx(const std::vector<double> &training_input,
 
     //////////////////////////////////////////////////////////////////////////////
     // Perform optimization
-    for (std::size_t iter = 0; iter < static_cast<std::size_t>(hyperparams.opt_iter); iter++)
+    for (std::size_t iter = 0; iter < static_cast<std::size_t>(adam_params.opt_iter); iter++)
     {
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous assembly of tiled covariance matrix, derivative of covariance matrix
@@ -1004,7 +967,7 @@ double optimize_step_hpx(
     int n_tiles,
     int n_tile_size,
     int n_regressors,
-    gprat_hyper::Hyperparameters &hyperparams,
+    gprat_hyper::AdamParams &adam_params,
     std::vector<double> &kernel_hyperparams,
     std::vector<bool> trainable_params,
     int iter)

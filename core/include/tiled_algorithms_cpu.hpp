@@ -89,13 +89,6 @@ void matrix_vector_tiled(Tiled_matrix &ft_tiles,
                          std::size_t n_tiles,
                          std::size_t m_tiles);
 
-// // Tiled Diagonal of Posterior Covariance Matrix
-// void posterior_covariance_tiled(std::vector<hpx::shared_future<std::vector<double>>> &ft_tCC_tiles,
-//                                 std::vector<hpx::shared_future<std::vector<double>>> &ft_inter_tiles,
-//                                 int N,
-//                                 int M,
-//                                 std::size_t n_tiles,
-//                                 std::size_t m_tiles);
 /**
  * @brief Perform tiled symmetric k-rank update on diagonal tiles
  *
@@ -141,7 +134,18 @@ void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_substrah
  */
 void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int M, std::size_t m_tiles);
 
-// Tiled Loss
+/**
+ * @brief Compute the negative log likelihood loss with a tiled covariance matrix K.
+ *
+ *  Computes l = 0.5 * ( log(det(K)) + y^T * K^-1 * y) + const.)
+ *
+ * @param ft_tiles Tiled Cholesky factor matrix represented as a vector of futurized tiles.
+ * @param ft_alpha Tiled vector containing the solution of K^-1 * y
+ * @param ft_y Tiled vector containing the the training output y
+ * @param loss The loss value to be computed
+ * @param N Tile size per dimension.
+ * @param n_tiles Number of tiles per dimension.
+ */
 void compute_loss_tiled(Tiled_matrix &ft_tiles,
                         Tiled_vector &ft_alpha,
                         Tiled_vector &ft_y,

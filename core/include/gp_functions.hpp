@@ -1,50 +1,8 @@
 #ifndef GP_FUNCTIONS_H
 #define GP_FUNCTIONS_H
 
-#include <hpx/future.hpp>
+#include "gp_hyperparameters.hpp"
 #include <vector>
-
-namespace gprat_hyper
-{
-
-/**
- * @brief Data structure to hold the hyperparameters of the Adam optimizer
- */
-struct Hyperparameters
-{
-    double learning_rate;
-    double beta1;
-    double beta2;
-    double epsilon;
-    int opt_iter;
-    std::vector<double> M_T;
-    std::vector<double> V_T;
-
-    /**
-     * @brief Constructor for Adam hyperparameters
-     *
-     * @param lr Learning rate
-     * @param b1 Beta1
-     * @param b2 Beta2
-     * @param eps Epsilon
-     * @param opt_i The Number of optimization iterations
-     * @param M_T_init The initial values for first moment vector
-     * @param V_T_init The initial values for second moment vector
-     */
-    Hyperparameters(double lr = 0.001,
-                    double b1 = 0.9,
-                    double b2 = 0.999,
-                    double eps = 1e-8,
-                    int opt_i = 0,
-                    std::vector<double> M_T = { 0.0, 0.0, 0.0 },
-                    std::vector<double> V_T = { 0.0, 0.0, 0.0 });
-
-    /**
-     * @brief Returns a string representation of the hyperparameters
-     */
-    std::string repr() const;
-};
-}  // namespace gprat_hyper
 
 /**
  * @brief Perform Cholesky decompositon (+Assebmly)
@@ -184,7 +142,7 @@ optimize_hpx(const std::vector<double> &training_input,
              int n_tiles,
              int n_tile_size,
              int n_regressors,
-             const gprat_hyper::Hyperparameters &hyperparams,
+             const gprat_hyper::AdamParams &adam_params,
              std::vector<double> &hyperparameters,
              std::vector<bool> trainable_params);
 
@@ -212,7 +170,7 @@ double optimize_step_hpx(
     int n_tiles,
     int n_tile_size,
     int n_regressors,
-    gprat_hyper::Hyperparameters &hyperparams,
+    gprat_hyper::AdamParams &adam_params,
     std::vector<double> &hyperparameters,
     std::vector<bool> trainable_params,
     int iter);

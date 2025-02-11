@@ -2,8 +2,6 @@
 
 #include "utils_c.hpp"
 #include <cstdio>
-#include <iomanip>
-#include <sstream>
 
 // namespace for GPRat library entities
 namespace gprat
@@ -175,10 +173,10 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, int m_tiles, in
  *
  * @return losses
  */
-std::vector<double> GP::optimize(const gprat_hyper::Hyperparameters &hyperparams)
+std::vector<double> GP::optimize(const gprat_hyper::AdamParams &adam_params)
 {
     return hpx::async(
-               [this, &hyperparams]()
+               [this, &adam_params]()
                {
                    return optimize_hpx(
                        _training_input,
@@ -186,7 +184,7 @@ std::vector<double> GP::optimize(const gprat_hyper::Hyperparameters &hyperparams
                        _n_tiles,
                        _n_tile_size,
                        n_regressors,
-                       hyperparams,
+                       adam_params,
                        kernel_hyperparams,
                        trainable_params);
                })
@@ -202,10 +200,10 @@ std::vector<double> GP::optimize(const gprat_hyper::Hyperparameters &hyperparams
  *
  * @return loss
  */
-double GP::optimize_step(gprat_hyper::Hyperparameters &hyperparams, int iter)
+double GP::optimize_step(gprat_hyper::AdamParams &adam_params, int iter)
 {
     return hpx::async(
-               [this, &hyperparams, iter]()
+               [this, &adam_params, iter]()
                {
                    return optimize_step_hpx(
                        _training_input,
@@ -213,7 +211,7 @@ double GP::optimize_step(gprat_hyper::Hyperparameters &hyperparams, int iter)
                        _n_tiles,
                        _n_tile_size,
                        n_regressors,
-                       hyperparams,
+                       adam_params,
                        kernel_hyperparams,
                        trainable_params,
                        iter);

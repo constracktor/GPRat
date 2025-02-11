@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
                 /////////////////////
                 ///// hyperparams
                 std::vector<double> M = { 0.0, 0.0, 0.0 };
-                gprat_hyper::Hyperparameters hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER, M };
+                gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER, M };
 
                 /////////////////////
                 ////// data loading

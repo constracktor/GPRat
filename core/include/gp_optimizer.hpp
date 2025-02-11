@@ -1,7 +1,6 @@
 #ifndef GP_OPTIMIZER_H
 #define GP_OPTIMIZER_H
 
-#include <cmath>
 #include <vector>
 
 /**

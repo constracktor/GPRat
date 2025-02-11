@@ -2,6 +2,7 @@
 #define gprat_C_H
 
 #include "gp_functions.hpp"
+#include "gp_hyperparameters.hpp"
 #include <string>
 #include <vector>
 
@@ -149,7 +150,7 @@ class GP
      *
      * @return losses
      */
-    std::vector<double> optimize(const gprat_hyper::Hyperparameters &hyperparams);
+    std::vector<double> optimize(const gprat_hyper::AdamParams &adam_params);
 
     /**
      * @brief Perform a single optimization step
@@ -160,7 +161,7 @@ class GP
      *
      * @return loss
      */
-    double optimize_step(gprat_hyper::Hyperparameters &hyperparams, int iter);
+    double optimize_step(gprat_hyper::AdamParams &adam_params, int iter);
 
     /**
      * @brief Calculate loss for given data and Gaussian process model
