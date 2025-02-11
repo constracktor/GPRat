@@ -3,6 +3,7 @@
 
 #include <hpx/future.hpp>
 #include <vector>
+using vector_future = hpx::shared_future<std::vector<float>>;
 
 // Constants that are compatible with CBLAS
 typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
@@ -29,7 +30,7 @@ typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
  * @param N matrix dimension
  * @return factorized, lower triangular matrix f_L
  */
-hpx::shared_future<std::vector<float>> potrf(hpx::shared_future<std::vector<float>> f_A, const int N);
+vector_future potrf(vector_future f_A, const int N);
 
 /**
  * @brief FP32 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -39,13 +40,12 @@ hpx::shared_future<std::vector<float>> potrf(hpx::shared_future<std::vector<floa
  * @param M second dimension
  * @return solution matrix f_X
  */
-hpx::shared_future<std::vector<float>>
-trsm(hpx::shared_future<std::vector<float>> f_L,
-     hpx::shared_future<std::vector<float>> f_A,
-     const int N,
-     const int M,
-     const BLAS_TRANSPOSE transpose_L,
-     const BLAS_SIDE side_L);
+vector_future trsm(vector_future f_L,
+                   vector_future f_A,
+                   const int N,
+                   const int M,
+                   const BLAS_TRANSPOSE transpose_L,
+                   const BLAS_SIDE side_L);
 
 /**
  * @brief FP32 Symmetric rank-k update: A = A - B * B^T
@@ -54,8 +54,7 @@ trsm(hpx::shared_future<std::vector<float>> f_L,
  * @param N matrix dimension
  * @return updated matrix f_A
  */
-hpx::shared_future<std::vector<float>>
-syrk(hpx::shared_future<std::vector<float>> f_A, hpx::shared_future<std::vector<float>> f_B, const int N);
+vector_future syrk(vector_future f_A, vector_future f_B, const int N);
 
 /**
  * @brief FP32 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -69,10 +68,10 @@ syrk(hpx::shared_future<std::vector<float>> f_A, hpx::shared_future<std::vector<
  * @param transpose_B transpose right matrix
  * @return updated matrix f_X
  */
-hpx::shared_future<std::vector<float>>
-gemm(hpx::shared_future<std::vector<float>> f_A,
-     hpx::shared_future<std::vector<float>> f_B,
-     hpx::shared_future<std::vector<float>> f_C,
+vector_future
+gemm(vector_future f_A,
+     vector_future f_B,
+     vector_future f_C,
      const int N,
      const int M,
      const int K,
@@ -91,11 +90,7 @@ gemm(hpx::shared_future<std::vector<float>> f_A,
  * @param transpose_L transpose Cholesky factor
  * @return solution vector f_x
  */
-hpx::shared_future<std::vector<float>>
-trsv(hpx::shared_future<std::vector<float>> f_L,
-     hpx::shared_future<std::vector<float>> f_a,
-     const int N,
-     const BLAS_TRANSPOSE transpose_L);
+vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L);
 
 /**
  * @brief FP32 General matrix-vector multiplication: b = b - A(^T) * a
@@ -107,14 +102,13 @@ trsv(hpx::shared_future<std::vector<float>> f_L,
  * @param transpose_A transpose update matrix
  * @return updated vector f_b
  */
-hpx::shared_future<std::vector<float>>
-gemv(hpx::shared_future<std::vector<float>> f_A,
-     hpx::shared_future<std::vector<float>> f_a,
-     hpx::shared_future<std::vector<float>> f_b,
-     const int N,
-     const int M,
-     const BLAS_ALPHA alpha,
-     const BLAS_TRANSPOSE transpose_A);
+vector_future gemv(vector_future f_A,
+                   vector_future f_a,
+                   vector_future f_b,
+                   const int N,
+                   const int M,
+                   const BLAS_ALPHA alpha,
+                   const BLAS_TRANSPOSE transpose_A);
 
 /**
  * @brief FP32 General matrix rank-1 update: A = A - x*y^T
@@ -124,11 +118,7 @@ gemv(hpx::shared_future<std::vector<float>> f_A,
  * @param N matrix dimension
  * @return updated vector f_b
  */
-hpx::shared_future<std::vector<float>>
-ger(hpx::shared_future<std::vector<float>> f_A,
-    hpx::shared_future<std::vector<float>> f_x,
-    hpx::shared_future<std::vector<float>> f_y,
-    const int N);
+vector_future ger(vector_future f_A, vector_future f_x, vector_future f_y, const int N);
 
 /**
  * @brief FP32 Vector update with diagonal SYRK: r = r + diag(A^T * A)
@@ -138,8 +128,7 @@ ger(hpx::shared_future<std::vector<float>> f_A,
  * @param M second matrix dimension
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<float>> dot_diag_syrk(
-    hpx::shared_future<std::vector<float>> f_A, hpx::shared_future<std::vector<float>> f_r, const int N, const int M);
+vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M);
 /**
  * @brief FP32 Vector update with diagonal GEMM: r = r + diag(A * B)
  * @param f_A first update matrix
@@ -149,16 +138,20 @@ hpx::shared_future<std::vector<float>> dot_diag_syrk(
  * @param M second matrix dimension
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<float>>
-dot_diag_gemm(hpx::shared_future<std::vector<float>> f_A,
-              hpx::shared_future<std::vector<float>> f_B,
-              hpx::shared_future<std::vector<float>> f_r,
-              const int N,
-              const int M);
+vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
 
 // }}} --------------------------------- end of BLAS level 2 operations
 
 // BLAS level 1 operations ------------------------------- {{{
+
+/**
+ * @brief FP32 AXPY: y - x
+ * @param f_y left vector
+ * @param f_x right vector
+ * @param N vector length
+ * @return y - x
+ */
+vector_future axpy(vector_future f_y, vector_future f_x, const int N);
 
 /**
  * @brief FP32 Dot product: a * b

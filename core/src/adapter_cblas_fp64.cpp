@@ -6,7 +6,7 @@
 
 // BLAS level 3 operations -------------------------------------- {{{
 
-hpx::shared_future<std::vector<double>> potrf(hpx::shared_future<std::vector<double>> f_A, const int N)
+vector_future potrf(vector_future f_A, const int N)
 {
     auto A = f_A.get();
     // POTRF: in-place Cholesky decomposition of A
@@ -16,13 +16,12 @@ hpx::shared_future<std::vector<double>> potrf(hpx::shared_future<std::vector<dou
     return hpx::make_ready_future(A);
 }
 
-hpx::shared_future<std::vector<double>>
-trsm(hpx::shared_future<std::vector<double>> f_L,
-     hpx::shared_future<std::vector<double>> f_A,
-     const int N,
-     const int M,
-     const BLAS_TRANSPOSE transpose_L,
-     const BLAS_SIDE side_L)
+vector_future trsm(vector_future f_L,
+                   vector_future f_A,
+                   const int N,
+                   const int M,
+                   const BLAS_TRANSPOSE transpose_L,
+                   const BLAS_SIDE side_L)
 
 {
     auto L = f_L.get();
@@ -47,8 +46,7 @@ trsm(hpx::shared_future<std::vector<double>> f_L,
     return hpx::make_ready_future(A);
 }
 
-hpx::shared_future<std::vector<double>>
-syrk(hpx::shared_future<std::vector<double>> f_A, hpx::shared_future<std::vector<double>> f_B, const int N)
+vector_future syrk(vector_future f_A, vector_future f_B, const int N)
 {
     auto B = f_B.get();
     auto A = f_A.get();
@@ -61,10 +59,10 @@ syrk(hpx::shared_future<std::vector<double>> f_A, hpx::shared_future<std::vector
     return hpx::make_ready_future(A);
 }
 
-hpx::shared_future<std::vector<double>>
-gemm(hpx::shared_future<std::vector<double>> f_A,
-     hpx::shared_future<std::vector<double>> f_B,
-     hpx::shared_future<std::vector<double>> f_C,
+vector_future
+gemm(vector_future f_A,
+     vector_future f_B,
+     vector_future f_C,
      const int N,
      const int M,
      const int K,
@@ -101,11 +99,7 @@ gemm(hpx::shared_future<std::vector<double>> f_A,
 
 // BLAS level 2 operations ------------------------------- {{{
 
-hpx::shared_future<std::vector<double>>
-trsv(hpx::shared_future<std::vector<double>> f_L,
-     hpx::shared_future<std::vector<double>> f_a,
-     const int N,
-     const BLAS_TRANSPOSE transpose_L)
+vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
     auto L = f_L.get();
     auto a = f_a.get();
@@ -123,14 +117,13 @@ trsv(hpx::shared_future<std::vector<double>> f_L,
     return hpx::make_ready_future(a);
 }
 
-hpx::shared_future<std::vector<double>>
-gemv(hpx::shared_future<std::vector<double>> f_A,
-     hpx::shared_future<std::vector<double>> f_a,
-     hpx::shared_future<std::vector<double>> f_b,
-     const int N,
-     const int M,
-     const BLAS_ALPHA alpha,
-     const BLAS_TRANSPOSE transpose_A)
+vector_future gemv(vector_future f_A,
+                   vector_future f_a,
+                   vector_future f_b,
+                   const int N,
+                   const int M,
+                   const BLAS_ALPHA alpha,
+                   const BLAS_TRANSPOSE transpose_A)
 {
     auto A = f_A.get();
     auto a = f_a.get();
@@ -156,11 +149,7 @@ gemv(hpx::shared_future<std::vector<double>> f_A,
     return hpx::make_ready_future(b);
 }
 
-hpx::shared_future<std::vector<double>>
-ger(hpx::shared_future<std::vector<double>> f_A,
-    hpx::shared_future<std::vector<double>> f_x,
-    hpx::shared_future<std::vector<double>> f_y,
-    const int N)
+vector_future ger(vector_future f_A, vector_future f_x, vector_future f_y, const int N)
 {
     auto A = f_A.get();
     auto x = f_x.get();
@@ -173,8 +162,7 @@ ger(hpx::shared_future<std::vector<double>> f_A,
     return hpx::make_ready_future(A);
 }
 
-hpx::shared_future<std::vector<double>> dot_diag_syrk(
-    hpx::shared_future<std::vector<double>> f_A, hpx::shared_future<std::vector<double>> f_r, const int N, const int M)
+vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M)
 {
     auto A = f_A.get();
     auto r = f_r.get();
@@ -187,12 +175,7 @@ hpx::shared_future<std::vector<double>> dot_diag_syrk(
     return hpx::make_ready_future(r);
 }
 
-hpx::shared_future<std::vector<double>>
-dot_diag_gemm(hpx::shared_future<std::vector<double>> f_A,
-              hpx::shared_future<std::vector<double>> f_B,
-              hpx::shared_future<std::vector<double>> f_r,
-              const int N,
-              const int M)
+vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M)
 {
     auto A = f_A.get();
     auto B = f_B.get();
@@ -209,8 +192,7 @@ dot_diag_gemm(hpx::shared_future<std::vector<double>> f_A,
 
 // BLAS level 1 operations ------------------------------- {{{
 
-hpx::shared_future<std::vector<double>>
-axpy(hpx::shared_future<std::vector<double>> f_y, hpx::shared_future<std::vector<double>> f_x, const int N)
+vector_future axpy(vector_future f_y, vector_future f_x, const int N)
 {
     auto y = f_y.get();
     auto x = f_x.get();
