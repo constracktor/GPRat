@@ -68,7 +68,7 @@ gprat_results run_on_data(const std::string &train_path, const std::string &out_
     const auto test_tiles = utils::compute_test_tiles(n_test, n_tiles, tile_size);
 
     // hyperparams
-    gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER};
+    gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
 
     // data loading
     gprat::GP_data training_input(train_path, n_train, n_reg);

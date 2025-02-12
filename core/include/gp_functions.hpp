@@ -1,8 +1,8 @@
 #ifndef GP_FUNCTIONS_H
 #define GP_FUNCTIONS_H
 
-#include "gp_kernels.hpp"
 #include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <vector>
 
 /**

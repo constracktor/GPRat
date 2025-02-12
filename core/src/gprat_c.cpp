@@ -61,13 +61,10 @@ std::string GP::repr() const
     // clang-format OFF
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(12);
-    oss << "Kernel_Params: [lengthscale=" << sek_params.lengthscale
-        << ", vertical_lengthscale=" << sek_params.vertical_lengthscale
-        << ", noise_variance=" << sek_params.noise_variance
-        << ", n_regressors=" << n_regressors
-        << ", trainable_params l=" << trainable_params[0]
-        << ", trainable_params v=" << trainable_params[1]
-        << ", trainable_params n=" << trainable_params[2] << "]";
+    oss << "Kernel_Params: [lengthscale=" << sek_params.lengthscale << ", vertical_lengthscale="
+        << sek_params.vertical_lengthscale << ", noise_variance=" << sek_params.noise_variance
+        << ", n_regressors=" << n_regressors << ", trainable_params l=" << trainable_params[0]
+        << ", trainable_params v=" << trainable_params[1] << ", trainable_params n=" << trainable_params[2] << "]";
     return oss.str();
     // clang-format ON
 }
@@ -230,8 +227,7 @@ double GP::optimize_step(gprat_hyper::AdamParams &adam_params, int iter)
 double GP::calculate_loss()
 {
     return hpx::async(
-               [this]()
-               {
+               [this]() {
                    return compute_loss_hpx(
                        _training_input, _training_output, sek_params, _n_tiles, _n_tile_size, n_regressors);
                })
@@ -243,9 +239,8 @@ double GP::calculate_loss()
  */
 std::vector<std::vector<double>> GP::cholesky()
 {
-    return hpx::async(
-               [this]()
-               { return cholesky_hpx(_training_input, sek_params, _n_tiles, _n_tile_size, n_regressors); })
+    return hpx::async([this]()
+                      { return cholesky_hpx(_training_input, sek_params, _n_tiles, _n_tile_size, n_regressors); })
         .get();
 }
 

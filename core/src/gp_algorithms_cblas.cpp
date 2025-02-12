@@ -76,8 +76,7 @@ std::vector<double> gen_tile_full_prior_covariance(
         {
             j_global = N * col + j;
             // compute covariance function
-            tile.push_back(
-                compute_covariance_function(i_global, j_global, n_regressors, sek_params, input, input));
+            tile.push_back(compute_covariance_function(i_global, j_global, n_regressors, sek_params, input, input));
         }
     }
     return tile;

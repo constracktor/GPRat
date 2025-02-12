@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
                 auto result = utils::compute_test_tiles(n_test, n_tiles, tile_size);
                 /////////////////////
                 ///// hyperparams
-                gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER};
+                gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
 
                 /////////////////////
                 ////// data loading

@@ -33,13 +33,12 @@ double compute_sigmoid(double parameter) { return 1.0 / (1.0 + exp(-parameter));
 
 /////////////////////////////////////////////////////////
 // Tile generation
-double compute_covariance_distance(
-    std::size_t i_global,
-    std::size_t j_global,
-    std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
-    const std::vector<double> &i_input,
-    const std::vector<double> &j_input)
+double compute_covariance_distance(std::size_t i_global,
+                                   std::size_t j_global,
+                                   std::size_t n_regressors,
+                                   const gprat_hyper::SEKParams &sek_params,
+                                   const std::vector<double> &i_input,
+                                   const std::vector<double> &j_input)
 {
     // -0.5*lengthscale^2*(z_i-z_j)^2
     double distance = 0.0;
@@ -72,8 +71,7 @@ std::vector<double> gen_tile_distance(
         {
             j_global = N * col + j;
             // compute covariance function
-            tile.push_back(
-                compute_covariance_distance(i_global, j_global, n_regressors, sek_params, input, input));
+            tile.push_back(compute_covariance_distance(i_global, j_global, n_regressors, sek_params, input, input));
         }
     }
     return tile;
@@ -141,7 +139,7 @@ gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
         for (std::size_t j = 0; j < N; j++)
         {
             // compute derivative
-            tile.push_back( factor * distance[i * N + j] * exp(distance[i * N + j]) * hyperparam_der);
+            tile.push_back(factor * distance[i * N + j] * exp(distance[i * N + j]) * hyperparam_der);
         }
     }
     return tile;
@@ -160,10 +158,10 @@ double update_second_moment(double gradient, double v_T, double beta_2)
 }
 
 double adam_step(const double unconstrained_hyperparam,
-                    const gprat_hyper::AdamParams adam_params,
-                    double m_T,
-                    double v_T,
-                    std::size_t iter)
+                 const gprat_hyper::AdamParams adam_params,
+                 double m_T,
+                 double v_T,
+                 std::size_t iter)
 {
     // Compute decay rate
     double beta1_T = pow(adam_params.beta1, static_cast<double>(iter + 1));
@@ -227,14 +225,12 @@ double compute_trace(const std::vector<double> &diagonal, double trace)
     return trace + std::reduce(diagonal.begin(), diagonal.end());
 }
 
-double
-compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result)
+double compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result)
 {
     return result + dot(vector_T, vector, static_cast<int>(vector.size()));
 }
 
-double compute_trace_noise(
-    const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N)
+double compute_trace_noise(const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N)
 {
     double local_trace = 0.0;
     for (std::size_t i = 0; i < N; ++i)
@@ -242,11 +238,11 @@ double compute_trace_noise(
         local_trace += ft_invK[i * N + i];
     }
     return trace + local_trace * compute_sigmoid(to_unconstrained(noise_variance, true));
-
 }
 
-double compute_dot_noise(
-    const std::vector<double> &vector, double result, const double noise_variance)
+double compute_dot_noise(const std::vector<double> &vector, double result, const double noise_variance)
 {
-    return result + dot(vector, vector, static_cast<int>(vector.size())) * compute_sigmoid(to_unconstrained(noise_variance, true));
+    return result
+           + dot(vector, vector, static_cast<int>(vector.size()))
+                 * compute_sigmoid(to_unconstrained(noise_variance, true));
 }

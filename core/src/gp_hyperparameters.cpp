@@ -1,20 +1,17 @@
 #include "../include/gp_hyperparameters.hpp"
+
 #include <iomanip>
 
 namespace gprat_hyper
 {
 
-AdamParams::AdamParams(double lr,
-                       double b1,
-                       double b2,
-                       double eps,
-                       int opt_i) :
+AdamParams::AdamParams(double lr, double b1, double b2, double eps, int opt_i) :
     learning_rate(lr),
     beta1(b1),
     beta2(b2),
     epsilon(eps),
     opt_iter(opt_i)
-    { }
+{ }
 
 std::string AdamParams::repr() const
 {

@@ -48,13 +48,12 @@ double compute_sigmoid(double parameter);
  *
  * @return The distance between two features at position i_global,j_global
  */
-double compute_covariance_distance(
-    std::size_t i_global,
-    std::size_t j_global,
-    std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
-    const std::vector<double> &i_input,
-    const std::vector<double> &j_input);
+double compute_covariance_distance(std::size_t i_global,
+                                   std::size_t j_global,
+                                   std::size_t n_regressors,
+                                   const gprat_hyper::SEKParams &sek_params,
+                                   const std::vector<double> &i_input,
+                                   const std::vector<double> &j_input);
 
 /**
  * @brief Generate a tile of distances divided by the lengthscale
@@ -115,7 +114,6 @@ gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
 std::vector<double>
 gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance);
 
-
 /**
  * @brief Update biased first raw moment estimate.
  */
@@ -130,10 +128,10 @@ double update_second_moment(double gradient, double v_T, double beta_2);
  * @brief Update hyperparameter using gradient decent.
  */
 double adam_step(const double unconstrained_hyperparam,
-                    const gprat_hyper::AdamParams adam_params,
-                    double m_T,
-                    double v_T,
-                    std::size_t iter);
+                 const gprat_hyper::AdamParams adam_params,
+                 double m_T,
+                 double v_T,
+                 std::size_t iter);
 
 /**
  * @brief Compute negative-log likelihood on one tile
@@ -160,18 +158,15 @@ double compute_loss(const std::vector<double> &K_diag_tile,
  */
 double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n);
 
-
 double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_tiles);
 
 double compute_trace(const std::vector<double> &diagonal, double trace);
 
+double compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result);
+
 double
-compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result);
+compute_trace_noise(const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N);
 
-double compute_trace_noise(
-    const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N);
-
-double compute_dot_noise(
-    const std::vector<double> &vector, double result, const double noise_variance);
+double compute_dot_noise(const std::vector<double> &vector, double result, const double noise_variance);
 
 #endif  // end of GP_OPTIMIZER_H
