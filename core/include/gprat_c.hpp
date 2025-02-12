@@ -100,7 +100,7 @@ class GP
        int n_tiles,
        int n_tile_size,
        int n_regressors,
-       std::vector<double> hyperparams,
+       std::vector<double> kernel_hyperparams,
        std::vector<bool> trainable_bool);
 
     /**

@@ -82,8 +82,8 @@ void init_utils(py::module &m)
               tuple: A tuple containing the number of test tiles and the adjusted tile size.
           )pbdoc");
 
-    m.def("print",
-          &utils::print,
+    m.def("print_vector",
+          &utils::print_vector,
           py::arg("vec"),
           py::arg("start") = 0,
           py::arg("end") = -1,

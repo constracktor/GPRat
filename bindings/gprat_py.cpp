@@ -29,27 +29,23 @@ void init_gprat(py::module &m)
         .def_readonly("file_path", &gprat::GP_data::file_path, "File path to the GP data")
         .def_readonly("data", &gprat::GP_data::data, "Data in the GP data file");
 
-    // Set hyperparameters to default values in `Hyperparameters` class, unless
+    // Set hyperparameters to default values in `AdamParams` class, unless
     // specified. Python object has full access to each hyperparameter and a
     // string representation `__repr__`.
-    py::class_<gprat_hyper::Hyperparameters>(m, "Hyperparameters")
-        .def(py::init<double, double, double, double, int, std::vector<double>, std::vector<double>>(),
+    py::class_<gprat_hyper::AdamParams>(m, "AdamParams")
+        .def(py::init<double, double, double, double, int>(),
              py::arg("learning_rate") = 0.001,
              py::arg("beta1") = 0.9,
              py::arg("beta2") = 0.999,
              py::arg("epsilon") = 1e-8,
-             py::arg("opt_iter") = 0,
-             py::arg("m_T") = std::vector<double>{ 0.0, 0.0, 0.0 },
-             py::arg("v_T") = std::vector<double>{ 0.0, 0.0, 0.0 })
-        .def_readwrite("learning_rate", &gprat_hyper::Hyperparameters::learning_rate)
-        .def_readwrite("beta1", &gprat_hyper::Hyperparameters::beta1)
-        .def_readwrite("beta2", &gprat_hyper::Hyperparameters::beta2)
-        .def_readwrite("epsilon", &gprat_hyper::Hyperparameters::epsilon)
-        .def_readwrite("opt_iter", &gprat_hyper::Hyperparameters::opt_iter)
-        .def_readwrite("m_T", &gprat_hyper::Hyperparameters::M_T)
-        .def_readwrite("v_T", &gprat_hyper::Hyperparameters::V_T)
-        .def("__repr__", &gprat_hyper::Hyperparameters::repr);
-    ;
+             py::arg("opt_iter") = 0)
+        .def_readwrite("learning_rate",
+                       &gprat_hyper::AdamParams::learning_rate)
+        .def_readwrite("beta1", &gprat_hyper::AdamParams::beta1)
+        .def_readwrite("beta2", &gprat_hyper::AdamParams::beta2)
+        .def_readwrite("epsilon", &gprat_hyper::AdamParams::epsilon)
+        .def_readwrite("opt_iter", &gprat_hyper::AdamParams::opt_iter)
+        .def("__repr__", &gprat_hyper::AdamParams::repr);
 
     // Initializes Gaussian Process with `GP` class. Sets default parameters for
     // squared exponential kernel, number of regressors and trainable, unless
@@ -82,7 +78,7 @@ Parameters:
         {true, true, true}.
              )pbdoc")
         .def_readwrite("n_reg", &gprat::GP::n_regressors)
-        .def_readwrite("kernel_params", &gprat::GP::kernel_hyperparams)
+        .def_readwrite("kernel_params", &gprat::GP::sek_params)
         .def("__repr__", &gprat::GP::repr)
         .def("get_input_data", &gprat::GP::get_training_input)
         .def("get_output_data", &gprat::GP::get_training_output)
@@ -97,7 +93,7 @@ Parameters:
              py::arg("test_data"),
              py::arg("m_tiles"),
              py::arg("m_tile_size"))
-        .def("optimize", &gprat::GP::optimize, py::arg("hyperparams"))
-        .def("optimize_step", &gprat::GP::optimize_step, py::arg("hyperparams"), py::arg("iter"))
+        .def("optimize", &gprat::GP::optimize, py::arg("AdamParams"))
+        .def("optimize_step", &gprat::GP::optimize_step, py::arg("AdamParams"), py::arg("iter"))
         .def("compute_loss", &gprat::GP::calculate_loss);
 }

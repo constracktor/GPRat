@@ -17,14 +17,14 @@ def gprat_run(config, output_csv_obj, n_train, l, cores):
 
     n_tile_size = gprat.compute_train_tile_size(n_train, config["N_TILES"])
     m_tiles, m_tile_size = gprat.compute_test_tiles(config["N_TEST"], config["N_TILES"], n_tile_size)
-    hpar = gprat.Hyperparameters(learning_rate=0.1, opt_iter=config["OPT_ITER"], m_T=[0,0,0], v_T=[0,0,0])
+    hpar = gprat.AdamParams(learning_rate=0.1, opt_iter=config["OPT_ITER"])
     train_in = gprat.GP_data(config["train_in_file"], n_train, config["N_REG"])
     train_out = gprat.GP_data(config["train_out_file"], n_train, config["N_REG"])
     test_in = gprat.GP_data(config["test_in_file"], config["N_TEST"], config["N_REG"])
 
     ###### GP object ######
     init_t = time.time()
-    gp = gprat.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, n_reg=config["N_REG"], trainable=[True, True, True])
+    gp = gprat.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, kernel_params = [1.0,1.0,0.1], n_reg=config["N_REG"], trainable=[True, True, True])
     init_t = time.time() - init_t
 
     # Init hpx runtime but do not start it yet

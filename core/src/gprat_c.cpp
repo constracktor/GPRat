@@ -42,14 +42,14 @@ GP::GP(std::vector<double> input,
        int n_tiles,
        int n_tile_size,
        int n_r,
-       std::vector<double> hyperparams,
+       std::vector<double> kernel_hyperparams,
        std::vector<bool> trainable_bool) :
     _training_input(input),
     _training_output(output),
     _n_tiles(n_tiles),
     _n_tile_size(n_tile_size),
     n_regressors(n_r),
-    sek_params(hyperparams[0], hyperparams[1], hyperparams[2]),
+    sek_params(kernel_hyperparams[0], kernel_hyperparams[1], kernel_hyperparams[2]),
     trainable_params(trainable_bool)
 { }
 

@@ -27,12 +27,6 @@ struct AdamParams
     /** @brief TODO: documentation */
     int opt_iter;
 
-    /** @brief TODO: documentation */
-    std::vector<double> M_T;
-
-    /** @brief TODO: documentation */
-    std::vector<double> V_T;
-
     /**
      * @brief Initialize hyperparameters
      *
