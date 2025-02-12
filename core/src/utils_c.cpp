@@ -116,7 +116,7 @@ std::vector<double> load_data(const std::string &file_path, int n_samples, int o
  * @param end End index
  * @param separator Separator between elements
  */
-void print(const std::vector<double> &vec, int start, int end, const std::string &separator)
+void print_vector(const std::vector<double> &vec, int start, int end, const std::string &separator)
 {
     // Convert negative indices to positive
     if (start < 0)

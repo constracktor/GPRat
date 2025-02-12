@@ -155,9 +155,20 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
                         int N,
                         std::size_t n_tiles);
 
-// Perform a gradient scent step for selected hyperparameter using Adam
-// algorithm
-void update_hyperparameter(
+/**
+ * @brief Updates a hyperparameter of the SEK kernel using Adam
+ *
+ * @param ft_invK Tiled inverse of the covariance matrix K represented as a vector of futurized tiles.
+ * @param ft_grad_param Tiled covariance matrix gradient w.r.t. a hyperparameter.
+ * @param ft_alpha Tiled vector containing the precomputed inv(K) * y where y is the training output.
+ * @param adam_params Hyperparameter of the Adam optimizer
+ * @param sek_params Hyperparameters of the SEK kernel
+ * @param N Tile size per dimension.
+ * @param n_tiles Number of tiles per dimension.
+ * @param iter Current iteration.
+ * @param param_idx Index of the hyperparameter to optimize.
+ */
+void update_hyperparameter_tiled(
     const Tiled_matrix &ft_invK,
     const Tiled_matrix &ft_gradK_param,
     const Tiled_vector &ft_alpha,

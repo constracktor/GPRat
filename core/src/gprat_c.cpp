@@ -58,6 +58,7 @@ GP::GP(std::vector<double> input,
  */
 std::string GP::repr() const
 {
+    // clang-format OFF
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(12);
     oss << "Kernel_Params: [lengthscale=" << sek_params.lengthscale
@@ -68,6 +69,7 @@ std::string GP::repr() const
         << ", trainable_params v=" << trainable_params[1]
         << ", trainable_params n=" << trainable_params[2] << "]";
     return oss.str();
+    // clang-format ON
 }
 
 /**

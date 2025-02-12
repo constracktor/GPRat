@@ -34,7 +34,7 @@ std::pair<int, int> compute_test_tiles(int m_samples, int n_tiles, int n_tile_si
 std::vector<double> load_data(const std::string &file_path, int n_samples, int offset = 0);
 
 // Print a vector
-void print(const std::vector<double> &vec, int start = 0, int end = -1, const std::string &separator = " ");
+void print_vector(const std::vector<double> &vec, int start = 0, int end = -1, const std::string &separator = " ");
 
 // Start HPX runtime
 void start_hpx_runtime(int argc, char **argv);

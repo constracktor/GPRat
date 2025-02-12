@@ -51,8 +51,7 @@ int main(int argc, char *argv[])
                 auto result = utils::compute_test_tiles(n_test, n_tiles, tile_size);
                 /////////////////////
                 ///// hyperparams
-                std::vector<double> M = { 0.0, 0.0, 0.0 };
-                gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER, M };
+                gprat_hyper::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER};
 
                 /////////////////////
                 ////// data loading
@@ -63,7 +62,7 @@ int main(int argc, char *argv[])
                 /////////////////////
                 ///// GP
                 auto start_init = std::chrono::high_resolution_clock::now();
-                std::vector<bool> trainable = { false, false, true };
+                std::vector<bool> trainable = { true, true, true };
                 gprat::GP gp(
                     training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable);
                 auto end_init = std::chrono::high_resolution_clock::now();

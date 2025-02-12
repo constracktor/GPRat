@@ -48,7 +48,7 @@ double compute_sigmoid(double parameter);
  *
  * @return The distance between two features at position i_global,j_global
  */
-double compute_covariance_dist_func(
+double compute_covariance_distance(
     std::size_t i_global,
     std::size_t j_global,
     std::size_t n_regressors,
@@ -57,7 +57,7 @@ double compute_covariance_dist_func(
     const std::vector<double> &j_input);
 
 /**
- * @brief Generate a tile of distances devided by the lengthscale
+ * @brief Generate a tile of distances divided by the lengthscale
  *
  * @param row The row index of the tile in the tiled matrix
  * @param col The column index of the tile in the tiled matrix
@@ -68,8 +68,7 @@ double compute_covariance_dist_func(
  *
  * @return A quadratic tile containing the distance between the features of size N x N
  */
-// NAME: gen tile distance
-std::vector<double> compute_cov_dist_vec(
+std::vector<double> gen_tile_distance(
     std::size_t row,
     std::size_t col,
     std::size_t N,
@@ -87,12 +86,12 @@ std::vector<double> compute_cov_dist_vec(
  *
  * @return A quadratic tile of the covariance matrix of size N x N
  */
-std::vector<double> gen_tile_covariance_opt(
+std::vector<double> gen_tile_covariance_with_distance(
     std::size_t row,
     std::size_t col,
     std::size_t N,
     const gprat_hyper::SEKParams &sek_params,
-    const std::vector<double> &cov_dists);
+    const std::vector<double> &distance);
 
 /* @brief  Generate a derivative tile w.r.t. vertical_lengthscale v
  *
@@ -103,7 +102,7 @@ std::vector<double> gen_tile_covariance_opt(
  * @return A quadratic tile of the derivative of v of size N x N
  */
 std::vector<double>
-gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &cov_dists);
+gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance);
 
 /* @brief  Generate a derivative tile w.r.t. lengthscale l
  *
@@ -114,7 +113,7 @@ gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
  * @return A quadratic tile of the derivative of l of size N x N
  */
 std::vector<double>
-gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &cov_dists);
+gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance);
 
 
 /**
@@ -161,9 +160,7 @@ double compute_loss(const std::vector<double> &K_diag_tile,
  */
 double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n);
 
-/**
- * @brief
- */
+
 double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_tiles);
 
 double compute_trace(const std::vector<double> &diagonal, double trace);

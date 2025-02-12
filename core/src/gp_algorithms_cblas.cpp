@@ -1,6 +1,8 @@
 #include "../include/gp_algorithms_cpu.hpp"
 #include <cmath>
 
+/////////////////////////////////////////////////////////
+// Tile generation
 double compute_covariance_function(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
@@ -162,6 +164,22 @@ std::vector<double> gen_tile_output(std::size_t row, std::size_t N, const std::v
     return tile;
 }
 
+std::vector<double> gen_tile_zeros(std::size_t N) { return std::vector<double>(N, 0.0); }
+
+std::vector<double> gen_tile_identity(std::size_t N)
+{
+    // Initialize zero tile
+    std::vector<double> tile(N * N, 0.0);
+    // Fill diagonal with ones
+    for (std::size_t i = 0; i < N; i++)
+    {
+        tile[i * N + i] = 1.0;
+    }
+    return tile;
+}
+
+/////////////////////////////////////////////////////////
+// Error
 double compute_error_norm(std::size_t n_tiles,
                           std::size_t tile_size,
                           const std::vector<double> &b,
@@ -179,18 +197,4 @@ double compute_error_norm(std::size_t n_tiles,
         }
     }
     return sqrt(error);
-}
-
-std::vector<double> gen_tile_zeros(std::size_t N) { return std::vector<double>(N, 0.0); }
-
-std::vector<double> gen_tile_identity(std::size_t N)
-{
-    // Initialize zero tile
-    std::vector<double> tile(N * N, 0.0);
-    // Fill diagonal with ones
-    for (std::size_t i = 0; i < N; i++)
-    {
-        tile[i * N + i] = 1.0;
-    }
-    return tile;
 }

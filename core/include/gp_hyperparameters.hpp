@@ -48,9 +48,7 @@ struct AdamParams
                double b1 = 0.9,
                double b2 = 0.999,
                double eps = 1e-8,
-               int opt_i = 0,
-               std::vector<double> M_T = { 0.0, 0.0, 0.0 },
-               std::vector<double> V_T = { 0.0, 0.0, 0.0 });
+               int opt_i = 0);
 
     /**
      * @brief Returns a string representation of the hyperparameters

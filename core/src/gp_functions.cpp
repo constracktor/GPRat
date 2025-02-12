@@ -757,7 +757,7 @@ optimize_hpx(const std::vector<double> &training_input,
             {
                 // Compute the distance (z_i - z_j) of K entries to reuse
                 hpx::shared_future<std::vector<double>> cov_dists = hpx::async(
-                    hpx::annotated_function(compute_cov_dist_vec, "assemble_cov_dist"),
+                    hpx::annotated_function(gen_tile_distance, "assemble_cov_dist"),
                     i,
                     j,
                     n_tile_size,
@@ -766,7 +766,7 @@ optimize_hpx(const std::vector<double> &training_input,
                     training_input);
 
                 K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_covariance_opt), "assemble_K"),
+                    hpx::annotated_function(hpx::unwrapping(&gen_tile_covariance_with_distance), "assemble_K"),
                     i,
                     j,
                     n_tile_size,
@@ -866,7 +866,7 @@ optimize_hpx(const std::vector<double> &training_input,
         // Launch asynchronous update of the hyperparameters
         if (trainable_params[0])
         {  // lengthscale
-            update_hyperparameter(
+            update_hyperparameter_tiled(
                 K_inv_tiles,
                 grad_l_tiles,
                 alpha_tiles,
@@ -879,7 +879,7 @@ optimize_hpx(const std::vector<double> &training_input,
         }
         if (trainable_params[1])
         {  // vertical_lengthscale
-            update_hyperparameter(
+            update_hyperparameter_tiled(
                 K_inv_tiles,
                 grad_v_tiles,
                 alpha_tiles,
@@ -892,7 +892,7 @@ optimize_hpx(const std::vector<double> &training_input,
         }
         if (trainable_params[2])
         {  // noise_variance
-             update_hyperparameter(
+             update_hyperparameter_tiled(
                 K_inv_tiles,
                 Tiled_matrix{},// no tiled gradient matrix required
                 alpha_tiles,
