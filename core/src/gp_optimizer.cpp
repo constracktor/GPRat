@@ -3,10 +3,9 @@
 #include "../include/adapter_cblas_fp64.hpp"
 #include <numeric>
 
-/**
- * @brief Transform hyperparameter to enforce constraints using softplus.
- */
-double to_constrained(const double &parameter, bool noise)
+///////////////////////////////////////////////////////////
+// Parameter constraints
+double to_constrained(double parameter, bool noise)
 {
     if (noise)
     {
@@ -18,12 +17,7 @@ double to_constrained(const double &parameter, bool noise)
     }
 }
 
-/**
- * @brief Transform hyperparmeter to entire real line using inverse of softplus.
- *        Optimizers, such as gradient decent or Adam, work better with
- *        unconstrained parameters.
- */
-double to_unconstrained(const double &parameter, bool noise)
+double to_unconstrained(double parameter, bool noise)
 {
     if (noise)
     {
@@ -35,27 +29,18 @@ double to_unconstrained(const double &parameter, bool noise)
     }
 }
 
-/**
- * @brief Calculates & returns sigmoid function for `parameter` as input.
- */
-double compute_sigmoid(const double &parameter)
-{
-    return 1.0 / (1.0 + exp(-parameter));
-}
+double compute_sigmoid(double parameter) { return 1.0 / (1.0 + exp(-parameter)); }
 
-/**
- * @brief Compute the distance divided by the lengthscale.
- */
-double compute_covariance_dist_func(std::size_t i_global,
-                                    std::size_t j_global,
-                                    std::size_t n_regressors,
-                                    const std::vector<double> &hyperparameters,
-                                    const std::vector<double> &i_input,
-                                    const std::vector<double> &j_input)
+/////////////////////////////////////////////////////////
+// Tile generation
+double compute_covariance_distance(std::size_t i_global,
+                                   std::size_t j_global,
+                                   std::size_t n_regressors,
+                                   const gprat_hyper::SEKParams &sek_params,
+                                   const std::vector<double> &i_input,
+                                   const std::vector<double> &j_input)
 {
     // -0.5*lengthscale^2*(z_i-z_j)^2
-
-    double lengthscale = hyperparameters[0];
     double distance = 0.0;
     double z_ik_minus_z_jk;
 
@@ -64,24 +49,21 @@ double compute_covariance_dist_func(std::size_t i_global,
         z_ik_minus_z_jk = i_input[i_global + k] - j_input[j_global + k];
         distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
     }
-    return -0.5 / (lengthscale * lengthscale) * distance;
+    return -0.5 / (sek_params.lengthscale * sek_params.lengthscale) * distance;
 }
 
-/**
- * @brief Compute vector of distances devided by the lengthscale.
- */
-std::vector<double> compute_cov_dist_vec(std::size_t row,
-                                         std::size_t col,
-                                         std::size_t N,
-                                         std::size_t n_regressors,
-                                         const std::vector<double> &hyperparameters,
-                                         const std::vector<double> &input)
+std::vector<double> gen_tile_distance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    const gprat_hyper::SEKParams &sek_params,
+    const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
-    double cov_dist;
-    // Initialize tile
+    // Preallocate memory
     std::vector<double> tile;
-    tile.resize(N * N);
+    tile.reserve(N * N);
     for (std::size_t i = 0; i < N; i++)
     {
         i_global = N * row + i;
@@ -89,29 +71,24 @@ std::vector<double> compute_cov_dist_vec(std::size_t row,
         {
             j_global = N * col + j;
             // compute covariance function
-            cov_dist =
-                compute_covariance_dist_func(i_global, j_global, n_regressors, hyperparameters, input, input);
-            tile[i * N + j] = cov_dist;
+            tile.push_back(compute_covariance_distance(i_global, j_global, n_regressors, sek_params, input, input));
         }
     }
     return tile;
 }
 
-/**
- * @brief Generate a tile of the covariance matrix.
- */
-std::vector<double>
-gen_tile_covariance_opt(std::size_t row,
-                        std::size_t col,
-                        std::size_t N,
-                        const std::vector<double> &hyperparameters,
-                        const std::vector<double> &cov_dists)
+std::vector<double> gen_tile_covariance_with_distance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    const gprat_hyper::SEKParams &sek_params,
+    const std::vector<double> &distance)
 {
     std::size_t i_global, j_global;
     double covariance;
-    // Initialize tile
+    // Preallocate required memory
     std::vector<double> tile;
-    tile.resize(N * N);
+    tile.reserve(N * N);
     for (std::size_t i = 0; i < N; i++)
     {
         i_global = N * row + i;
@@ -119,311 +96,153 @@ gen_tile_covariance_opt(std::size_t row,
         {
             j_global = N * col + j;
             // compute covariance function
-            covariance = hyperparameters[1] * exp(cov_dists[i * N + j]);
+            covariance = sek_params.vertical_lengthscale * exp(distance[i * N + j]);
             if (i_global == j_global)
             {
                 // noise variance on diagonal
-                covariance += hyperparameters[2];
+                covariance += sek_params.noise_variance;
             }
-            tile[i * N + j] = covariance;
+            tile.push_back(covariance);
         }
     }
     return tile;
 }
 
-/**
- * @brief Generate a derivative tile w.r.t. vertical_lengthscale.
- */
-std::vector<double> gen_tile_grad_v(std::size_t N,
-                                    const std::vector<double> &hyperparameters,
-                                    const std::vector<double> &cov_dists)
-{
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    double hyperparam_der =
-        compute_sigmoid(to_unconstrained(hyperparameters[1], false));
-    for (std::size_t i = 0; i < N; i++)
-    {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // compute covariance function
-            tile[i * N + j] = exp(cov_dists[i * N + j]) * hyperparam_der;
-        }
-    }
-    return tile;
-}
-
-/**
- * @brief Generate a derivative tile w.r.t. lengthscale.
- */
-std::vector<double> gen_tile_grad_l(std::size_t N,
-                                    const std::vector<double> &hyperparameters,
-                                    const std::vector<double> &cov_dists)
-{
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    double hyperparam_der =
-        compute_sigmoid(to_unconstrained(hyperparameters[0], false));
-    for (std::size_t i = 0; i < N; i++)
-    {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // compute covariance function
-            tile[i * N + j] = -2.0 * (hyperparameters[1] / hyperparameters[0]) * cov_dists[i * N + j] * exp(cov_dists[i * N + j]) * hyperparam_der;
-        }
-    }
-    return tile;
-}
-
-/**
- * @brief Generate a derivative tile w.r.t. lengthscale.
- */
 std::vector<double>
-gen_tile_grad_v_trans(std::size_t N, const std::vector<double> &grad_l_tile)
+gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance)
 {
-    std::vector<double> transposed;
-    transposed.resize(N * N);
+    // Preallocate required memory
+    std::vector<double> tile;
+    tile.reserve(N * N);
+    double hyperparam_der = compute_sigmoid(to_unconstrained(sek_params.vertical_lengthscale, false));
     for (std::size_t i = 0; i < N; i++)
     {
         for (std::size_t j = 0; j < N; j++)
         {
-            // Mapping (i, j) in the original matrix to (j, i) in the transposed
-            // matrix
-            transposed[j * N + i] = grad_l_tile[i * N + j];
+            // compute derivative
+            tile.push_back(exp(distance[i * N + j]) * hyperparam_der);
         }
     }
-    return transposed;
+    return tile;
 }
 
-/**
- * @brief Generate a derivative tile w.r.t. lengthscale.
- */
 std::vector<double>
-gen_tile_grad_l_trans(std::size_t N, const std::vector<double> &grad_l_tile)
+gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance)
 {
-    std::vector<double> transposed;
-    transposed.resize(N * N);
+    // Preallocate required memory
+    std::vector<double> tile;
+    tile.reserve(N * N);
+    double hyperparam_der = compute_sigmoid(to_unconstrained(sek_params.lengthscale, false));
+    double factor = -2.0 * sek_params.vertical_lengthscale / sek_params.lengthscale;
     for (std::size_t i = 0; i < N; i++)
     {
         for (std::size_t j = 0; j < N; j++)
         {
-            // Mapping (i, j) in the original matrix to (j, i) in the transposed
-            // matrix
-            transposed[j * N + i] = grad_l_tile[i * N + j];
+            // compute derivative
+            tile.push_back(factor * distance[i * N + j] * exp(distance[i * N + j]) * hyperparam_der);
         }
     }
-    return transposed;
+    return tile;
 }
 
-/**
- * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
- */
-double gen_beta_T(int t, const std::vector<double> &hyperparameters, std::size_t param_idx)
+/////////////////////////////////////////////////////////////////////////
+// Adam
+double update_first_moment(double gradient, double m_T, double beta_1)
 {
-    return pow(hyperparameters[param_idx], t);
+    return beta_1 * m_T + (1.0 - beta_1) * gradient;
 }
 
-/**
- * @brief Compute negative-log likelihood tiled.
- */
+double update_second_moment(double gradient, double v_T, double beta_2)
+{
+    return beta_2 * v_T + (1.0 - beta_2) * gradient * gradient;
+}
+
+double adam_step(const double unconstrained_hyperparam,
+                 const gprat_hyper::AdamParams adam_params,
+                 double m_T,
+                 double v_T,
+                 std::size_t iter)
+{
+    // Compute decay rate
+    double beta1_T = pow(adam_params.beta1, static_cast<double>(iter + 1));
+    double beta2_T = pow(adam_params.beta2, static_cast<double>(iter + 1));
+
+    // Option 1:
+    // double mhat = m_T / (1.0 - beta1_T[iter]);
+    // double vhat = v_T / (1.0 - beta2_T[iter]);
+    // return unconstrained_hyperparam - adam_params.learning_rate * mhat / (sqrt(vhat)
+    // + adam_params.epsilon);
+
+    // Option 2:
+    double nu_T = adam_params.learning_rate * sqrt(1.0 - beta2_T) / (1.0 - beta1_T);
+    return unconstrained_hyperparam - nu_T * m_T / (sqrt(v_T) + adam_params.epsilon);
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Loss
 double compute_loss(const std::vector<double> &K_diag_tile,
                     const std::vector<double> &alpha_tile,
                     const std::vector<double> &y_tile,
                     std::size_t N)
 {
-    double l = 0.0;
-    l += dot(y_tile, alpha_tile, static_cast<int>(N));
+    // l = y^T * alpha + \sum_i^N log(L_ii^2)
+    double l;
+    // Compute y^T * alpha
+    l = dot(y_tile, alpha_tile, static_cast<int>(N));
+    // Compute \sum_i^N log(L_ii^2)
     for (std::size_t i = 0; i < N; i++)
     {
-        // Add the squared difference to the error
-        l += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
+        double diag_value = K_diag_tile[i * N + i];
+        l += log(diag_value * diag_value);
     }
     return l;
 }
 
-/**
- * @brief Compute negative-log likelihood.
- */
-double
-add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n)
+double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n_tiles)
 {
+    // 0.5 * \sum losses + const
     double l = 0.0;
-    double Nn = static_cast<double>(N * n);
-    for (std::size_t i = 0; i < n; i++)
+    double Nn = static_cast<double>(N * n_tiles);
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         // Add the squared difference to the error
         l += losses[i];
     }
 
     l += Nn * log(2.0 * M_PI);
-    return 0.5 * l / Nn;
+    return 0.5 * l / Nn;  // why /Nn?
 }
 
-/**
- * @brief Compute trace of (K^-1 - K^-1*y*y^T*K^-1)* del(K)/del(hyperparam) =
- *        gradient(K) w.r.t. hyperparam.
- */
-double compute_gradient(const double &grad_l,
-                        const double &grad_r,
-                        std::size_t N,
-                        std::size_t n_tiles)
+/////////////////////////////////////////////////////////////////////////
+// Gradient
+double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_tiles)
 {
-    return 0.5 / static_cast<double>(N * n_tiles) * (grad_l - grad_r);
+    return 0.5 / static_cast<double>(N * n_tiles) * (trace - dot);
 }
 
-/**
- * @brief Compute trace for noise variance.
- *
- * Same function as compute_trace with() the only difference that we only use
- * diag tiles multiplied by derivative of noise_variance.
- */
-double compute_gradient_noise(const std::vector<std::vector<double>> &ft_tiles,
-                              const std::vector<double> &hyperparameters,
-                              std::size_t N,
-                              std::size_t n_tiles)
+double compute_trace(const std::vector<double> &diagonal, double trace)
 {
-    // Initialize tile
-    double trace = 0.0;
-    double hyperparam_der =
-        compute_sigmoid(to_unconstrained(hyperparameters[2], true));
-    for (std::size_t d = 0; d < n_tiles; d++)
-    {
-        auto tile = ft_tiles[d * n_tiles + d];
-        for (std::size_t i = 0; i < N; ++i)
-        {
-            trace += (tile[i * N + i] * hyperparam_der);
-        }
-    }
-    trace = 0.5 / static_cast<double>(N * n_tiles) * trace;
-    return trace;
+    return trace + std::reduce(diagonal.begin(), diagonal.end());
 }
 
-/**
- * @brief Update biased first raw moment estimate.
- */
-double
-update_first_moment(const double &gradient, double m_T, const double &beta_1)
+double compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result)
 {
-    return beta_1 * m_T + (1.0 - beta_1) * gradient;
+    return result + dot(vector_T, vector, static_cast<int>(vector.size()));
 }
 
-/**
- * @brief Update biased second raw moment estimate.
- */
-double
-update_second_moment(const double &gradient, double v_T, const double &beta_2)
+double compute_trace_noise(const std::vector<double> &ft_invK, double trace, const double noise_variance, std::size_t N)
 {
-    return beta_2 * v_T + (1.0 - beta_2) * gradient * gradient;
-}
-
-/**
- * @brief Update hyperparameter using gradient decent.
- */
-double update_param(const double &unconstrained_hyperparam,
-                    const std::vector<double> &hyperparameters,
-                    double m_T,
-                    double v_T,
-                    const std::vector<double> &beta1_T,
-                    const std::vector<double> &beta2_T,
-                    std::size_t iter)
-{
-    // Option 1:
-    // double mhat = m_T / (1.0 - beta1_T[iter]);
-    // double vhat = v_T / (1.0 - beta2_T[iter]);
-    // return unconstrained_hyperparam - hyperparameters[3] * mhat / (sqrt(vhat)
-    // + hyperparameters[6]);
-
-    // Option 2:
-    double alpha_T =
-        hyperparameters[3] * sqrt(1.0 - beta2_T[iter]) / (1.0 - beta1_T[iter]);
-    return unconstrained_hyperparam - alpha_T * m_T / (sqrt(v_T) + hyperparameters[6]);
-}
-
-/**
- * @brief Generate an identity tile if i==j.
- */
-std::vector<double>
-gen_tile_identity(std::size_t row, std::size_t col, std::size_t N)
-{
-    std::size_t i_global, j_global;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    std::fill(tile.begin(), tile.end(), 0.0);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        i_global = N * row + i;
-        for (std::size_t j = i; j <= i; j++)
-        {
-            j_global = N * col + j;
-            if (i_global == j_global)
-            {
-                tile[i * N + j] = 1.0;
-            }
-        }
-    }
-    return tile;
-}
-
-/**
- * @brief Generate an empty tile NxN.
- */
-std::vector<double> gen_tile_zeros_diag(std::size_t N)
-{
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N);
-    std::fill(tile.begin(), tile.end(), 0.0);
-    return tile;
-}
-
-/**
- * @brief return zero - used to initialize moment vectors
- */
-double gen_zero()
-{
-    double z = 0.0;
-    return z;
-}
-
-double sum_gradleft(const std::vector<double> &diagonal, double grad)
-{
-    grad += std::reduce(diagonal.begin(), diagonal.end());
-    return grad;
-}
-
-double sum_gradright(const std::vector<double> &inter_alpha,
-                     const std::vector<double> &alpha,
-                     double grad,
-                     std::size_t N)
-{
-    grad += dot(inter_alpha, alpha, static_cast<int>(N));
-    return grad;
-}
-
-double sum_noise_gradleft(const std::vector<double> &ft_invK,
-                          double grad,
-                          const std::vector<double> &hyperparameters,
-                          std::size_t N)
-{
-    double noise_der =
-        compute_sigmoid(to_unconstrained(hyperparameters[2], true));
+    double local_trace = 0.0;
     for (std::size_t i = 0; i < N; ++i)
     {
-        grad += (ft_invK[i * N + i] * noise_der);
+        local_trace += ft_invK[i * N + i];
     }
-    return grad;
+    return trace + local_trace * compute_sigmoid(to_unconstrained(noise_variance, true));
 }
 
-double sum_noise_gradright(const std::vector<double> &alpha,
-                           double grad,
-                           const std::vector<double> &hyperparameters,
-                           std::size_t N)
+double compute_dot_noise(const std::vector<double> &vector, double result, const double noise_variance)
 {
-    double noise_der =
-        compute_sigmoid(to_unconstrained(hyperparameters[2], true));
-    grad += (noise_der * dot(alpha, alpha, static_cast<int>(N)));
-    return grad;
+    return result
+           + dot(vector, vector, static_cast<int>(vector.size()))
+                 * compute_sigmoid(to_unconstrained(noise_variance, true));
 }

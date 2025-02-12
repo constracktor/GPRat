@@ -2,6 +2,8 @@
 #define gprat_C_H
 
 #include "gp_functions.hpp"
+#include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <string>
 #include <vector>
 
@@ -64,23 +66,13 @@ class GP
     int _n_tile_size;
 
   public:
-    /** @brief Lengthscale parameter `l` of squared exponential kernel */
-    double lengthscale;
-
-    /**
-     * @brief Vertical lengthscale parameter `v` of squared exponential
-     * kernel
-     */
-    double vertical_lengthscale;
-
-    /**
-     * @brief Noise variance parameter `sigma` / `n` of squared exponential
-     * kernel
-     */
-    double noise_variance;
-
     /** @brief Number of regressors */
     int n_regressors;
+
+    /**
+     * @brief Hyperarameters of the squared exponential kernel
+     */
+    gprat_hyper::SEKParams sek_params;
 
     /**
      * @brief List of bools indicating trainable parameters: lengthscale,
@@ -107,10 +99,8 @@ class GP
        std::vector<double> output,
        int n_tiles,
        int n_tile_size,
-       double l,
-       double v,
-       double n,
        int n_regressors,
+       std::vector<double> kernel_hyperparams,
        std::vector<bool> trainable_bool);
 
     /**
@@ -131,16 +121,14 @@ class GP
     /**
      * @brief Predict output for test input
      */
-    std::vector<double> predict(const std::vector<double> &test_data,
-                                int m_tiles,
-                                int m_tile_size);
+    std::vector<double> predict(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Predict output for test input and additionally provide
      * uncertainty for the predictions.
      */
-    std::vector<std::vector<double>> predict_with_uncertainty(
-        const std::vector<double> &test_data, int m_tiles, int m_tile_size);
+    std::vector<std::vector<double>>
+    predict_with_uncertainty(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Predict output for test input and additionally compute full
@@ -152,8 +140,8 @@ class GP
      *
      * @return Full covariance matrix
      */
-    std::vector<std::vector<double>> predict_with_full_cov(
-        const std::vector<double> &test_data, int m_tiles, int m_tile_size);
+    std::vector<std::vector<double>>
+    predict_with_full_cov(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
 
     /**
      * @brief Optimize hyperparameters
@@ -163,8 +151,7 @@ class GP
      *
      * @return losses
      */
-    std::vector<double>
-    optimize(const gprat_hyper::Hyperparameters &hyperparams);
+    std::vector<double> optimize(const gprat_hyper::AdamParams &adam_params);
 
     /**
      * @brief Perform a single optimization step
@@ -175,8 +162,7 @@ class GP
      *
      * @return loss
      */
-    double optimize_step(gprat_hyper::Hyperparameters &hyperparams,
-                         int iter);
+    double optimize_step(gprat_hyper::AdamParams &adam_params, int iter);
 
     /**
      * @brief Calculate loss for given data and Gaussian process model

@@ -3,16 +3,14 @@
 
 #include <hpx/future.hpp>
 #include <vector>
+using vector_future = hpx::shared_future<std::vector<double>>;
 
 // Constants that are compatible with CBLAS
-typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111,
-                              Blas_trans = 112 } BLAS_TRANSPOSE;
+typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
 
-typedef enum BLAS_SIDE { Blas_left = 141,
-                         Blas_right = 142 } BLAS_SIDE;
+typedef enum BLAS_SIDE { Blas_left = 141, Blas_right = 142 } BLAS_SIDE;
 
-typedef enum BLAS_ALPHA { Blas_add = 1,
-                          Blas_substract = -1 } BLAS_ALPHA;
+typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
 
 // typedef enum BLAS_UPLO { Blas_upper = 121,
 //                          Blas_lower = 122 } BLAS_UPLO;
@@ -32,8 +30,7 @@ typedef enum BLAS_ALPHA { Blas_add = 1,
  * @param N matrix dimension
  * @return factorized, lower triangular matrix f_L
  */
-hpx::shared_future<std::vector<double>> potrf(hpx::shared_future<std::vector<double>> f_A,
-                                              const int N);
+vector_future potrf(vector_future f_A, const int N);
 
 /**
  * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -43,12 +40,12 @@ hpx::shared_future<std::vector<double>> potrf(hpx::shared_future<std::vector<dou
  * @param M second dimension
  * @return solution matrix f_X
  */
-hpx::shared_future<std::vector<double>> trsm(hpx::shared_future<std::vector<double>> f_L,
-                                             hpx::shared_future<std::vector<double>> f_A,
-                                             const int N,
-                                             const int M,
-                                             const BLAS_TRANSPOSE transpose_L,
-                                             const BLAS_SIDE side_L);
+vector_future trsm(vector_future f_L,
+                   vector_future f_A,
+                   const int N,
+                   const int M,
+                   const BLAS_TRANSPOSE transpose_L,
+                   const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -57,9 +54,7 @@ hpx::shared_future<std::vector<double>> trsm(hpx::shared_future<std::vector<doub
  * @param N matrix dimension
  * @return updated matrix f_A
  */
-hpx::shared_future<std::vector<double>> syrk(hpx::shared_future<std::vector<double>> f_A,
-                                             hpx::shared_future<std::vector<double>> f_B,
-                                             const int N);
+vector_future syrk(vector_future f_A, vector_future f_B, const int N);
 
 /**
  * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -73,14 +68,15 @@ hpx::shared_future<std::vector<double>> syrk(hpx::shared_future<std::vector<doub
  * @param transpose_B transpose right matrix
  * @return updated matrix f_X
  */
-hpx::shared_future<std::vector<double>> gemm(hpx::shared_future<std::vector<double>> f_A,
-                                             hpx::shared_future<std::vector<double>> f_B,
-                                             hpx::shared_future<std::vector<double>> f_C,
-                                             const int N,
-                                             const int M,
-                                             const int K,
-                                             const BLAS_TRANSPOSE transpose_A,
-                                             const BLAS_TRANSPOSE transpose_B);
+vector_future
+gemm(vector_future f_A,
+     vector_future f_B,
+     vector_future f_C,
+     const int N,
+     const int M,
+     const int K,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_TRANSPOSE transpose_B);
 
 // }}} --------------------------------- end of BLAS level 3 operations
 
@@ -94,10 +90,7 @@ hpx::shared_future<std::vector<double>> gemm(hpx::shared_future<std::vector<doub
  * @param transpose_L transpose Cholesky factor
  * @return solution vector f_x
  */
-hpx::shared_future<std::vector<double>> trsv(hpx::shared_future<std::vector<double>> f_L,
-                                             hpx::shared_future<std::vector<double>> f_a,
-                                             const int N,
-                                             const BLAS_TRANSPOSE transpose_L);
+vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L);
 
 /**
  * @brief FP64 General matrix-vector multiplication: b = b - A(^T) * a
@@ -109,26 +102,13 @@ hpx::shared_future<std::vector<double>> trsv(hpx::shared_future<std::vector<doub
  * @param transpose_A transpose update matrix
  * @return updated vector f_b
  */
-hpx::shared_future<std::vector<double>> gemv(hpx::shared_future<std::vector<double>> f_A,
-                                             hpx::shared_future<std::vector<double>> f_a,
-                                             hpx::shared_future<std::vector<double>> f_b,
-                                             const int N,
-                                             const int M,
-                                             const BLAS_ALPHA alpha,
-                                             const BLAS_TRANSPOSE transpose_A);
-
-/**
- * @brief FP64 General matrix rank-1 update: A = A - x*y^T
- * @param f_A base matrix
- * @param f_x first update vector
- * @param f_y second update vector
- * @param N matrix dimension
- * @return updated vector f_b
- */
-hpx::shared_future<std::vector<double>> ger(hpx::shared_future<std::vector<double>> f_A,
-                                            hpx::shared_future<std::vector<double>> f_x,
-                                            hpx::shared_future<std::vector<double>> f_y,
-                                            const int N);
+vector_future gemv(vector_future f_A,
+                   vector_future f_a,
+                   vector_future f_b,
+                   const int N,
+                   const int M,
+                   const BLAS_ALPHA alpha,
+                   const BLAS_TRANSPOSE transpose_A);
 
 /**
  * @brief FP64 Vector update with diagonal SYRK: r = r + diag(A^T * A)
@@ -138,10 +118,8 @@ hpx::shared_future<std::vector<double>> ger(hpx::shared_future<std::vector<doubl
  * @param M second matrix dimension
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<double>> dot_diag_syrk(hpx::shared_future<std::vector<double>> f_A,
-                                                      hpx::shared_future<std::vector<double>> f_r,
-                                                      const int N,
-                                                      const int M);
+vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M);
+
 /**
  * @brief FP64 Vector update with diagonal GEMM: r = r + diag(A * B)
  * @param f_A first update matrix
@@ -151,26 +129,29 @@ hpx::shared_future<std::vector<double>> dot_diag_syrk(hpx::shared_future<std::ve
  * @param M second matrix dimension
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<double>> dot_diag_gemm(hpx::shared_future<std::vector<double>> f_A,
-                                                      hpx::shared_future<std::vector<double>> f_B,
-                                                      hpx::shared_future<std::vector<double>> f_r,
-                                                      const int N,
-                                                      const int M);
+vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
 
 // }}} --------------------------------- end of BLAS level 2 operations
 
 // BLAS level 1 operations ------------------------------- {{{
 
 /**
- * @brief FP64 Dot product: a * b
- * @param f_a left vector
- * @param f_b right vector
+ * @brief FP64 AXPY: y - x
+ * @param f_y left vector
+ * @param f_x right vector
  * @param N vector length
- * @return f_a * f_b
+ * @return y - x
  */
-double dot(std::vector<double> a,
-           std::vector<double> b,
-           const int N);
+vector_future axpy(vector_future f_y, vector_future f_x, const int N);
+
+/**
+ * @brief FP64 Dot product: a * b
+ * @param a left vector
+ * @param b right vector
+ * @param N vector length
+ * @return a * b
+ */
+double dot(std::vector<double> a, std::vector<double> b, const int N);
 
 // }}} --------------------------------- end of BLAS level 1 operations
 
