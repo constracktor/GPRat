@@ -1,3 +1,48 @@
-   [build-system]
-   requires = ["setuptools", "pybind11"]
-   build-backend = "setuptools.build_meta"
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+# set the necessary CMake build options
+[tool.scikit-build]
+cmake.args = [
+	"--preset release-linux",
+	"-G Unix Makefiles",
+        "-DGPRAT_BUILD_BINDINGS=ON",
+	"-DGPRAT_ENABLE_FORMAT_TARGETS=OFF",
+   	"-DCMAKE_INSTALL_LIBDIR=gprat",
+    	"-DCMAKE_INSTALL_BINDIR=gprat",
+   	"-DCMAKE_INSTALL_INCLUDEDIR=gprat",
+   	"-DCMAKE_INSTALL_MANDIR=gprat",
+    	"-DCMAKE_INSTALL_DATAROOTDIR=gprat/cmake",
+    	"-DCMAKE_INSTALL_RPATH=$ORIGIN"]
+sdist.exclude = ["build*/", "dist/", "docs/html/", ".github", "examples", "install", "tests", ".clang*", ".gitignore"]
+# project specific metadata
+[project]
+name = "gprat"
+version = "0.1.0"
+description = "GPRat - Gaussian Process Regression using Asynchronous Tasks"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Alexander Strack, Maksim Helmann" }
+]
+maintainers = [
+    { name = "University of Stuttgart IPVS - SC", email = "sc@ipvs.uni-stuttgart.de" }
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: CPU",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+# project specific URLs
+[project.urls]
+homepage = ""
+documentation = ""
+repository = "https://github.com/constracktor/GPRat.git"
+issues = ""

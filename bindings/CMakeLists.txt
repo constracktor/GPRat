@@ -55,3 +55,9 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
+
+# install the __init__.py file so Python recognizes the package when installed via pip
+include(GNUInstallDirs)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/__init__.py"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
