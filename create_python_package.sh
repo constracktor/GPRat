@@ -8,6 +8,7 @@ source pypi_env/bin/activate
 
 # Install requirements
 pip install --upgrade pip
+pip install build
 pip install twine
 
 # Load required libs
@@ -26,10 +27,10 @@ cd examples/gprat_python
 python execute.py
 cd ../..
 
-# Build package 
-# This command will generate distribution archives 
-# (.tar.gz and .whl) in the dist directory
-#python3 setup.py sdist bdist_wheel
-#rm -rf build
-# Upload to PyPI
-#python -m twine upload dist/*
+# Build package
+rm -rf build dist
+# This command will generate a distribution archive
+# (.tar.gz) in the dist directory
+python -m build --sdist
+# Upload to Test PyPI
+twine upload --repository testpypi dist/*
