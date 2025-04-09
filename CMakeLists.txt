@@ -18,6 +18,9 @@ cmake_dependent_option(
   ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
 cmake_dependent_option(GPRAT_ENABLE_TESTS "Build unit and integration tests"
                        ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
+cmake_dependent_option(
+  GPRAT_ENABLE_MKL "Enable support for Intel oneMKL"
+  ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" ON)
 
 option(GPRAT_ENABLE_FORMAT_TARGETS "Enable clang-format / cmake-format targets"
        ${PROJECT_IS_TOP_LEVEL})
@@ -43,11 +46,29 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 if(GPRAT_BUILD_CORE)
-  set(MKL_INTERFACE_FULL "intel_lp64")
-  set(MKL_THREADING "sequential")
+  if(GPRAT_ENABLE_MKL)
+    # Try to find Intel oneMKL
+    set(MKL_INTERFACE_FULL "intel_lp64")
+    set(MKL_THREADING "sequential")
+    find_package(MKL CONFIG REQUIRED)
+
+    if(MKL)
+      message(STATUS "Intel oneMKL Library found")
+    else()
+      message(FATAL_ERROR "No BLAS Library found")
+    endif()
+  else()
+    # Try to find OpenBLAS
+    find_library(OpenBLAS_LIB NAMES openblas REQUIRED)
+  
+    if(OpenBLAS_LIB)
+      message(STATUS "OpenBLAS Library found at ${OpenBLAS_LIB}")
+    else()
+      message(FATAL_ERROR "No BLAS Library found")
+    endif()
+  endif()
 
   find_package(HPX REQUIRED)
-  find_package(MKL CONFIG REQUIRED)
 
   add_subdirectory(core)
   if(GPRAT_BUILD_BINDINGS)

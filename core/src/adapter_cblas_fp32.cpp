@@ -1,8 +1,13 @@
 #include "../include/adapter_cblas_fp32.hpp"
 
-// MKL CBLAS and LAPACKE
-#include "mkl_cblas.h"
-#include "mkl_lapacke.h"
+#ifdef GPRAT_ENABLE_MKL
+    // MKL CBLAS and LAPACKE
+    #include "mkl_cblas.h"
+    #include "mkl_lapacke.h"
+#else
+    #include "cblas.h"
+    #include "lapacke.h"
+#endif
 
 // BLAS level 3 operations -------------------------------------- {{{
 
