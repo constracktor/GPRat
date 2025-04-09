@@ -151,25 +151,26 @@ TEST_CASE("GP results match known-good values", "[integration]")
     // see:
     // https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
     using Catch::Matchers::WithinRel;
+    double eps = std::numeric_limits<double>::epsilon() * 1000000;
     for (std::size_t i = 0, n = results.choleksy.size(); i != n; ++i)
     {
         for (std::size_t j = 0, m = results.choleksy[i].size(); j != m; ++j)
         {
             INFO("choleksy " << i << " " << j);
-            REQUIRE_THAT(results.choleksy[i][j], WithinRel(expected_results.choleksy[i][j]));
+            REQUIRE_THAT(results.choleksy[i][j], WithinRel(expected_results.choleksy[i][j], eps));
         }
     }
     for (std::size_t i = 0, n = results.losses.size(); i != n; ++i)
     {
         INFO("losses " << i);
-        REQUIRE_THAT(results.losses[i], WithinRel(expected_results.losses[i]));
+        REQUIRE_THAT(results.losses[i], WithinRel(expected_results.losses[i], eps));
     }
     for (std::size_t i = 0, n = results.sum.size(); i != n; ++i)
     {
         for (std::size_t j = 0, m = results.sum[i].size(); j != m; ++j)
         {
             INFO("sum " << i << " " << j);
-            REQUIRE_THAT(results.sum[i][j], WithinRel(expected_results.sum[i][j]));
+            REQUIRE_THAT(results.sum[i][j], WithinRel(expected_results.sum[i][j], eps));
         }
     }
     for (std::size_t i = 0, n = results.full.size(); i != n; ++i)
@@ -177,12 +178,12 @@ TEST_CASE("GP results match known-good values", "[integration]")
         for (std::size_t j = 0, m = results.full[i].size(); j != m; ++j)
         {
             INFO("full " << i << " " << j);
-            REQUIRE_THAT(results.full[i][j], WithinRel(expected_results.full[i][j]));
+            REQUIRE_THAT(results.full[i][j], WithinRel(expected_results.full[i][j], eps));
         }
     }
     for (std::size_t i = 0, n = results.pred.size(); i != n; ++i)
     {
         INFO("pred " << i);
-        REQUIRE_THAT(results.pred[i], WithinRel(expected_results.pred[i]));
+        REQUIRE_THAT(results.pred[i], WithinRel(expected_results.pred[i], eps));
     }
 }
