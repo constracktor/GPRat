@@ -1,0 +1,7 @@
+spack:
+  specs:
+  - hpx@1.10.0 malloc=system networking=none max_cpu_count=256 instrumentation=none
+  - openblas@0.3.29 shared=false fortran=false target=a64fx ~dynamic_dispatch
+  view: true
+  concretizer:
+    unify: true

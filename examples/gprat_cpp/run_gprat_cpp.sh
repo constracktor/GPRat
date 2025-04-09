@@ -7,8 +7,17 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 # Configurations
 ################################################################################
 # Load GCC compiler
-spack load gcc@14.2.0
-spack load cmake
+if [[ "$1" == "arm" ]]
+then
+    spack load gcc@14.2.0
+    export LIB=lib64
+elif [[ "$1" == "riscv" ]]
+then
+    echo "TBD"
+else
+    module load gcc@14.2.0
+    export LIB=lib
+fi
 
 # Activate environment
 spack env activate gprat_cpu_gcc
@@ -22,7 +31,7 @@ export APEX_DISABLE=1
 ################################################################################
 rm -rf build && mkdir build && cd build
 # Configure the project
-cmake .. -DCMAKE_BUILD_TYPE=Release -DGPRat_DIR=./lib/cmake/GPRat
+cmake .. -DCMAKE_BUILD_TYPE=Release -DGPRat_DIR=./$LIB/cmake/GPRat
  # Build the project
 make -j
 
