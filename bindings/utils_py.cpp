@@ -1,3 +1,4 @@
+#include "target.hpp"
 #include "utils_c.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -100,4 +101,9 @@ void init_utils(py::module &m)
     m.def("resume_hpx", &utils::resume_hpx_runtime);
     m.def("suspend_hpx", &utils::suspend_hpx_runtime);
     m.def("stop_hpx", &utils::stop_hpx_runtime);
+
+    m.def("compiled_with_cuda", &utils::compiled_with_cuda, "Check if the code was compiled with CUDA support");
+
+    m.def("print_available_gpus", &gprat::print_available_gpus, "Print available GPUs with their properties");
+    m.def("gpu_count", &gprat::gpu_count, "Return the number of available GPUs");
 }
