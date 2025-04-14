@@ -1,8 +1,11 @@
-#ifndef GP_ALGORITHMS_CPU_H
-#define GP_ALGORITHMS_CPU_H
+#ifndef CPU_GP_ALGORITHMS_H
+#define CPU_GP_ALGORITHMS_H
 
 #include "gp_kernels.hpp"
 #include <vector>
+
+namespace cpu
+{
 
 /**
  * @brief Compute the squared exponential kernel of two feature vectors
@@ -26,12 +29,12 @@ double compute_covariance_function(std::size_t i_global,
 /**
  * @brief Generate a tile of the covariance matrix
  *
+ * @param input The input data vector
  * @param row The row index of the tile in the tiled matrix
  * @param col The column index of the tile in the tiled matrix
  * @param N The dimension of the quadratic tile (N*N elements)
  * @param n_regressors The number of regressors
- * @param hyperparameters The kernel hyperparameters
- * @param input The input data vector
+ * @param sek_params The kernel hyperparameters
  *
  * @return A quadratic tile of the covariance matrix of size N x N
  * @note Does apply noise variance on the diagonal
@@ -165,4 +168,6 @@ std::vector<double> gen_tile_zeros(std::size_t N);
  */
 std::vector<double> gen_tile_identity(std::size_t N);
 
-#endif  // end of GP_ALGORITHMS_CPU_H
+}  // end of namespace cpu
+
+#endif  // end of CPU_GP_ALGORITHMS_H

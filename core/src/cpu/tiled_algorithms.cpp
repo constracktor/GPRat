@@ -1,12 +1,15 @@
-#include "../include/tiled_algorithms_cpu.hpp"
+#include "cpu/tiled_algorithms.hpp"
 
-#include "../include/adapter_cblas_fp64.hpp"
-#include "../include/gp_algorithms_cpu.hpp"
-#include "../include/gp_optimizer.hpp"
-#include "../include/gp_uncertainty.hpp"
+#include "cpu/adapter_cblas_fp64.hpp"
+#include "cpu/gp_algorithms.hpp"
+#include "cpu/gp_optimizer.hpp"
+#include "cpu/gp_uncertainty.hpp"
 #include <hpx/future.hpp>
 
-// Tiled Cholesky Algorithm ------------------------------------------------ {{{
+namespace cpu
+{
+
+// Tiled Cholesky Algorithm
 
 void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_tiles)
 {
@@ -53,9 +56,7 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
     }
 }
 
-// }}} ----------------------------------------- end of Tiled Cholesky Algorithm
-
-// Tiled Triangular Solve Algorithms --------------------------------------- {{{
+// Tiled Triangular Solve Algorithms
 
 void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, std::size_t n_tiles)
 {
@@ -182,8 +183,6 @@ void backward_solve_tiled_matrix(
         }
     }
 }
-
-// }}} -------------------------------- end of Tiled Triangular Solve Algorithms
 
 void matrix_vector_tiled(Tiled_matrix &ft_tiles,
                          Tiled_vector &ft_vector,
@@ -447,3 +446,5 @@ void update_hyperparameter_tiled(
     // Transform hyperparameter back to constrained form
     sek_params.set_param(param_idx, to_constrained(updated_param, jitter));
 }
+
+}  // end of namespace cpu

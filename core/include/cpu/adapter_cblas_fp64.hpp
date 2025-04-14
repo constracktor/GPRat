@@ -1,11 +1,13 @@
-#ifndef ADAPTER_CBLAS_FP32_H
-#define ADAPTER_CBLAS_FP32_H
+#ifndef CPU_ADAPTER_CBLAS_FP64_H
+#define CPU_ADAPTER_CBLAS_FP64_H
 
 #include <hpx/future.hpp>
 #include <vector>
-using vector_future = hpx::shared_future<std::vector<float>>;
+
+using vector_future = hpx::shared_future<std::vector<double>>;
 
 // Constants that are compatible with CBLAS
+
 typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
 
 typedef enum BLAS_SIDE { Blas_left = 141, Blas_right = 142 } BLAS_SIDE;
@@ -18,14 +20,10 @@ typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
 // typedef enum BLAS_ORDERING { Blas_row_major = 101,
 //                              Blas_col_major = 102 } BLAS_ORDERING;
 
-// =============================================================================
-// BLAS operations on CPU with MKL
-// =============================================================================
-
-// BLAS level 3 operations -------------------------------------- {{{
+// BLAS level 3 operations
 
 /**
- * @brief FP32 In-place Cholesky decomposition of A
+ * @brief FP64 In-place Cholesky decomposition of A
  * @param f_A matrix to be factorized
  * @param N matrix dimension
  * @return factorized, lower triangular matrix f_L
@@ -33,7 +31,7 @@ typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
 vector_future potrf(vector_future f_A, const int N);
 
 /**
- * @brief FP32 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
+ * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
  * @param f_L Cholesky factor matrix
  * @param f_A right hand side matrix
  * @param N first dimension
@@ -48,7 +46,7 @@ vector_future trsm(vector_future f_L,
                    const BLAS_SIDE side_L);
 
 /**
- * @brief FP32 Symmetric rank-k update: A = A - B * B^T
+ * @brief FP64 Symmetric rank-k update: A = A - B * B^T
  * @param f_A Base matrix
  * @param f_B Symmetric update matrix
  * @param N matrix dimension
@@ -57,7 +55,7 @@ vector_future trsm(vector_future f_L,
 vector_future syrk(vector_future f_A, vector_future f_B, const int N);
 
 /**
- * @brief FP32 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
+ * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
  * @param f_C Base matrix
  * @param f_B Right update matrix
  * @param f_A Left update matrix
@@ -78,12 +76,10 @@ gemm(vector_future f_A,
      const BLAS_TRANSPOSE transpose_A,
      const BLAS_TRANSPOSE transpose_B);
 
-// }}} --------------------------------- end of BLAS level 3 operations
-
-// BLAS level 2 operations ------------------------------- {{{
+// BLAS level 2 operations
 
 /**
- * @brief FP32 In-place solve L(^T) * x = a where L lower triangular
+ * @brief FP64 In-place solve L(^T) * x = a where L lower triangular
  * @param f_L Cholesky factor matrix
  * @param f_a right hand side vector
  * @param N matrix dimension
@@ -93,7 +89,7 @@ gemm(vector_future f_A,
 vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L);
 
 /**
- * @brief FP32 General matrix-vector multiplication: b = b - A(^T) * a
+ * @brief FP64 General matrix-vector multiplication: b = b - A(^T) * a
  * @param f_A update matrix
  * @param f_a update vector
  * @param f_b base vector
@@ -111,7 +107,7 @@ vector_future gemv(vector_future f_A,
                    const BLAS_TRANSPOSE transpose_A);
 
 /**
- * @brief FP32 Vector update with diagonal SYRK: r = r + diag(A^T * A)
+ * @brief FP64 Vector update with diagonal SYRK: r = r + diag(A^T * A)
  * @param f_A update matrix
  * @param f_r base vector
  * @param N first matrix dimension
@@ -119,8 +115,9 @@ vector_future gemv(vector_future f_A,
  * @return updated vector f_r
  */
 vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M);
+
 /**
- * @brief FP32 Vector update with diagonal GEMM: r = r + diag(A * B)
+ * @brief FP64 Vector update with diagonal GEMM: r = r + diag(A * B)
  * @param f_A first update matrix
  * @param f_B second update matrix
  * @param f_r base vector
@@ -130,12 +127,10 @@ vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, c
  */
 vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
 
-// }}} --------------------------------- end of BLAS level 2 operations
-
-// BLAS level 1 operations ------------------------------- {{{
+// BLAS level 1 operations
 
 /**
- * @brief FP32 AXPY: y - x
+ * @brief FP64 AXPY: y - x
  * @param f_y left vector
  * @param f_x right vector
  * @param N vector length
@@ -144,14 +139,12 @@ vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future 
 vector_future axpy(vector_future f_y, vector_future f_x, const int N);
 
 /**
- * @brief FP32 Dot product: a * b
- * @param f_a left vector
- * @param f_b right vector
+ * @brief FP64 Dot product: a * b
+ * @param a left vector
+ * @param b right vector
  * @param N vector length
- * @return f_a * f_b
+ * @return a * b
  */
-float dot(std::vector<float> a, std::vector<float> b, const int N);
+double dot(std::vector<double> a, std::vector<double> b, const int N);
 
-// }}} --------------------------------- end of BLAS level 1 operations
-
-#endif  // end of ADAPTER_CBLAS_FP32_H
+#endif  // end of CPU_ADAPTER_CBLAS_FP64_H

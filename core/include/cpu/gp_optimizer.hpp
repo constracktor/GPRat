@@ -1,9 +1,12 @@
-#ifndef GP_OPTIMIZER_H
-#define GP_OPTIMIZER_H
+#ifndef CPU_GP_OPTIMIZER_H
+#define CPU_GP_OPTIMIZER_H
 
 #include "gp_hyperparameters.hpp"
 #include "gp_kernels.hpp"
 #include <vector>
+
+namespace cpu
+{
 
 /**
  * @brief Transform hyperparameter to enforce constraints using softplus.
@@ -225,4 +228,6 @@ double compute_dot(const std::vector<double> &vector_T, const std::vector<double
  */
 double compute_trace_diag(const std::vector<double> &tile, double trace, std::size_t N);
 
-#endif  // end of GP_OPTIMIZER_H
+}  // end of namespace cpu
+
+#endif  // end of CPU_GP_OPTIMIZER_H

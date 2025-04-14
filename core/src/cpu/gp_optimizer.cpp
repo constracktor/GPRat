@@ -1,7 +1,10 @@
-#include "../include/gp_optimizer.hpp"
+#include "cpu/gp_optimizer.hpp"
 
-#include "../include/adapter_cblas_fp64.hpp"
+#include "cpu/adapter_cblas_fp64.hpp"
 #include <numeric>
+
+namespace cpu
+{
 
 ///////////////////////////////////////////////////////////
 // Parameter constraints
@@ -239,3 +242,5 @@ double compute_trace_diag(const std::vector<double> &tile, double trace, std::si
     }
     return trace + local_trace;
 }
+
+}  // end of namespace cpu

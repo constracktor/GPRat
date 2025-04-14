@@ -1,21 +1,24 @@
-#include "../include/gp_functions.hpp"
+#include "cpu/gp_functions.hpp"
 
-#include "../include/gp_algorithms_cpu.hpp"
-#include "../include/gp_optimizer.hpp"
-#include "../include/tiled_algorithms_cpu.hpp"
+#include "cpu/gp_algorithms.hpp"
+#include "cpu/gp_optimizer.hpp"
+#include "cpu/tiled_algorithms.hpp"
 #include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 
+namespace cpu
+{
+
 ///////////////////////////////////////////////////////////////////////////
 // PREDICT
 std::vector<std::vector<double>>
-cholesky_hpx(const std::vector<double> &training_input,
-             const gprat_hyper::SEKParams &sek_params,
-             int n_tiles,
-             int n_tile_size,
-             int n_regressors)
+cholesky(const std::vector<double> &training_input,
+         const gprat_hyper::SEKParams &sek_params,
+         int n_tiles,
+         int n_tile_size,
+         int n_regressors)
 {
     std::vector<std::vector<double>> result;
     // Tiled future data structures
@@ -60,15 +63,15 @@ cholesky_hpx(const std::vector<double> &training_input,
 }
 
 std::vector<double>
-predict_hpx(const std::vector<double> &training_input,
-            const std::vector<double> &training_output,
-            const std::vector<double> &test_input,
-            const gprat_hyper::SEKParams &sek_params,
-            int n_tiles,
-            int n_tile_size,
-            int m_tiles,
-            int m_tile_size,
-            int n_regressors)
+predict(const std::vector<double> &training_input,
+        const std::vector<double> &training_output,
+        const std::vector<double> &test_input,
+        const gprat_hyper::SEKParams &sek_params,
+        int n_tiles,
+        int n_tile_size,
+        int m_tiles,
+        int m_tile_size,
+        int n_regressors)
 {
     /*
      * Prediction: hat(y)_M = cross(K)_MxN * K^-1_NxN * y_N
@@ -176,7 +179,7 @@ predict_hpx(const std::vector<double> &training_input,
     return prediction_result;
 }
 
-std::vector<std::vector<double>> predict_with_uncertainty_hpx(
+std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
@@ -373,7 +376,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
     return std::vector<std::vector<double>>{ std::move(prediction_result), std::move(uncertainty_result) };
 }
 
-std::vector<std::vector<double>> predict_with_full_cov_hpx(
+std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
@@ -584,12 +587,12 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
 
 ///////////////////////////////////////////////////////////////////////////
 // OPTIMIZATION
-double compute_loss_hpx(const std::vector<double> &training_input,
-                        const std::vector<double> &training_output,
-                        const gprat_hyper::SEKParams &sek_params,
-                        int n_tiles,
-                        int n_tile_size,
-                        int n_regressors)
+double compute_loss(const std::vector<double> &training_input,
+                    const std::vector<double> &training_output,
+                    const gprat_hyper::SEKParams &sek_params,
+                    int n_tiles,
+                    int n_tile_size,
+                    int n_regressors)
 {
     /*
      * Negative log likelihood loss:
@@ -668,14 +671,14 @@ double compute_loss_hpx(const std::vector<double> &training_input,
 }
 
 std::vector<double>
-optimize_hpx(const std::vector<double> &training_input,
-             const std::vector<double> &training_output,
-             int n_tiles,
-             int n_tile_size,
-             int n_regressors,
-             const gprat_hyper::AdamParams &adam_params,
-             gprat_hyper::SEKParams &sek_params,
-             std::vector<bool> trainable_params)
+optimize(const std::vector<double> &training_input,
+         const std::vector<double> &training_output,
+         int n_tiles,
+         int n_tile_size,
+         int n_regressors,
+         const gprat_hyper::AdamParams &adam_params,
+         gprat_hyper::SEKParams &sek_params,
+         std::vector<bool> trainable_params)
 {
     /*
      * - Hyperparameters theta={v, l, v_n}
@@ -916,16 +919,15 @@ optimize_hpx(const std::vector<double> &training_input,
     return losses;
 }
 
-double optimize_step_hpx(
-    const std::vector<double> &training_input,
-    const std::vector<double> &training_output,
-    int n_tiles,
-    int n_tile_size,
-    int n_regressors,
-    gprat_hyper::AdamParams &adam_params,
-    gprat_hyper::SEKParams &sek_params,
-    std::vector<bool> trainable_params,
-    int iter)
+double optimize_step(const std::vector<double> &training_input,
+                     const std::vector<double> &training_output,
+                     int n_tiles,
+                     int n_tile_size,
+                     int n_regressors,
+                     gprat_hyper::AdamParams &adam_params,
+                     gprat_hyper::SEKParams &sek_params,
+                     std::vector<bool> trainable_params,
+                     int iter)
 {
     /*
      * - Hyperparameters theta={v, l, v_n}
@@ -1155,3 +1157,5 @@ double optimize_step_hpx(
     }
     return loss_value.get();
 }
+
+}  // end of namespace cpu

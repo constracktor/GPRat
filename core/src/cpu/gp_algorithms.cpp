@@ -1,8 +1,12 @@
-#include "../include/gp_algorithms_cpu.hpp"
+#include "cpu/gp_algorithms.hpp"
+
 #include <cmath>
 
-/////////////////////////////////////////////////////////
+namespace cpu
+{
+
 // Tile generation
+
 double compute_covariance_function(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
@@ -177,8 +181,8 @@ std::vector<double> gen_tile_identity(std::size_t N)
     return tile;
 }
 
-/////////////////////////////////////////////////////////
 // Error
+
 double compute_error_norm(std::size_t n_tiles,
                           std::size_t tile_size,
                           const std::vector<double> &b,
@@ -197,3 +201,5 @@ double compute_error_norm(std::size_t n_tiles,
     }
     return sqrt(error);
 }
+
+}  // end of namespace cpu
