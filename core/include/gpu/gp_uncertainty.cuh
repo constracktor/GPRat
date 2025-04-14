@@ -15,12 +15,8 @@ namespace gpu
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-hpx::shared_future<double *>
-diag_posterior(
-    const hpx::shared_future<double *> A,
-    const hpx::shared_future<double *> B,
-    std::size_t M,
-    gprat::CUDA_GPU &gpu);
+hpx::shared_future<double *> diag_posterior(
+    const hpx::shared_future<double *> A, const hpx::shared_future<double *> B, std::size_t M, gprat::CUDA_GPU &gpu);
 
 /**
  * @brief Retrieve diagonal elements of posterior covariance matrix.
@@ -30,11 +26,7 @@ diag_posterior(
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-hpx::shared_future<double *>
-diag_tile(
-    const hpx::shared_future<double *> A,
-    std::size_t M,
-    gprat::CUDA_GPU &gpu);
+hpx::shared_future<double *> diag_tile(const hpx::shared_future<double *> A, std::size_t M, gprat::CUDA_GPU &gpu);
 
 }  // end of namespace gpu
 

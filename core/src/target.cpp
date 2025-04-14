@@ -71,7 +71,10 @@ void CUDA_GPU::destroy()
     }
 }
 
-cudaStream_t CUDA_GPU::next_stream() { return streams[static_cast<std::size_t>(i_stream++) % static_cast<std::size_t>(n_streams)]; }
+cudaStream_t CUDA_GPU::next_stream()
+{
+    return streams[static_cast<std::size_t>(i_stream++) % static_cast<std::size_t>(n_streams)];
+}
 
 void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
 {
@@ -101,15 +104,9 @@ std::pair<cublasHandle_t, cudaStream_t> CUDA_GPU::next_cublas_handle()
     return std::make_pair(cublas, stream);
 }
 
-CUDA_GPU get_gpu(int id, int n_streams)
-{
-    return CUDA_GPU(id, n_streams);
-}
+CUDA_GPU get_gpu(int id, int n_streams) { return CUDA_GPU(id, n_streams); }
 
-CUDA_GPU get_gpu()
-{
-    return CUDA_GPU(0, 1);
-}
+CUDA_GPU get_gpu() { return CUDA_GPU(0, 1); }
 #endif
 
 void print_available_gpus()

@@ -77,9 +77,7 @@ class GP
      */
     std::shared_ptr<Target> target_;
 
-
   public:
-
     /** @brief Number of regressors */
     int n_reg;
 
@@ -87,7 +85,6 @@ class GP
      * @brief Hyperarameters of the squared exponential kernel
      */
     gprat_hyper::SEKParams kernel_params;
-
 
     /**
      * @brief Constructs a Gaussian Process (GP)

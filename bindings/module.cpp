@@ -2,8 +2,8 @@
 
 namespace py = pybind11;
 
-void init_gprat(py::module &); // See gprat_py.cpp
-void init_utils(py::module &); // See utils_py.cpp
+void init_gprat(py::module &);  // See gprat_py.cpp
+void init_utils(py::module &);  // See utils_py.cpp
 
 // Define Python module with name gprat and handle m
 PYBIND11_MODULE(gprat, m)

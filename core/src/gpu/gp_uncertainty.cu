@@ -1,7 +1,7 @@
 #include "gpu/gp_uncertainty.cuh"
 
-#include "target.hpp"
 #include "gpu/cuda_utils.cuh"
+#include "target.hpp"
 #include <hpx/async_cuda/cuda_exception.hpp>
 
 using hpx::cuda::experimental::check_cuda_error;
@@ -9,12 +9,8 @@ using hpx::cuda::experimental::check_cuda_error;
 namespace gpu
 {
 
-hpx::shared_future<double *>
-diag_posterior(
-    const hpx::shared_future<double *> A,
-    const hpx::shared_future<double *> B,
-    std::size_t M,
-    gprat::CUDA_GPU &gpu)
+hpx::shared_future<double *> diag_posterior(
+    const hpx::shared_future<double *> A, const hpx::shared_future<double *> B, std::size_t M, gprat::CUDA_GPU &gpu)
 {
     auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -31,11 +27,7 @@ diag_posterior(
     return hpx::make_ready_future(tile);
 }
 
-hpx::shared_future<double *>
-diag_tile(
-    const hpx::shared_future<double *> A,
-    std::size_t M,
-    gprat::CUDA_GPU &gpu)
+hpx::shared_future<double *> diag_tile(const hpx::shared_future<double *> A, std::size_t M, gprat::CUDA_GPU &gpu)
 {
     double *diag_tile;
     check_cuda_error(cudaMalloc(&diag_tile, M * sizeof(double)));

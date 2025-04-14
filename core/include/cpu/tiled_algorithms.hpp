@@ -180,4 +180,4 @@ void update_hyperparameter_tiled(
 
 }  // end of namespace cpu
 
-#endif // end of CPU_TILED_ALGORITHMS_H
+#endif  // end of CPU_TILED_ALGORITHMS_H

@@ -9,7 +9,6 @@
  * @param width Width of the original matrix.
  * @param height Height of the original matrix.
  */
-__global__ void
-transpose(double *transposed, double *original, std::size_t width, std::size_t height);
+__global__ void transpose(double *transposed, double *original, std::size_t width, std::size_t height);
 
 #endif  // CUDA_KERNELS_H
