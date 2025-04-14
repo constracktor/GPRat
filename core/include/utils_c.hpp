@@ -59,6 +59,9 @@ void print_vector(const std::vector<double> &vec, int start, int end, const std:
 
 /**
  * @brief Start HPX runtime
+ *
+ * @param argc Number of arguments
+ * @param argv Arguments as array of strings
  */
 void start_hpx_runtime(int argc, char **argv);
 
@@ -76,6 +79,11 @@ void suspend_hpx_runtime();
  * @brief Stop HPX runtime
  */
 void stop_hpx_runtime();
+
+/**
+ * @brief Returns whether the code was compiled with CUDA support.
+ */
+bool compiled_with_cuda();
 
 }  // namespace utils
 

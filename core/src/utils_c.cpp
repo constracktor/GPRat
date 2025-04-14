@@ -1,4 +1,4 @@
-#include "../include/utils_c.hpp"
+#include "utils_c.hpp"
 
 #include <cstdio>
 
@@ -36,11 +36,13 @@ std::pair<int, int> compute_test_tiles(int n_test, int n_tiles, int n_tile_size)
     int m_tiles;
     int m_tile_size;
 
+    // if n_test is not divisible by (incl. smaller than) n_tile_size, use the same number of tiles
     if ((n_test % n_tile_size) > 0)
     {
         m_tiles = n_tiles;
         m_tile_size = n_test / m_tiles;
     }
+    // if n_test is divisible by n_tile_size, use the same tile size
     else
     {
         m_tiles = n_test / n_tile_size;
@@ -128,6 +130,15 @@ void stop_hpx_runtime()
 {
     hpx::post([]() { hpx::finalize(); });
     hpx::stop();
+}
+
+bool compiled_with_cuda()
+{
+#if GPRAT_WITH_CUDA
+    return true;
+#else
+    return false;
+#endif
 }
 
 }  // namespace utils
