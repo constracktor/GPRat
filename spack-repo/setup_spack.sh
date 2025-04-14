@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
+
 # Script to install and setup spack
+
 set -e
-# clone git repository
+
+spack_repo_dir=$PWD
+
+# Clone spack repository into $HOME/spack
 cd
-git clone -c feature.manyFiles=true https://github.com/spack/spack.git
-# configure spack (add this to your .bashrc file)
+git clone -c feature.manyFiles=true --branch=v0.23.1 --depth=1 https://github.com/spack/spack.git
+
+# Configure spack (add this to your .bashrc file)
 source $HOME/spack/share/spack/setup-env.sh
-# find external compilers
+# Find external compilers & software
 spack compiler find
-# find external software
 spack external find
-# add GPRat spack-repo to spack
-spack repo add $(pwd)
+
+# Add GPRat spack-repo to spack
+spack repo add $spack_repo_dir
