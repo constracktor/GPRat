@@ -1,5 +1,4 @@
-#include "../core/include/gp_functions.hpp"
-#include "../core/include/gprat_c.hpp"
+#include "gprat_c.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -10,7 +9,7 @@ namespace py = pybind11;
  */
 void init_gprat(py::module &m)
 {
-    // set training data with `GP_data` class
+    // Set training data with `GP_data` class
     py::class_<gprat::GP_data>(m, "GP_data", "Class representing Gaussian Process data.")
         .def(py::init<std::string, int, int>(),
              py::arg("file_path"),
@@ -50,10 +49,11 @@ void init_gprat(py::module &m)
     // squared exponential kernel, number of regressors and trainable, unless
     // specified. Instance object has full access to parameters for squared
     // exponential kernel and number of regressors. Also adds some member
-    // functions.
-    // GPU support is disabled by default and may only be enabled on
+    // functions. GPU support is disabled by default and may only be enabled on
     // initialization.
     py::class_<gprat::GP>(m, "GP")
+
+        // CPU constructor
         .def(
             py::init<std::vector<double>, std::vector<double>, int, int, int, std::vector<double>, std::vector<bool>>(),
             py::arg("input_data"),
@@ -64,7 +64,9 @@ void init_gprat(py::module &m)
             py::arg("kernel_params") = std::vector<double>{ 1.0, 1.0, 0.1 },
             py::arg("trainable") = std::vector<bool>{ true, true, true },
             R"pbdoc(
-Create Gaussian Process including its data, hyperparameters.
+Create Gaussian Process including its data, hyperparameters, and target. By
+default, the calculations are performed on the CPU. Setting at least gpu_id or
+n_streams to a value enables computations on the GPU.
 
 Parameters:
     input_data (list): Input data for the GP.
@@ -72,12 +74,54 @@ Parameters:
     n_tiles (int): Number of tiles to split the input data.
     n_tile_size (int): Size of each tile.
     n_reg (int): Number of regressors. Default is 100.
-    kernel_params (list): List of kernel hyperparameters. Default is {1.0, 1.0, 0.1}
+    kernel_params (list): List of kernel hyperparameters. Default is
+        {1.0, 1.0, 0.1}
     trainable (list): List of booleans for trainable hyperparameters. Default is
         {true, true, true}.
+    gpu_id (int): ID of the GPU to use. Default is 0.
+    n_streams (int): Number of streams for GPU computation. Default is 1.
              )pbdoc")
-        .def_readwrite("n_reg", &gprat::GP::n_regressors)
-        .def_readwrite("kernel_params", &gprat::GP::sek_params)
+
+        // GPU constructor
+        .def(py::init<std::vector<double>,
+                      std::vector<double>,
+                      int,
+                      int,
+                      int,
+                      std::vector<double>,
+                      std::vector<bool>,
+                      int,
+                      int>(),
+             py::arg("input_data"),
+             py::arg("output_data"),
+             py::arg("n_tiles"),
+             py::arg("n_tile_size"),
+             py::arg("n_reg") = 8,
+             py::arg("kernel_params") = std::vector<double>{ 1.0, 1.0, 0.1 },
+             py::arg("trainable") = std::vector<bool>{ true, true, true },
+             py::arg("gpu_id") = 0,
+             py::arg("n_streams") = 1,
+             R"pbdoc(
+Create Gaussian Process including its data, hyperparameters, and target. By
+default, the calculations are performed on the CPU. Setting at least gpu_id or
+n_streams to a value enables computations on the GPU.
+
+Parameters:
+    input_data (list): Input data for the GP.
+    output_data (list): Output data for the GP.
+    n_tiles (int): Number of tiles to split the input data.
+    n_tile_size (int): Size of each tile.
+    n_reg (int): Number of regressors. Default is 100.
+    kernel_params (list): List of kernel hyperparameters. Default is
+        {1.0, 1.0, 0.1}
+    trainable (list): List of booleans for trainable hyperparameters. Default is
+        {true, true, true}.
+    gpu_id (int): ID of the GPU to use. Default is 0.
+    n_streams (int): Number of streams for GPU computation. Default is 1.
+
+             )pbdoc")
+        .def_readwrite("n_reg", &gprat::GP::n_reg)
+        .def_readwrite("kernel_params", &gprat::GP::kernel_params)
         .def("__repr__", &gprat::GP::repr)
         .def("get_input_data", &gprat::GP::get_training_input)
         .def("get_output_data", &gprat::GP::get_training_output)
