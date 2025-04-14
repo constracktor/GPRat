@@ -4,7 +4,7 @@ project(
   GPRat
   VERSION 0.1.0
   DESCRIPTION "Gaussian Process Regression using Asynchronous Tasks"
-  HOMEPAGE_URL "https://github.com/constracktor/GPRat"
+  HOMEPAGE_URL "https://github.com/SC-SGS/GPRat"
   LANGUAGES CXX)
 
 include(CMakeDependentOption)
