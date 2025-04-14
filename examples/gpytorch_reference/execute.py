@@ -32,6 +32,7 @@ def gpytorch_run(config, output_file, size_train, l, cores):
         l (int): Loop index.
     """
     total_t = time.time()
+    target = "gpu" if args.use_gpu and torch.cuda.is_available() else "cpu"
     device = torch.device("cuda" if args.use_gpu and torch.cuda.is_available() else "cpu")
     X_train, Y_train, X_test, Y_test = load_data(
         train_in_path=config["train_in_file"],
@@ -79,7 +80,7 @@ def gpytorch_run(config, output_file, size_train, l, cores):
     PREDICTION_TIME = pred_t
     # ERROR = calculate_error(Y_test, y_pred).detach().cpu().numpy()
 
-    row_data = f"{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PREDICTION_TIME},{l}\n"
+    row_data = f"{target},{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PREDICTION_TIME},{l}\n"
     output_file.write(row_data)
 
     logger.info(f"{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PRED_UNCER_TIME},{PREDICTION_TIME},{l}")
@@ -108,8 +109,8 @@ def execute():
     with open(file_path, "a") as output_file:
         if not file_exists or os.stat(file_path).st_size == 0:
             # logger.info("Write output file header")
-            logger.info("Cores,N_train,N_test,N_reg,Opt_iter,Total_time,Init_time,Opt_Time,Pred_Var_time,Pred_time,N_loop")
-            header = "Cores,N_train,N_test,N_regressor,Opt_iter,Total_time,Init_time,Opt_time,Pred_Uncer_time,Predict_time,N_loop\n"
+            logger.info("Target,Cores,N_train,N_test,N_reg,Opt_iter,Total_time,Init_time,Opt_Time,Pred_Var_time,Pred_time,N_loop")
+            header = "Target,Cores,N_train,N_test,N_regressor,Opt_iter,Total_time,Init_time,Opt_time,Pred_Uncer_time,Predict_time,N_loop\n"
             output_file.write(header)
 
         if config["PRECISION"] == "float32":
