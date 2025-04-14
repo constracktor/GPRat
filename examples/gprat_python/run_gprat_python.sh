@@ -7,4 +7,4 @@ then
 	export LD_PRELOAD=$HOME/git_workspace/build-scripts/build/jemalloc/lib/libjemalloc.so.2
 fi
 
-python3 execute.py
+python3 execute.py "$@"
