@@ -1,4 +1,4 @@
-#include "../core/include/utils_c.hpp"
+#include "utils_c.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -14,6 +14,12 @@ namespace py = pybind11;
  */
 void start_hpx_wrapper(std::vector<std::string> args, std::size_t n_cores)
 {
+    // If args is empty, set the first argument to "gprat"
+    if (args.empty())
+    {
+        args.push_back("gprat");
+    }
+
     // Add the --hpx:threads argument to the args vector
     args.push_back("--hpx:threads=" + std::to_string(n_cores));
 
