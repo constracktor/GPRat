@@ -1,4 +1,4 @@
-#include "../include/gp_hyperparameters.hpp"
+#include "gp_hyperparameters.hpp"
 
 #include <iomanip>
 

@@ -1,4 +1,4 @@
-#include "../include/gp_kernels.hpp"
+#include "gp_kernels.hpp"
 
 #include <stdexcept>
 

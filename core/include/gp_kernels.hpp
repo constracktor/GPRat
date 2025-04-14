@@ -1,11 +1,13 @@
 #ifndef GP_KERNELS_H
 #define GP_KERNELS_H
+
 #include <vector>
 
 // #include <cstddef>
 
 namespace gprat_hyper
 {
+
 /**
  * @brief Squared Exponential Kernel Parameters
  */
@@ -47,12 +49,31 @@ struct SEKParams
     SEKParams(double lengthscale_, double vertical_lengthscale_, double noise_variance_);
 
     /**
-     * @brief return the number of parameters
+     * @brief Return the number of parameters
      */
     std::size_t size();
 
+    /**
+     * @brief Sets the parameter at the given index
+     *
+     * Index 0: lengthscale
+     * Index 1: vertical_lengthscale
+     * Index 2: noise_variance
+     *
+     * @param index Index of the parameter to set
+     * @param value Value to set
+     */
     void set_param(std::size_t index, double value);
 
+    /**
+     * @brief Returns the parameter at the given index
+     *
+     * Index 0: lengthscale
+     * Index 1: vertical_lengthscale
+     * Index 2: noise_variance
+     *
+     * @param index Index of the parameter to get
+     */
     const double &get_param(std::size_t index) const;
 };
 

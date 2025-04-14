@@ -2,7 +2,6 @@
 #define GP_HYPERPARAMETERS_H
 
 #include <string>
-#include <vector>
 
 namespace gprat_hyper
 {
@@ -12,19 +11,29 @@ namespace gprat_hyper
  */
 struct AdamParams
 {
-    /** @brief TODO: documentation */
+    /**
+     * @brief Learning rate is step size per iteration
+     */
     double learning_rate;
 
-    /** @brief TODO: documentation */
+    /**
+     * @brief Beta1 is the exponential decay rate for the first moment estimates
+     */
     double beta1;
 
-    /** @brief TODO: documentation */
+    /**
+     * @brief Beta2 is the exponential decay rate for the second moment estimates
+     */
     double beta2;
 
-    /** @brief TODO: documentation */
+    /**
+     * @brief Epsilon is a small constant to prevent division by zero
+     */
     double epsilon;
 
-    /** @brief TODO: documentation */
+    /**
+     * @brief Number of optimization iterations
+     */
     int opt_iter;
 
     /**
