@@ -34,11 +34,12 @@ logger = logging.getLogger()
 log_filename = "./gpflow_logs.log"
 
 
-def gpflow_run(config, output_file, size_train, l, cores):
+def gpflow_run(target, config, output_file, size_train, l, cores):
     """
     Run the GPflow regression pipeline.
 
     Args:
+        target (str): String of target (cpu/gpu) for logs.
         config (dict): Configuration parameters for the pipeline.
         output_csv_obj (csv.writer): CSV writer object for writing output data.
         size_train (int): Size of the training dataset.
@@ -94,11 +95,11 @@ def gpflow_run(config, output_file, size_train, l, cores):
     PREDICTION_TIME = pred_t
     # ERROR = calculate_error(Y_test, y_pred).detach().cpu().numpy()
 
-    row_data = f"{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PRED_UNCER_TIME},{PREDICTION_TIME},{l}\n"
+    row_data = f"{target},{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PRED_UNCER_TIME},{PREDICTION_TIME},{l}\n"
     output_file.write(row_data)
 
     logger.info(
-        f"{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PRED_UNCER_TIME},{PREDICTION_TIME},{l}"
+        f"{target},{cores},{size_train},{config['N_TEST']},{config['N_REG']},{config['OPT_ITER']},{TOTAL_TIME},{INIT_TIME},{OPT_TIME},{PRED_UNCER_TIME},{PREDICTION_TIME},{l}"
     )
     # logger.info("Completed iteration.")
 
@@ -120,8 +121,10 @@ def execute():
     physical_devices = tf.config.list_physical_devices("GPU")
     if len(physical_devices) > 0:
         logger.info(f"GPUs available: {physical_devices}")
+        target = "gpu"
     else:
         logger.info("No GPUs found. Using CPU.")
+        target = "cpu"
 
     # logger.info("\n")
     # logger.info("-" * 40)
@@ -135,9 +138,9 @@ def execute():
         if not file_exists or os.stat(file_path).st_size == 0:
             # logger.info("Write output file header")
             logger.info(
-                "Cores,N_train,N_test,N_reg,Opt_iter,Total_time,Init_time,Opt_Time,Pred_Var_time,Pred_time,N_loop"
+                "Target,Cores,N_train,N_test,N_reg,Opt_iter,Total_time,Init_time,Opt_Time,Pred_Var_time,Pred_time,N_loop"
             )
-            header = "Cores,N_train,N_test,N_regressor,Opt_iter,Total_time,Init_time,Opt_time,Pred_Uncer_time,Predict_time,N_loop\n"
+            header = "Target,Cores,N_train,N_test,N_regressor,Opt_iter,Total_time,Init_time,Opt_time,Pred_Uncer_time,Predict_time,N_loop\n"
             output_file.write(header)
 
         if config["PRECISION"] == "float32":
@@ -156,7 +159,7 @@ def execute():
                 for l in range(config["LOOP"]):
                     logger.info("*" * 40)
                     logger.info(f"Core: {cores}, Train Size: {data_size}, Loop: {l}")
-                    gpflow_run(config, output_file, data_size, l, cores)
+                    gpflow_run(target,config, output_file, data_size, l, cores)
                 data_size = data_size * config["STEP"]
             cores = cores * 2
     logger.info("Completed the program.")
