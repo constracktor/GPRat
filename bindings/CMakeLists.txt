@@ -18,6 +18,11 @@ else()
   message(STATUS "Installed pybind11 version ${GPRat_pybind11_VERSION}.")
 endif()
 
+# Option for GPU support with CUDA, cuSolver, cuBLAS
+option(GPRAT_WITH_CUDA "Enable GPU support with CUDA, cuSolver, cuBLAS" OFF)
+# Pass variable to C++ code
+add_compile_definitions(GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
+
 file(GLOB SOURCE_FILES CONFIGURE_DEPENDS "*.cpp")
 file(GLOB HEADER_FILES CONFIGURE_DEPENDS "*.hpp")
 
