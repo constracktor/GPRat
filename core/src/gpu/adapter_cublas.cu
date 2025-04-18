@@ -1,11 +1,5 @@
 #include "gpu/adapter_cublas.cuh"
 
-#include <cuda_runtime.h>
-#include <hpx/future.hpp>
-#include <hpx/modules/async_cuda.hpp>
-#include <mkl_cblas.h>
-#include <mkl_lapacke.h>
-
 // frequently used names
 using hpx::cuda::experimental::check_cuda_error;
 
