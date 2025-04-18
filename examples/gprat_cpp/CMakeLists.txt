@@ -16,10 +16,10 @@ else()
 endif()
 
 # Enables/disables computation with CUDA on test system
-option(EXAMPLE_WITH_CUDA
+option(GPRAT_WITH_CUDA
        "Enable additional computation with CUDA, cuSolver, cuBLAS" OFF)
 # Pass variable to C++ code
-add_compile_definitions(EXAMPLE_WITH_CUDA=$<BOOL:${EXAMPLE_WITH_CUDA}>)
+add_compile_definitions(GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
 
 # Add the executable
 add_executable(gprat_cpp src/execute.cpp)

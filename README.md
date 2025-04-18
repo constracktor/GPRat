@@ -62,8 +62,9 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 - Go to [`examples/gprat_cpp`](examples/gprat_cpp/)
 - Set parameters in [`execute.cpp`](examples/gprat_cpp/src/execute.cpp)
 - The example is built as part of the main project.
-  If you want to use an installed GPrat version:
-  Run `./run_gprat_cpp.sh x86/arm/riscv` to build and run example
+  - Go to `build/` and execute `./gprat_cpp [--use_gpu]` to run the example.
+  - If you want to use an installed GPRat version:
+    Run `./run_gprat_cpp.sh cpu/gpu x86/arm/riscv` to build and run the example.
 
 ### To run GPRat with Python
 
