@@ -7,16 +7,22 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 ################################################################################
 # Configurations
 ################################################################################
-# Load compiler
+# Load compiler and depenencies
 if [[ "$2" == "arm" ]]
 then
     spack load gcc@14.2.0
+    spack env activate gprat_cpu_gcc
+    export USE_MKL=OFF
 elif [[ "$2" == "riscv" ]]
 then
-    echo "TBD"
+    #module load gcc/13.2.1
+    spack load openblas arch=linux-fedora38-riscv64
+    export HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
+    export USE_MKL=OFF
 else
     # x86
     module load gcc@14.2.0
+    spack env activate gprat_cpu_gcc
 fi
 
 # Select BLAS library
@@ -26,9 +32,6 @@ then
 else
     export USE_MKL=OFF
 fi
-
-# Activate spack environment
-spack env activate gprat_cpu_gcc
 
 # Bindings and examples
 if [[ "$1" == "python" ]]
@@ -54,6 +57,7 @@ export PRESET=release-linux
 # Compile code
 ################################################################################
 cmake --preset $PRESET \
+      -DHPX_DIR=$HPX_CMAKE \
       -DGPRAT_BUILD_BINDINGS=$BINDINGS \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
       -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
