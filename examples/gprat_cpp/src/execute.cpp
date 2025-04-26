@@ -243,60 +243,57 @@ void example_gpu(Runtimes &runtimes,
 
 int main(int argc, char *argv[])
 {
-    gprat::example::GpratSettings settings;
+    namespace po = hpx::program_options;
+    po::options_description desc("Allowed options");
+    // clang-format off
+    desc.add_options()
+        ("help", "produce help message")
+        ("train_x_path", po::value<std::string>()->default_value("../../../data/data_1024/training_input.txt"), "training data (x)")
+        ("train_y_path", po::value<std::string>()->default_value("../../../data/data_1024/training_output.txt"), "training data (y)")
+        ("test_path", po::value<std::string>()->default_value("../../../data/data_1024/test_input.txt"), "test data")
+        ("tiles", po::value<std::size_t>()->default_value(16), "tiles per dimension")
+        ("regressors", po::value<std::size_t>()->default_value(8), "num regressors")
+        ("start-cores", po::value<std::size_t>()->default_value(2), "num CPUs to start with")
+        ("end-cores", po::value<std::size_t>()->default_value(4), "num CPUs to end with")
+        ("start", po::value<std::size_t>()->default_value(512), "Starting number of training samples")
+        ("end", po::value<std::size_t>()->default_value(1024), "End number of training samples")
+        ("step", po::value<std::size_t>()->default_value(2), "Increment of training samples")
+        ("loop", po::value<std::size_t>()->default_value(2), "Number of iterations to be performed for each number of training samples")
+        ("opt_iter", po::value<std::size_t>()->default_value(1), "Number of optimization iterations*/")
+    ;
+    // clang-format on
 
-    const std::size_t n_test = 1024;
-    const std::size_t N_CORES = 4;
-    const std::size_t n_tiles = 16;
-    const std::size_t n_reg = 8;
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
 
-    std::ifstream ifs(GPRAT_CPP_CONFIG_PATH);
-    if (!ifs.fail())
+    if (vm.count("help"))
     {
-        using iterator_type = std::istreambuf_iterator<char>;
-        const std::string content(iterator_type{ ifs }, iterator_type{});
-        settings = boost::json::value_to<gprat::example::GpratSettings>(boost::json::parse(content));
+        std::cout << desc << "\n";
+        return 1;
+    }
+
+    /////////////////////
+    /////// configuration
+    std::size_t START = vm["start"].as<std::size_t>();
+    std::size_t END = vm["end"].as<std::size_t>();
+    std::size_t STEP = vm["step"].as<std::size_t>();
+    std::size_t LOOP = vm["loop"].as<std::size_t>();
+    const std::size_t OPT_ITER = vm["opt_iter"].as<std::size_t>();
+
+    const std::size_t n_test = START;
+    const std::size_t N_CORES = vm["end-cores"].as<std::size_t>();
+    const std::size_t n_tiles = vm["tiles"].as<std::size_t>();
+    const std::size_t n_reg = vm["regressors"].as<std::size_t>();
+
+    std::string train_path = vm["train_x_path"].as<std::string>();
+    std::string out_path = vm["train_y_path"].as<std::string>();
+    std::string test_path = vm["test_path"].as<std::string>();
 
     bool use_gpu =
         gprat::compiled_with_cuda() && gprat::gpu_count() > 0 && argc > 1 && std::strcmp(argv[1], "--use_gpu") == 0;
 
-    if (argc > 1 && std::strcmp(argv[1], "--use-gpu") == 0)
-    {
-        if (!utils::compiled_with_cuda() && !utils::compiled_with_sycl())
-        {
-            std::cerr << "Error: GPU support is not available. Please compile with CUDA or SYCL support.\n";
-            return 1;
-        }
-        else if (gprat::gpu_count() == 0)
-        {
-            std::cerr << "GPU support requested but GPRat found no GPUs.\n";
-            return 1;
-        }
-        else
-        {
-            use_gpu = true;
-            if (utils::compiled_with_cuda())
-            {
-                std::cout << "Using CUDA GPU for computations.\n";
-            }
-            else if (utils::compiled_with_sycl())
-            {
-                std::cout << "Using SYCL GPU for computations.\n";
-            }
-        }
-    }
-    else
-    {
-        std::cout << "Using CPU for computations.\n";
-    }
-
-    std::string target = use_gpu ? utils::compiled_with_cuda() ? "cuda" : "sycl" : "cpu";
-
-    int training_baseline =
-        settings.train_size_start > settings.n_tiles_start ? settings.train_size_start : settings.n_tiles_start;
-
-    // Loop over cores
-    for (int core = settings.start_cores; core <= settings.end_cores; core *= 2)
+    for (std::size_t core = vm["start-cores"].as<std::size_t>(); core <= N_CORES; core = core * 2)
     {
         // Create new argc and argv to include the --hpx:threads argument
         std::vector<std::string> args(argv, argv + argc);
