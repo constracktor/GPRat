@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help"))
+    if (vm.contains("help"))
     {
         std::cout << desc << "\n";
         return 1;
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
                 auto total_time = end_total - start_total;
 
                 // Save parameters and times to a .txt file with a header
-                std::ofstream outfile("../output.csv", std::ios::app);  // Append mode
+                std::ofstream outfile("output.csv", std::ios::app);  // Append mode
                 if (outfile.tellp() == 0)
                 {
                     // If file is empty, write the header
