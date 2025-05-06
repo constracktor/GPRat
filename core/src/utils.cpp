@@ -50,6 +50,31 @@ std::pair<std::size_t, std::size_t> compute_test_tiles(std::size_t n_test, std::
     return { m_tiles, m_tile_size };
 }
 
+std::size_t guess_good_tile_count_per_dimension(std::size_t n)
+{
+    // These have been found through experimentation - they are only estimates that have been shown to perform
+    // better than fixed tile counts.
+    const auto hw_concurrency = hpx::threads::hardware_concurrency();
+
+    // For small datasets / few cores we shouldn't bother
+    if (n < (1 << 8) || hw_concurrency < 4)
+    {
+        return 1;
+    }
+
+    if (n < (1 << 12) || hw_concurrency < 16)
+    {
+        return 4;
+    }
+
+    if (n < (1 << 18) || hw_concurrency < 32)
+    {
+        return 16;
+    }
+
+    return std::min<std::size_t>(hw_concurrency, n / 256);
+}
+
 std::vector<double> load_data(const std::string &file_path, std::size_t n_samples, std::size_t offset)
 {
     std::vector<double> _data;
