@@ -52,7 +52,7 @@ if(GPRAT_BUILD_CORE)
     set(MKL_THREADING "sequential")
     find_package(MKL CONFIG REQUIRED)
 
-    if(MKL)
+    if(MKL_FOUND)
       message(STATUS "Intel oneMKL Library found")
     else()
       message(FATAL_ERROR "No BLAS Library found")
