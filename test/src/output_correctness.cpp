@@ -1,3 +1,4 @@
+#include "test_data.hpp"
 #include "gprat/gprat.hpp"
 #include "gprat/utils.hpp"
 
@@ -12,55 +13,6 @@ using Catch::Matchers::WithinRel;
 #include <fstream>
 #include <string>
 #include <string_view>
-
-namespace gprat::test
-{
-
-// Parameters /////////////////////////////////////////////////////////////////////////////////////
-
-// Global test settings
-constexpr std::size_t n_test = 128;
-constexpr std::size_t n_train = 128;
-constexpr std::size_t n_tiles = 4;
-constexpr std::size_t n_reg = 8;
-
-// CPU test settings
-constexpr std::size_t OPT_ITER = 3;
-
-// CUDA and SYCL test settings
-constexpr int gpu_id = 0;
-constexpr int n_units = 4;
-
-// GPRat results structure ////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief   Struct containing all results we would like to compare
- */
-struct GpratResults
-{
-    std::vector<std::vector<double>> cholesky;
-    std::vector<double> losses;
-    std::vector<std::vector<double>> sum;
-    std::vector<std::vector<double>> full;
-    std::vector<double> pred;
-};
-
-// JSON (de-)serialization ////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief Creates data for a JSON object from an existing results structure.
- *
- * @param jv the values held by the JSON file
- * @param results the GpratResults object that from which the values are read
- */
-void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, const GpratResults &results)
-{
-    jv = { { "cholesky", boost::json::value_from(results.cholesky) },
-           { "losses", boost::json::value_from(results.losses) },
-           { "sum", boost::json::value_from(results.sum) },
-           { "full", boost::json::value_from(results.full) },
-           { "pred", boost::json::value_from(results.pred) } };
-}
 
 template <typename T>
 std::vector<T> to_vector(const gprat::const_tile_data<T> &data)
@@ -92,46 +44,8 @@ std::vector<std::vector<T>> to_vector(const std::vector<gprat::mutable_tile_data
     return out;
 }
 
-// This helper function deduces the type and assigns the value with the matching key
-template <typename T>
-inline void extract(const boost::json::object &obj, T &t, std::string_view key)
-{
-    t = boost::json::value_to<T>(obj.at(key));
-}
-
-/**
- * @brief Returns a results structure with the contents of a loaded JSON file.
- *
- * @param jv the contents of the loaded JSON file
- *
- * @return a GpratResults structure filled with the loaded values
- */
-GpratResults tag_invoke(boost::json::value_to_tag<GpratResults>, const boost::json::value &jv)
-{
-    GpratResults results;
-    const auto &obj = jv.as_object();
-    extract(obj, results.cholesky, "cholesky");
-    extract(obj, results.losses, "losses");
-    extract(obj, results.sum, "sum");
-    extract(obj, results.full, "full");
-    extract(obj, results.pred, "pred");
-    return results;
-}
-
-/**
- * @brief Tries to read the contents of the specified filename to set them as the basis of the
- *        test for correctness. If that is not possible, a file with the specified name is created
- *        and filled with fallback results.
- *
- * @param filename the filename to read from in case of success or write to in case of failure
- * @param fallback_results the fallback results to fill the file with in case of failure
- * @param results the results object to fill up with the content of the file in case of success
- *
- * @return `true` if reading the specified file is successful, and `false` if it failed and has
- *         been created
- */
-bool load_or_create_expected_results(
-    const std::string &filename, const GpratResults &fallback_results, GpratResults &results)
+// This logic is basically equivalent to the GPRat C++ example (for now).
+gprat_results run_on_data_cpu(const std::string &train_path, const std::string &out_path, const std::string &test_path)
 {
     // First try to read our expected results file
     {
@@ -370,20 +284,7 @@ TEST_CASE("GP GPU results match known-good values (no loss)", "[integration][gpu
 {
     if (!gprat::compiled_with_cuda() && !gprat::compiled_with_sycl())
     {
-        INFO("GPRat not compiled with GPU support — skipping GPU test.");
-        return;
-    }
-    if (gprat::compiled_with_cuda())
-    {
-        INFO("Executing GPU test with CUDA support.");
-    }
-    else if (gprat::compiled_with_sycl())
-    {
-        INFO("Executing GPU test with SYCL support.");
-    }
-    else
-    {
-        INFO("GPRat not compiled with GPU support — skipping GPU test.");
+        WARN("CUDA not available � skipping GPU test.");
         return;
     }
 

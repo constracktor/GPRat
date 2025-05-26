@@ -144,6 +144,7 @@ endif()
 # ##############################################################################
 if(GPRAT_ENABLE_EXAMPLES)
   add_subdirectory(examples/gprat_cpp)
+  add_subdirectory(examples/distributed)
 endif()
 
 # Tests
