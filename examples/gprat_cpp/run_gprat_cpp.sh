@@ -15,13 +15,14 @@ elif [[ "$1" == "riscv" ]]
 then
     echo "TBD"
 else
-    module load gcc@14.2.0
+    module load gcc/14.2.0
     export LIB=lib
+    export CC=gcc
+    export CXX=g++
 fi
 
 # Activate environment
 spack env activate gprat_cpu_gcc
-
 # Configure APEX
 export APEX_SCREEN_OUTPUT=0
 export APEX_DISABLE=1
