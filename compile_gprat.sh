@@ -7,17 +7,24 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 ################################################################################
 # Configurations
 ################################################################################
-# Load GCC compiler
+# Load compiler
 if [[ "$2" == "arm" ]]
 then
     spack load gcc@14.2.0
-    export USE_MKL=OFF
 elif [[ "$2" == "riscv" ]]
 then
     echo "TBD"
 else
+    # x86
     module load gcc@14.2.0
+fi
+
+# Select BLAS library
+if [[ "$2" == "mkl" ]]
+then
     export USE_MKL=ON
+else
+    export USE_MKL=OFF
 fi
 
 # Activate spack environment
