@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
-# search for gcc compiler and install if necessary
+# Script to setup CPU spack environment for GPRat using a recent gcc
+
 # Load GCC compiler
 if [[ "$1" == "arm" ]]
 then
@@ -15,7 +16,7 @@ else
     env_name=gprat_cpu_gcc
 fi
 
-# Script to setup CPU spack environment for GPRat using a recent gcc
+# Find GCC compiler with spack
 source $HOME/spack/share/spack/setup-env.sh
 spack compiler find
 
