@@ -4,7 +4,7 @@ set -e
 # Script to setup CPU spack environment for GPRat using a recent gcc
 
 # Search for gcc compiler and install if necessary
-module load gcc/14.1.0
+module load gcc/14.2.0
 source $HOME/spack/share/spack/setup-env.sh
 spack compiler find
 
