@@ -73,6 +73,7 @@ if command -v spack &> /dev/null; then
 	if spack env list | grep -q "gprat_cpu_arm"; then
 	    echo "Found gprat_cpu_arm environment, activating it."
 	    spack env activate gprat_cpu_arm
+	fi
 	export USE_MKL=OFF
     elif [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n2" ]]; then
 	# Check if the gprat_gpu_clang environment exists
