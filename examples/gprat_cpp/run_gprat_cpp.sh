@@ -6,23 +6,25 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 ################################################################################
 # Configurations
 ################################################################################
-# Load GCC compiler
+# Load compiler and dependencies
 if [[ "$1" == "arm" ]]
 then
     spack load gcc@14.2.0
+    spack env activate gprat_cpu_gcc
     export LIB=lib64
 elif [[ "$1" == "riscv" ]]
 then
-    echo "TBD"
+    spack load openblas arch=linux-fedora38-riscv64
+    export HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
+    export LIB=lib64
 else
-    module load gcc/14.2.0
+    module load gcc@14.2.0
+    spack env activate gprat_cpu_gcc
     export LIB=lib
     export CC=gcc
     export CXX=g++
 fi
 
-# Activate environment
-spack env activate gprat_cpu_gcc
 # Configure APEX
 export APEX_SCREEN_OUTPUT=0
 export APEX_DISABLE=1
@@ -32,7 +34,7 @@ export APEX_DISABLE=1
 ################################################################################
 rm -rf build && mkdir build && cd build
 # Configure the project
-cmake .. -DCMAKE_BUILD_TYPE=Release -DGPRat_DIR=./$LIB/cmake/GPRat
+cmake .. -DCMAKE_BUILD_TYPE=Release -DGPRat_DIR=./$LIB/cmake/GPRat -DHPX_DIR=$HPX_CMAKE
  # Build the project
 make -j
 
