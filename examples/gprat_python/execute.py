@@ -6,7 +6,8 @@ from csv import writer
 from config import get_config
 from hpx_logger import setup_logging
 
-import lib.gprat as gprat
+import lib64.gprat as gprat
+#import lib.gprat as gprat
 
 logger = logging.getLogger()
 log_filename = "./hpx_logs.log"
