@@ -151,7 +151,7 @@ TEST_CASE("GP results match known-good values", "[integration]")
     // see:
     // https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
     using Catch::Matchers::WithinRel;
-    double eps = std::numeric_limits<double>::epsilon() * 1000000;
+    double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
     for (std::size_t i = 0, n = results.choleksy.size(); i != n; ++i)
     {
         for (std::size_t j = 0, m = results.choleksy[i].size(); j != m; ++j)

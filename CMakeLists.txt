@@ -18,9 +18,8 @@ cmake_dependent_option(
   ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
 cmake_dependent_option(GPRAT_ENABLE_TESTS "Build unit and integration tests"
                        ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
-cmake_dependent_option(
-  GPRAT_ENABLE_MKL "Enable support for Intel oneMKL"
-  ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" ON)
+cmake_dependent_option(GPRAT_ENABLE_MKL "Enable support for Intel oneMKL"
+                       ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" ON)
 
 option(GPRAT_ENABLE_FORMAT_TARGETS "Enable clang-format / cmake-format targets"
        ${PROJECT_IS_TOP_LEVEL})
@@ -60,7 +59,7 @@ if(GPRAT_BUILD_CORE)
   else()
     # Try to find OpenBLAS
     find_library(OpenBLAS_LIB NAMES openblas REQUIRED)
-  
+
     if(OpenBLAS_LIB)
       message(STATUS "OpenBLAS Library found at ${OpenBLAS_LIB}")
     else()

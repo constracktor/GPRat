@@ -22,21 +22,19 @@ file(GLOB_RECURSE header_files CONFIGURE_DEPENDS include/*.hpp)
 target_sources(gprat_core PRIVATE ${header_files})
 
 # Link HPX libraries
-target_link_libraries(
-	gprat_core PUBLIC HPX::hpx)
+target_link_libraries(gprat_core PUBLIC HPX::hpx)
 # Include directories
 target_include_directories(
-	gprat_core PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/core/include>")
+  gprat_core PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/core/include>")
 
 # Link BLAS
 if(GPRAT_ENABLE_MKL)
   # Link Intel oneMKL
-  target_link_libraries(
-	gprat_core PUBLIC MKL::mkl_intel_lp64 MKL::mkl_core MKL::MKL MKL::mkl_sequential)
+  target_link_libraries(gprat_core PUBLIC MKL::mkl_intel_lp64 MKL::mkl_core
+                                          MKL::MKL MKL::mkl_sequential)
 else()
   # Link OpenBLAS
-  target_link_libraries(
-	gprat_core PUBLIC ${OpenBLAS_LIB})
+  target_link_libraries(gprat_core PUBLIC ${OpenBLAS_LIB})
 endif()
 
 if(GPRAT_ENABLE_MKL)
