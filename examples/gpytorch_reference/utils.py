@@ -115,32 +115,30 @@ def train(model, likelihood, X_train, Y_train, training_iter=10):
     Returns:
         None
     """
-    # training_iter = 10
+    # Find optimal model hyperparameters
+    model.train()
+    likelihood.train()
 
-    # # Find optimal model hyperparameters
-    # model.train()
-    # likelihood.train()
+    # Use the adam optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)  # Includes GaussianLikelihood parameters
 
-    # # Use the adam optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.1)  # Includes GaussianLikelihood parameters
+    # "Loss" for GPs - the marginal log likelihood
+    mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
-    # # "Loss" for GPs - the marginal log likelihood
-    # mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
-
-    # for i in range(training_iter):
-    #     # Zero gradients from previous iteration
-    #     optimizer.zero_grad()
-    #     # Output from model
-    #     output = model(X_train)
-    #     # Calc loss and backprop gradients
-    #     loss = -(mll(output, Y_train))
-    #     loss.backward()
-    #     print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
-    #         i + 1, training_iter, loss.item(),
-    #         model.covar_module.base_kernel.lengthscale.item(),
-    #         model.likelihood.noise.item()
-    #     ))
-    #     optimizer.step()
+    for i in range(training_iter):
+        # Zero gradients from previous iteration
+        optimizer.zero_grad()
+        # Output from model
+        output = model(X_train)
+        # Calc loss and backprop gradients
+        loss = -(mll(output, Y_train))
+        loss.backward()
+        print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
+            i + 1, training_iter, loss.item(),
+            model.covar_module.base_kernel.lengthscale.item(),
+            model.likelihood.noise.item()
+        ))
+        optimizer.step()
         
     return None
 
@@ -161,18 +159,28 @@ def predict_with_var(model, likelihood, X_test):
     model.eval()
     likelihood.eval()
     
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+    with (torch.no_grad(), \
+        gpytorch.settings.fast_pred_var(False), \
+        # Compute the exact posterior covariance
+        gpytorch.settings.lazily_evaluate_kernels(False), \
+        # Kernel matrices are computed immediately, not lazily
+        gpytorch.settings.fast_computations(covar_root_decomposition=False, \
+                                            # Compute exact Cholesky
+                                            log_prob=False, \
+                                            # Compute the log-determinant exactly (via Cholesky)
+                                            solves=False)):
+                                            # Use direct solver
         f_pred = model(X_test)
         f_mean = f_pred.mean
         f_var = f_pred.variance
-    
+
     '''
     for future plot generation:
     # Get upper and lower confidence bounds
     observed_pred = likelihood(model(test_x))
     lower, upper = observed_pred.confidence_region()
     '''
-    
+
     return f_mean, f_var
 
 def predict(model, likelihood, X_test):
