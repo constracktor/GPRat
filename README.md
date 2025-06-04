@@ -7,10 +7,8 @@ Thus, GPRat can be conveniently integrated into Python projects without binding 
 
 ## Dependencies
 
-GPRat utilizes two external libraries:
-
-- [HPX](https://hpx-docs.stellar-group.org/latest/html/index.html) for asynchronous task-based parallelization
-- [MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) for CPU-only BLAS computations
+GPRat depends on [HPX](https://hpx-docs.stellar-group.org/latest/html/index.html) for asynchronous task-based parallelization. 
+Furthermore, for CPU-only BLAS computation GPRat requires [OpenBLAS](http://www.openmathlib.org/OpenBLAS/) or [MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html).
 
 ### Install dependencies
 
@@ -41,8 +39,9 @@ The following options can be set to include / exclude parts of the project:
 |-----------------------------|------------------------------------------------|-----------------|
 | GPRAT_BUILD_CORE            | Enable/Disable building of the core library    | ON              |
 | GPRAT_BUILD_BINDINGS        | Enable/Disable building of the Python bindings | ON              |
-| GPRAT_ENABLE_FORMAT_TARGETS | Enable/disable code formatting helper targets  | ON if top-level |
-| GPRAT_ENABLE_EXAMPLES       | Enable/disable example projects                | ON if top-level |
+| GPRAT_ENABLE_FORMAT_TARGETS | Enable/Disable code formatting helper targets  | ON if top-level |
+| GPRAT_ENABLE_EXAMPLES       | Enable/Disable example projects                | ON if top-level |
+| GPRAT_USE_MKL               | Enable/Disable usage of MKL library            | OFF             |
 
 Respective scripts can be found in this directory.
 
@@ -59,7 +58,7 @@ reference implementations based on TensorFlow
 - Set parameters in [`execute.cpp`](examples/gprat_cpp/src/execute.cpp)
 - The example is built as part of the main project.
   If you want to use an installed GPrat version:
-  Run `./run_gprat_cpp.sh` to build and run example
+  Run `./run_gprat_cpp.sh x86/arm/riscv` to build and run example
 
 ### To run GPRat with Python
 
@@ -71,13 +70,13 @@ reference implementations based on TensorFlow
 
 - Go to [`examples/gpflow_reference`](examples/gpflow_reference/)
 - Set parameters in [`config.json`](examples/gpflow_reference/config.json)
-- Run `./run_gpflow.sh cpu/gpu` to run example
+- Run `./run_gpflow.sh cpu/gpu/arm` to run example
 
 ### To run GPflow reference
 
 - Go to [`examples/gpytorch_reference`](examples/gpytorch_reference/)
 - Set parameters in [`config.json`](examples/gpytorch_reference/config.json)
-- Run `./run_gpytorch.sh cpu/gpu` to run example
+- Run `./run_gpytorch.sh cpu/gpu/arm` to run example
 
 ## The Team
 
@@ -93,13 +92,21 @@ We specifically thank the follow contributors:
   Maintainer and [initial framework](https://doi.org/10.1007/978-3-031-32316-4_5).
 
 - [Maksim Helmann](https://de.linkedin.com/in/maksim-helmann-60b8701b1):
-  [Optimization, Python bindings and reference implementations](tbd.).
+  [Optimization, Python bindings and reference implementations](https://doi.org/10.48550/arXiv.2505.00136).
 
 - [Henrik Möllmann](https://www.linkedin.com/in/moellh/):
   [Accelerator Support](tbd.).
 
 ## How To Cite
 
-TBD.
+```
+@InProceedings{GPRat2025,
+  author={Helmann, Maksim and Strack, Alexander and Pfl{\"u}ger, Dirk},
+  title={{GPRat: Gaussian Process Regression with Asynchronous Tasks}},
+  booktitle={Asynchronous Many-Task Systems and Applications},
+  year={2025},
+  publisher={Springer Nature}
+}
+```
 
 [1]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
