@@ -120,7 +120,7 @@ def execute():
         # runs tests on exponentially increasing number of cores and
         # data size, for multiple loops (each loop starts with *s)
         torch.set_num_threads(config["N_CORES"])
-        cores = 2
+        cores = config["START_CORES"]
         while cores <= config["N_CORES"]:
             data_size = config["START"]
             while data_size <= config["END"]:

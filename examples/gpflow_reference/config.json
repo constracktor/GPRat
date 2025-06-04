@@ -6,6 +6,7 @@
     "START": 512,
     "END": 1024,
     "STEP": 2,
+    "START_CORES": 1,
     "N_CORES": 4,
     "N_TEST": 1024,
     "N_REG": 8,

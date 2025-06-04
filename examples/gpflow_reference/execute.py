@@ -149,7 +149,7 @@ def execute():
         # data size, for multiple loops (each loop starts with *s)
         tf.config.threading.set_intra_op_parallelism_threads(config["N_CORES"])
         tf.config.threading.set_inter_op_parallelism_threads(config["N_CORES"])
-        cores = 2
+        cores = config["START_CORES"]
         while cores <= config["N_CORES"]:
             data_size = config["START"]
             while data_size <= config["END"]:
