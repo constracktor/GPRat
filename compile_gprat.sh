@@ -11,7 +11,7 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 if [[ "$2" == "arm" ]]
 then
     spack load gcc@14.2.0
-    spack env activate gprat_cpu_gcc
+    spack env activate gprat_cpu_arm
     export USE_MKL=OFF
 elif [[ "$2" == "riscv" ]]
 then

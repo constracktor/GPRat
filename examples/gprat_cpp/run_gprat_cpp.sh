@@ -10,7 +10,7 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 if [[ "$1" == "arm" ]]
 then
     spack load gcc@14.2.0
-    spack env activate gprat_cpu_gcc
+    spack env activate gprat_cpu_arm
     export LIB=lib64
 elif [[ "$1" == "riscv" ]]
 then
