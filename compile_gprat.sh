@@ -11,12 +11,12 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 # Bindings
 if [[ "$1" == "python" ]]
 then
-    bindings=ON
-    install_dir=$(pwd)/examples/gprat_python
+    BINDINGS=ON
+    INSTALL_DIR=$(pwd)/examples/gprat_python
 elif [[ "$1" == "cpp" ]]
 then
-    bindings=OFF
-    install_dir=$(pwd)/examples/gprat_cpp
+    BINDINGS=OFF
+    INSTALL_DIR=$(pwd)/examples/gprat_cpp
 else
     echo "Please specify input parameter: python/cpp"
     exit 1
@@ -25,25 +25,25 @@ fi
 # Select CMake preset
 if [[ "$2" == "cpu" ]]; then
     # Release:
-    preset=release-linux
+    PRESET=release-linux
     # Debug:
-    #preset=dev-linux
+    #PRESET=dev-linux
 elif [[ "$2" == "gpu" ]]; then
     # Release:
-    preset=release-linux-gpu
+    PRESET=release-linux-gpu
     # Debug:
-    #preset=dev-linux-gpu
+    #PRESET=dev-linux-gpu
 elif [[ "$2" != "cpu" ]]; then
     echo "Input parameter is missing. Using default: Run computations on CPU in Release mode"
-    preset=release-linux
+    PRESET=release-linux
 fi
 
 # Select BLAS library
 if [[ "$3" == "mkl" ]]
 then
-    export USE_MKL=ON
+    USE_MKL=ON
 else
-    export USE_MKL=OFF
+    USE_MKL=OFF
 fi
 
 if command -v spack &> /dev/null; then
@@ -65,8 +65,8 @@ if command -v spack &> /dev/null; then
     elif [[ "$HOSTNAME" == "sven0"  ||  "$HOSTNAME" == "sven1" ]]; then
 	#module load gcc/13.2.1
 	spack load openblas arch=linux-fedora38-riscv64
-	export HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
-	export USE_MKL=OFF
+	HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
+	USE_MKL=OFF
     elif [[ "$HOSTNAME" == "fj*" ]]; then
 	spack load gcc@14.2.0
 	# Check if the gprat_cpu_arm environment exists
@@ -74,7 +74,7 @@ if command -v spack &> /dev/null; then
 	    echo "Found gprat_cpu_arm environment, activating it."
 	    spack env activate gprat_cpu_arm
 	fi
-	export USE_MKL=OFF
+	USE_MKL=OFF
     elif [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n2" ]]; then
 	# Check if the gprat_gpu_clang environment exists
 	if spack env list | grep -q "gprat_gpu_clang"; then
@@ -94,26 +94,27 @@ else
     # Assuming that Spack is not required on given system
 fi
 
-if [[ $preset == "release-linux" || $preset == "dev-linux" ]]; then
-    cmake --preset $preset \
-	-DGPRAT_BUILD_BINDINGS=$bindings \
-	-DCMAKE_INSTALL_PREFIX=$install_dir \
-	-DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
-	-DGPRAT_ENABLE_FORMAT_TARGETS=OFF
-
-elif [[ $preset == "release-linux-gpu" || $preset == "dev-linux-gpu" ]]; then
-    cuda_arch=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
-
-    cmake --preset $preset \
-	-DGPRAT_BUILD_BINDINGS=$bindings \
-	-DCMAKE_INSTALL_PREFIX=$install_dir \
+if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
+    cmake --preset $PRESET \
+	-DGPRAT_BUILD_BINDINGS=$BINDINGS \
+	-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 	-DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
 	-DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
-        -DCMAKE_C_COMPILER=$(which clang) \
+	-DGPRAT_ENABLE_MKL=$USE_MKL
+elif [[ $PRESET == "release-linux-gpu" || $PRESET == "dev-linux-gpu" ]]; then
+    CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
+
+    cmake --preset $PRESET \
+	-DGPRAT_BUILD_BINDINGS=$BINDINGS \
+	-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+	-DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
+	-DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
+        -DGPRAT_ENABLE_MKL=$USE_MKL \
+	-DCMAKE_C_COMPILER=$(which clang) \
         -DCMAKE_CXX_COMPILER=$(which clang++) \
         -DCMAKE_CUDA_COMPILER=$(which clang++) \
         -DCMAKE_CUDA_FLAGS=--cuda-path=${CUDA_HOME} \
-        -DCMAKE_CUDA_ARCHITECTURES=$cuda_arch
+        -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}
 fi
 
 ################################################################################
@@ -122,5 +123,5 @@ fi
 cmake --build --preset $PRESET -- -j
 cmake --install build/$PRESET
 
-cd build/$preset
+cd build/$PRESET
 ctest --output-on-failure --no-tests=ignore -C Release -j 2

@@ -19,7 +19,7 @@ cmake_dependent_option(
 cmake_dependent_option(GPRAT_ENABLE_TESTS "Build unit and integration tests"
                        ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
 cmake_dependent_option(GPRAT_ENABLE_MKL "Enable support for Intel oneMKL"
-                       ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" ON)
+  ${PROJECT_IS_TOP_LEVEL} "GPRAT_BUILD_CORE" OFF)
 
 option(GPRAT_ENABLE_FORMAT_TARGETS "Enable clang-format / cmake-format targets"
        ${PROJECT_IS_TOP_LEVEL})
