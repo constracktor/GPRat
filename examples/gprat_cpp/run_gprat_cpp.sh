@@ -18,6 +18,14 @@ elif [[ "$1" != "cpu" ]]; then
     exit 1
 fi
 
+# Select BLAS library
+if [[ "$2" == "mkl" ]]
+then
+    USE_MKL=ON
+else
+    USE_MKL=OFF
+fi
+
 if command -v spack &> /dev/null; then
     echo "Spack command found, checking for environments..."
     # Get current hostname
@@ -78,7 +86,8 @@ rm -rf build && mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release \
          -DGPRat_DIR=./lib/cmake/GPRat \
          -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA} \
-         -DHPX_DIR=$HPX_CMAKE
+         -DHPX_DIR=$HPX_CMAKE \
+	 -DUSE_MKL=$USE_MKL
 
 # Build the project
 make -j

@@ -9,10 +9,12 @@ if(TARGET GPRat::core)
 else()
   message("Using out-of-tree GPRat::core")
   find_package(GPRat REQUIRED)
-  # Try to find Intel oneMKL
-  set(MKL_INTERFACE_FULL "intel_lp64")
-  set(MKL_THREADING "sequential")
-  find_package(MKL CONFIG REQUIRED)
+  if(USE_MKL)
+    # Try to find Intel oneMKL
+    set(MKL_INTERFACE_FULL "intel_lp64")
+    set(MKL_THREADING "sequential")
+    find_package(MKL CONFIG REQUIRED)
+  endif()
 endif()
 
 # Enables/disables computation with CUDA on test system
