@@ -3,6 +3,7 @@ spack:
   - hpx@1.10.0%clang +cuda cuda_arch=80 malloc=system networking=none max_cpu_count=256 instrumentation=apex ^cmake@3.30 ^curl@8.10.1 ^ninja@1.12.1
   - cuda +allow-unsupported-compilers
   - intel-oneapi-mkl@2024.2.1%clang
+  - openblas@0.3.28%clang fortran=false
   - cmake@3.30
   view: true
   concretizer:
