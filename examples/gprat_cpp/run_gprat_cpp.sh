@@ -44,8 +44,9 @@ if command -v spack &> /dev/null; then
     elif [[ "$HOSTNAME" == "sven0"  ||  "$HOSTNAME" == "sven1" ]]; then
 	#module load gcc/13.2.1
 	spack load openblas arch=linux-fedora38-riscv64
-	export HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
+	HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
         GPRAT_WITH_CUDA=OFF
+	ADD=64
     elif [[ "$HOSTNAME" == "fj*" ]]; then
 	spack load gcc@14.2.0
 	# Check if the gprat_cpu_arm environment exists
@@ -84,7 +85,7 @@ rm -rf build && mkdir build && cd build
 
 # Configure the project
 cmake .. -DCMAKE_BUILD_TYPE=Release \
-         -DGPRat_DIR=./lib/cmake/GPRat \
+         -DGPRat_DIR=./lib$ADD/cmake/GPRat \
          -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA} \
          -DHPX_DIR=$HPX_CMAKE \
 	 -DUSE_MKL=$USE_MKL

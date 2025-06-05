@@ -1,10 +1,10 @@
 #!/bin/bash
 
-if [[ $(uname -i) == "unknown" ]]
+if [[ $(hostname -s) == "sven0" || $(hostname -s) == "sven1" ]]
 then
-	LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/hpx/lib64:$LD_LIBRARY_PATH
-	LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/boost/lib:$LD_LIBRARY_PATH
-	LD_PRELOAD=$HOME/git_workspace/build-scripts/build/jemalloc/lib/libjemalloc.so.2
+	export LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/hpx/lib64:$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/boost/lib:$LD_LIBRARY_PATH
+	export LD_PRELOAD=$HOME/git_workspace/build-scripts/build/jemalloc/lib/libjemalloc.so.2
 elif [[ $(hostname) == "simcl1n1" || $(hostname) == "simcl1n2" ]]; then
 	# Check if the gprat_gpu_clang environment exists
 	if spack env list | grep -q "gprat_gpu_clang"; then

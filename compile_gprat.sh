@@ -99,6 +99,7 @@ if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
 	-DGPRAT_BUILD_BINDINGS=$BINDINGS \
 	-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 	-DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
+	-DHPX_DIR=$HPX_CMAKE \
 	-DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
 	-DGPRAT_ENABLE_MKL=$USE_MKL
 elif [[ $PRESET == "release-linux-gpu" || $PRESET == "dev-linux-gpu" ]]; then
