@@ -67,7 +67,7 @@ if command -v spack &> /dev/null; then
 	spack load openblas arch=linux-fedora38-riscv64
 	HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
 	USE_MKL=OFF
-    elif [[ "$HOSTNAME" == "fj*" ]]; then
+    elif [[ $(uname -i) == "aarch64" ]]; then
 	spack load gcc@14.2.0
 	# Check if the gprat_cpu_arm environment exists
 	if spack env list | grep -q "gprat_cpu_arm"; then

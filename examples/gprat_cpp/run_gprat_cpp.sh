@@ -47,7 +47,7 @@ if command -v spack &> /dev/null; then
 	HPX_CMAKE=$HOME/git_workspace/build-scripts/build/hpx/lib64/cmake/HPX
         GPRAT_WITH_CUDA=OFF
 	ADD=64
-    elif [[ "$HOSTNAME" == "fj*" ]]; then
+    elif [[ $(uname -i) == "aarch64" ]]; then
 	spack load gcc@14.2.0
 	# Check if the gprat_cpu_arm environment exists
 	if spack env list | grep -q "gprat_cpu_arm"; then
@@ -55,6 +55,7 @@ if command -v spack &> /dev/null; then
 	    spack env activate gprat_cpu_arm
 	fi
 	GPRAT_WITH_CUDA=OFF
+	ADD=64
     elif [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n1" ]]; then
 	# Check if the gprat_gpu_clang environment exists
 	if spack env list | grep -q "gprat_gpu_clang"; then
