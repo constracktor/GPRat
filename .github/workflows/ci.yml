@@ -37,7 +37,6 @@ jobs:
       uses: spack/setup-spack@v2
       with:
         ref: releases/v0.23
-        buildcache: true  # Configure oci://ghcr.io/spack/github-actions-buildcache
         color: true       # Force color output (SPACK_COLOR=always)
         path: spack
 
@@ -95,8 +94,9 @@ jobs:
 
     # See: https://github.com/spack/setup-spack?tab=readme-ov-file#example-caching-your-own-binaries-for-public-repositories
     - name: Push packages and update index
-      run: |
-        spack -e . mirror set --push --oci-username ${{ github.actor }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
-        spack -e . buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
+      env:
+        GITHUB_USER: ${{ github.actor }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: spack -e . buildcache push --base-image ubuntu:24.04 --update-index local-buildcache
       # The owner must match the namespace in /spack-repo/environments/ci_env_settings.yaml.tpl
-      if: ${{ !cancelled() && github.repository_owner == 'SC-SGS' }}
+      if: ${{ !cancelled() && github.repository_owner == 'SC-SGS' && github.event_name != 'pull_request' }}
