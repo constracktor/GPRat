@@ -7,6 +7,8 @@ cmake.args = [
 	"--preset release-linux",
 	"-G Unix Makefiles",
         "-DGPRAT_BUILD_BINDINGS=ON",
+	"-DGPRAT_ENABLE_MKL=OFF",
+	"-DGPRAT_WITH_CUDA=OFF", 
 	"-DGPRAT_ENABLE_FORMAT_TARGETS=OFF",
    	"-DCMAKE_INSTALL_LIBDIR=gprat",
     	"-DCMAKE_INSTALL_BINDIR=gprat",
@@ -18,12 +20,12 @@ sdist.exclude = ["build*/", "dist/", "docs/html/", ".github", "examples", "insta
 # project specific metadata
 [project]
 name = "gprat"
-version = "0.1.0"
+version = "0.3.0"
 description = "GPRat - Gaussian Process Regression using Asynchronous Tasks"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Alexander Strack, Maksim Helmann" }
+    { name = "Alexander Strack, Maksim Helmann, Henrik Moellmann, Tim Niederhausen" }
 ]
 maintainers = [
     { name = "University of Stuttgart IPVS - SC", email = "sc@ipvs.uni-stuttgart.de" }
@@ -44,5 +46,5 @@ classifiers = [
 [project.urls]
 homepage = ""
 documentation = ""
-repository = "https://github.com/constracktor/GPRat.git"
+repository = "https://github.com/SC-SGS/GPRat.git"
 issues = ""
