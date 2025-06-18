@@ -13,12 +13,15 @@ class Gprat(CMakePackage, CudaPackage):#, ROCmPackage):
 
     homepage = ""
     url = ""
-    git = "https://github.com/constracktor/GPRat.git"
+    git = "https://github.com/SC-SGS/GPRat.git"
     maintainers("constracktor")
 
     license("MIT")
 
     version("main", branch="main")
+    #version("0.3.0", sha256="")
+    #version("0.2.0", sha256="")
+    #version("0.1.0", sha256="")
 
     depends_on("cxx", type="build")
 
@@ -32,24 +35,33 @@ class Gprat(CMakePackage, CudaPackage):#, ROCmPackage):
     )
 
     variant(
-        "cpu_blas",
-        default="mkl",
+        "blas",
+        default="openblas",
         description="Define CPU BLAS backend.",
+        values=("openblas", "mkl"),
+        multi=False,
     )
 
 
     variant("bindings", default=False, description="Build Python bindings")
-    #variant("examples", default=False, description="Build examples")
+
+    variant("examples", default=False, description="Build examples")
+
+    variant("format", default=False, description="Build formating targets")
+
 
     # Build dependencies
     depends_on("git", type="build")
     depends_on("cmake@3.23:", type="build")
-    depends_on("hpx@1.9.0: +static malloc=system")
+    depends_on("hpx@1.10.0: +static malloc=system networking=none max_cpu_count=256")
 
-    # Other dependecies
-    depends_on("intel-oneapi-mkl shared=false", when="cpu_blas=mkl")
+    # Backend dependecies
+    depends_on("intel-oneapi-mkl shared=false", when="blas=mkl")
+    depends_on("openblas fortran=false", when="blas=openblas")
 
-    depends_on("cuda", when="+cuda")
+    # CUDA
+    depends_on("cuda +allow-unsupported-compilers", when="+cuda")
+    depends_on("hpx@1.10.0: +cuda", when="+cuda")
 
     # ROCm not supported yet
     #depends_on("rocm", when="+rocm")
@@ -62,7 +74,17 @@ class Gprat(CMakePackage, CudaPackage):#, ROCmPackage):
 
         args += [
             self.define_from_variant("GPRAT_BUILD_BINDINGS", "bindings"),
-            #self.define_from_variant("GPRAT_ENABLE_EXAMPLES", "examples"),
+            self.define_from_variant("GPRAT_ENABLE_EXAMPLES", "examples"),
+            self.define_from_variant("GPRAT_ENABLE_FORMAT_TARGETS", "format"),
         ]
+        if self.spec.satisfies("+cuda"):
+            args += [self.define("GPRAT_WITH_CUDA", "ON")]
+        else:
+            args += [self.define("GPRAT_WITH_CUDA", "OFF")]
+
+        if self.spec.satisfies("blas=mkl"):
+            args += [self.define("GPRAT_ENABLE_MKL", "ON")]
+        else:
+            args += [self.define("GPRAT_ENABLE_MKL", "OFF")]
 
         return args
