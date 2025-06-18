@@ -12,9 +12,8 @@ pip install build
 pip install twine
 
 # Load required libs
-spack load gcc@14.2.0
+module load gcc/14.2.0
 export CXX=$(which g++)
-spack load cmake
 spack env activate gprat_cpu_gcc
 
 # Test: Manually install GPRat to pip
