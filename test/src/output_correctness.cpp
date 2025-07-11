@@ -1,13 +1,5 @@
-// References /////////////////////////////////////////////////////////////////////////////////////
-
-// [1]
-// https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
-
-// Includes ///////////////////////////////////////////////////////////////////////////////////////
-
-// GPRat
-#include "gprat_c.hpp"
-#include "utils_c.hpp"
+#include "gprat/gprat_c.hpp"
+#include "gprat/utils_c.hpp"
 
 // Catch2
 #include <catch2/catch_test_macros.hpp>

@@ -1,6 +1,5 @@
-// GPRat
-#include "gprat_c.hpp"
-#include "utils_c.hpp"
+#include "gprat/gprat_c.hpp"
+#include "gprat/utils_c.hpp"
 
 // Boost
 #include <boost/json/src.hpp>

@@ -1,4 +1,4 @@
-#include "gprat_c.hpp"
+#include "gprat/gprat_c.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
