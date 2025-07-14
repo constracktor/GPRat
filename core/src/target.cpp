@@ -1,4 +1,4 @@
-#include "target.hpp"
+#include "gprat/target.hpp"
 
 #include <iostream>
 #include <vector>
@@ -12,12 +12,9 @@ using hpx::cuda::experimental::check_cuda_error;
 #include "gpu/sycl/sycl_utils.hpp"
 #endif
 
-namespace gprat
-{
+GPRAT_NS_BEGIN
 
-// CPU ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-CPU::CPU() { }
+CPU::CPU() = default;
 
 bool CPU::is_cpu() { return true; }
 
@@ -371,4 +368,4 @@ int gpu_count()
 #endif
 }
 
-}  // namespace gprat
+GPRAT_NS_END

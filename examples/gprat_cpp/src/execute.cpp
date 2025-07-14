@@ -1,10 +1,6 @@
 #include "gprat/gprat_c.hpp"
 #include "gprat/utils_c.hpp"
 
-// Boost
-#include <boost/json/src.hpp>
-
-// Standard library
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -258,24 +254,8 @@ int main(int argc, char *argv[])
         const std::string content(iterator_type{ ifs }, iterator_type{});
         settings = boost::json::value_to<gprat::example::GpratSettings>(boost::json::parse(content));
 
-        // Resolve data file paths relative to the config file's directory
-        const std::filesystem::path config_dir = std::filesystem::path(GPRAT_CPP_CONFIG_PATH).parent_path();
-        auto resolve = [&](std::string &p)
-        {
-            if (!std::filesystem::path(p).is_absolute())
-            {
-                p = (config_dir / p).lexically_normal().string();
-            }
-        };
-        resolve(settings.train_in_file);
-        resolve(settings.train_out_file);
-        resolve(settings.test_in_file);
-    }
-    else
-    {
-        std::cerr << "Could not read config file. Please make sure config.json is present and valid.\n";
-        return 1;
-    }
+    bool use_gpu =
+        gprat::compiled_with_cuda() && gprat::gpu_count() > 0 && argc > 1 && std::strcmp(argv[1], "--use_gpu") == 0;
 
     if (argc > 1 && std::strcmp(argv[1], "--use-gpu") == 0)
     {
@@ -341,7 +321,12 @@ int main(int argc, char *argv[])
             for (int train_size = training_baseline; train_size <= settings.train_size_end;
                  train_size *= settings.train_size_step)
             {
-                int n_test = settings.scale_test_with_train ? train_size : settings.test_size;
+                // Compute tile sizes and number of predict tiles
+                int tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
+                auto result = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+                /////////////////////
+                ///// hyperparams
+                gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
 
                 // Loop over repetitions
                 for (int l = 0; l < settings.loop; l++)
@@ -353,8 +338,8 @@ int main(int argc, char *argv[])
                     gprat::GP_data training_output(settings.train_out_file, train_size, settings.n_reg);
                     gprat::GP_data test_input(settings.test_in_file, n_test, settings.n_reg);
 
-                    gprat::example::Runtimes runtimes;
-                    std::vector<bool> trainable = { true, true, true };
+                    // Initialize HPX with the new arguments, don't run hpx_main
+                    gprat::start_hpx_runtime(new_argc, new_argv);
 
                     auto start_total = std::chrono::high_resolution_clock::now();
 
@@ -393,14 +378,63 @@ int main(int argc, char *argv[])
                         target,
                         core,
                         n_tiles,
-                        train_size,
-                        n_test,
-                        settings.n_reg,
-                        settings.opt_iter,
-                        total_time,
-                        runtimes,
-                        l);
+                        tile_size,
+                        n_reg,
+                        { 1.0, 1.0, 0.1 },
+                        trainable,
+                        0,
+                        2);
+                    auto end_init = std::chrono::high_resolution_clock::now();
+                    init_time = end_init - start_init;
+
+                    // Initialize HPX with the new arguments, don't run hpx_main
+                    gprat::start_hpx_runtime(new_argc, new_argv);
+
+                    auto start_cholesky = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> choleksy_gpu = gp_gpu.cholesky();
+                    auto end_cholesky = std::chrono::high_resolution_clock::now();
+                    cholesky_time = end_cholesky - start_cholesky;
+
+                    // NOTE: optimization is not implemented for GPU
+                    opt_time = std::chrono::seconds(-1);
+
+                    auto start_pred_uncer = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> sum_gpu =
+                        gp_gpu.predict_with_uncertainty(test_input.data, result.first, result.second);
+                    auto end_pred_uncer = std::chrono::high_resolution_clock::now();
+                    pred_uncer_time = end_pred_uncer - start_pred_uncer;
+
+                    auto start_pred_full_cov = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> full_gpu =
+                        gp_gpu.predict_with_full_cov(test_input.data, result.first, result.second);
+                    auto end_pred_full_cov = std::chrono::high_resolution_clock::now();
+                    pred_full_cov_time = end_pred_full_cov - start_pred_full_cov;
+
+                    auto start_pred = std::chrono::high_resolution_clock::now();
+                    std::vector<double> pred_gpu = gp_gpu.predict(test_input.data, result.first, result.second);
+                    auto end_pred = std::chrono::high_resolution_clock::now();
+                    pred_time = end_pred - start_pred;
                 }
+
+                // Stop the HPX runtime
+                gprat::stop_hpx_runtime();
+
+                auto end_total = std::chrono::high_resolution_clock::now();
+                auto total_time = end_total - start_total;
+
+                // Save parameters and times to a .txt file with a header
+                std::ofstream outfile("../output.csv", std::ios::app);  // Append mode
+                if (outfile.tellp() == 0)
+                {
+                    // If file is empty, write the header
+                    outfile << "Target,Cores,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,Cholesky_"
+                               "time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
+                }
+                outfile << target << "," << core << "," << n_train << "," << n_test << "," << n_tiles << "," << n_reg
+                        << "," << OPT_ITER << "," << total_time.count() << "," << init_time.count() << ","
+                        << cholesky_time.count() << "," << opt_time.count() << "," << pred_uncer_time.count() << ","
+                        << pred_full_cov_time.count() << "," << pred_time.count() << "," << l << "\n";
+                outfile.close();
             }
         }
 

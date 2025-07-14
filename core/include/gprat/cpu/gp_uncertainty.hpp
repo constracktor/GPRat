@@ -1,8 +1,14 @@
-#ifndef CPU_GP_UNCERTAINTY_H
-#define CPU_GP_UNCERTAINTY_H
+#ifndef GPRAT_CPU_GP_UNCERTAINTY_HPP
+#define GPRAT_CPU_GP_UNCERTAINTY_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
 
 #include <hpx/future.hpp>
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -19,5 +25,7 @@ namespace cpu
 hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M);
 
 }  // end of namespace cpu
+
+GPRAT_NS_END
 
 #endif  // end of CPU_GP_UNCERTAINTY_H

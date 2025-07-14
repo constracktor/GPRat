@@ -1,11 +1,18 @@
-#ifndef GPU_GP_OPTIMIZER_H
-#define GPU_GP_OPTIMIZER_H
+#ifndef GPRAT_GPU_GP_OPTIMIZER_HPP
+#define GPRAT_GPU_GP_OPTIMIZER_HPP
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
-#include "target.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/gp_kernels.hpp"
+#include "gprat/target.hpp"
+
 #include <hpx/future.hpp>
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -56,7 +63,7 @@ double compute_sigmoid(const double parameter);
 double compute_covariance_distance(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   gprat_hyper::SEKParams sek_params,
+                                   SEKParams sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input);
 
@@ -77,7 +84,7 @@ std::vector<double> gen_tile_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    gprat_hyper::SEKParams sek_params,
+    SEKParams sek_params,
     const std::vector<double> &input);
 
 /**
@@ -96,7 +103,7 @@ std::vector<double> gen_tile_covariance_with_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    gprat_hyper::SEKParams sek_params,
+    SEKParams sek_params,
     const std::vector<double> &cov_dists);
 
 /**
@@ -116,7 +123,7 @@ gen_tile_grad_v(std::size_t row,
                 std::size_t col,
                 std::size_t N,
                 std::size_t n_regressors,
-                gprat_hyper::SEKParams sek_params,
+                SEKParams sek_params,
                 const std::vector<double> &cov_dists);
 
 /**
@@ -136,7 +143,7 @@ gen_tile_grad_l(std::size_t row,
                 std::size_t col,
                 std::size_t N,
                 std::size_t n_regressors,
-                gprat_hyper::SEKParams sek_params,
+                SEKParams sek_params,
                 const std::vector<double> &cov_dists);
 
 /**
@@ -159,7 +166,7 @@ std::vector<double> gen_tile_grad_v_trans(std::size_t N, const std::vector<doubl
  * @return A quadratic tile of the derivative of l of size N x N
  */
 hpx::shared_future<double *>
-gen_tile_grad_l_trans(std::size_t N, const hpx::shared_future<double *> f_grad_l_tile, gprat::CUDA_GPU &gpu);
+gen_tile_grad_l_trans(std::size_t N, const hpx::shared_future<double *> f_grad_l_tile, CUDA_GPU &gpu);
 
 /**
  * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
@@ -187,7 +194,7 @@ compute_loss(const hpx::shared_future<double *> &K_diag_tile,
              const hpx::shared_future<double *> &alpha_tile,
              const hpx::shared_future<double *> &y_tile,
              std::size_t N,
-             gprat::CUDA_GPU &gpu);
+             CUDA_GPU &gpu);
 
 /**
  * @brief Add up negative-log likelihood loss for all tiles.
@@ -260,8 +267,8 @@ double update_second_moment(const double &gradient, double v_T, const double &be
  */
 hpx::shared_future<double>
 update_param(const double unconstrained_hyperparam,
-             gprat_hyper::SEKParams sek_params,
-             gprat_hyper::AdamParams adam_params,
+             SEKParams sek_params,
+             AdamParams adam_params,
              double m_T,
              double v_T,
              const std::vector<double> beta1_T,
@@ -319,7 +326,7 @@ sum_gradright(const std::vector<double> &inter_alpha, const std::vector<double> 
  */
 double sum_noise_gradleft(const std::vector<double> &ft_invK,
                           double grad,
-                          gprat_hyper::SEKParams sek_params,
+                          SEKParams sek_params,
                           std::size_t N,
                           std::size_t n_tiles);
 
@@ -334,8 +341,10 @@ double sum_noise_gradleft(const std::vector<double> &ft_invK,
  * @return The sum of the noise gradient
  */
 double
-sum_noise_gradright(const std::vector<double> &alpha, double grad, gprat_hyper::SEKParams sek_params, std::size_t N);
+sum_noise_gradright(const std::vector<double> &alpha, double grad, SEKParams sek_params, std::size_t N);
 
 }  // end of namespace gpu
 
-#endif  // end of GPU_GP_OPTIMIZER_H
+GPRAT_NS_END
+
+#endif

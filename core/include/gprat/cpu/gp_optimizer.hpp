@@ -1,9 +1,15 @@
-#ifndef CPU_GP_OPTIMIZER_H
-#define CPU_GP_OPTIMIZER_H
+#ifndef GPRAT_CPU_GP_OPTIMIZER_H
+#define GPRAT_CPU_GP_OPTIMIZER_H
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/gp_kernels.hpp"
+
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -54,7 +60,7 @@ double compute_sigmoid(double parameter);
 double compute_covariance_distance(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   const gprat_hyper::SEKParams &sek_params,
+                                   const SEKParams &sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input);
 
@@ -75,7 +81,7 @@ std::vector<double> gen_tile_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -90,11 +96,7 @@ std::vector<double> gen_tile_distance(
  * @return A quadratic tile of the covariance matrix of size N x N
  */
 std::vector<double> gen_tile_covariance_with_distance(
-    std::size_t row,
-    std::size_t col,
-    std::size_t N,
-    const gprat_hyper::SEKParams &sek_params,
-    const std::vector<double> &distance);
+    std::size_t row, std::size_t col, std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
 
 /**
  * @brief  Generate a derivative tile w.r.t. vertical_lengthscale v
@@ -105,8 +107,7 @@ std::vector<double> gen_tile_covariance_with_distance(
  *
  * @return A quadratic tile of the derivative of v of size N x N
  */
-std::vector<double>
-gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance);
+std::vector<double> gen_tile_grad_v(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
 
 /**
  * @brief  Generate a derivative tile w.r.t. lengthscale l
@@ -117,8 +118,7 @@ gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
  *
  * @return A quadratic tile of the derivative of l of size N x N
  */
-std::vector<double>
-gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance);
+std::vector<double> gen_tile_grad_l(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
 
 /**
  * @brief Update biased first raw moment estimate: m_T+1 = beta_1 * m_T + (1 - beta_1) * g_T.
@@ -153,11 +153,8 @@ double update_second_moment(double gradient, double v_T, double beta_2);
  *
  * @return The updated hyperparameter
  */
-double adam_step(const double unconstrained_hyperparam,
-                 const gprat_hyper::AdamParams &adam_params,
-                 double m_T,
-                 double v_T,
-                 std::size_t iter);
+double adam_step(
+    const double unconstrained_hyperparam, const AdamParams &adam_params, double m_T, double v_T, std::size_t iter);
 
 /**
  * @brief Compute negative-log likelihood on one tile.
@@ -230,4 +227,6 @@ double compute_trace_diag(const std::vector<double> &tile, double trace, std::si
 
 }  // end of namespace cpu
 
-#endif  // end of CPU_GP_OPTIMIZER_H
+GPRAT_NS_END
+
+#endif

@@ -1,4 +1,4 @@
-#include "cpu/adapter_cblas_fp64.hpp"
+#include "gprat/cpu/adapter_cblas_fp64.hpp"
 
 #ifdef GPRAT_ENABLE_MKL
 // MKL CBLAS and LAPACKE
@@ -8,6 +8,8 @@
 #include "cblas.h"
 #include "lapacke.h"
 #endif
+
+GPRAT_NS_BEGIN
 
 // BLAS level 3 operations
 
@@ -192,3 +194,5 @@ double dot(std::vector<double> a, std::vector<double> b, const int N)
     // DOT: a * b
     return cblas_ddot(N, a.data(), 1, b.data(), 1);
 }
+
+GPRAT_NS_END

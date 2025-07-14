@@ -1,10 +1,16 @@
-#ifndef GPU_GP_ALGORITHMS_H
-#define GPU_GP_ALGORITHMS_H
+#ifndef GPRAT_GPU_GP_ALGORITHMS_HPP
+#define GPRAT_GPU_GP_ALGORITHMS_HPP
 
-#include "gp_kernels.hpp"
-#include "target.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/gp_kernels.hpp"
+#include "gprat/target.hpp"
 #include <hpx/future.hpp>
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -28,8 +34,8 @@ double *gen_tile_covariance(const double *d_input,
                             const std::size_t tile_column,
                             const std::size_t n_tile_size,
                             const std::size_t n_regressors,
-                            const gprat_hyper::SEKParams sek_params,
-                            gprat::CUDA_GPU &gpu);
+                            const SEKParams sek_params,
+                            CUDA_GPU &gpu);
 
 /**
  * @brief Generate the diagonal of a diagonal tile in the prior covariance matrix
@@ -51,8 +57,8 @@ double *gen_tile_prior_covariance(
     const std::size_t tile_column,
     const std::size_t n_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile of the cross-covariance matrix
@@ -77,8 +83,8 @@ double *gen_tile_cross_covariance(
     const std::size_t n_row_tile_size,
     const std::size_t n_column_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Transpose a tile of size n_row_tile_size x n_column_tile_size
@@ -92,7 +98,7 @@ double *gen_tile_cross_covariance(
 hpx::shared_future<double *> gen_tile_transpose(std::size_t n_row_tile_size,
                                                 std::size_t n_column_tile_size,
                                                 const hpx::shared_future<double *> f_tile,
-                                                gprat::CUDA_GPU &gpu);
+                                                CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile of the output data
@@ -104,7 +110,7 @@ hpx::shared_future<double *> gen_tile_transpose(std::size_t n_row_tile_size,
  * @return A tile of the output data of size n_tile_size
  */
 double *
-gen_tile_output(const std::size_t row, const std::size_t n_tile_size, const double *d_output, gprat::CUDA_GPU &gpu);
+gen_tile_output(const std::size_t row, const std::size_t n_tile_size, const double *d_output, CUDA_GPU &gpu);
 
 /**
  * @brief Compute the L2-error norm over all tiles and elements
@@ -126,7 +132,7 @@ double compute_error_norm(const std::size_t n_tiles,
  *
  * @return A tile filled with zeros of size N
  */
-double *gen_tile_zeros(std::size_t n_tile_size, gprat::CUDA_GPU &gpu);
+double *gen_tile_zeros(std::size_t n_tile_size, CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled covariance matrix on the device given the training
@@ -144,8 +150,8 @@ std::vector<hpx::shared_future<double *>> assemble_tiled_covariance_matrix(
     const std::size_t n_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled alpha vector on the device given the training
@@ -159,7 +165,7 @@ std::vector<hpx::shared_future<double *>> assemble_tiled_covariance_matrix(
  * @return A tiled alpha vector of size n_tiles x n_tile_size
  */
 std::vector<hpx::shared_future<double *>> assemble_alpha_tiles(
-    const double *d_output, const std::size_t n_tiles, const std::size_t n_tile_size, gprat::CUDA_GPU &gpu);
+    const double *d_output, const std::size_t n_tiles, const std::size_t n_tile_size, CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled cross covariance matrix on the device given the
@@ -185,8 +191,8 @@ std::vector<hpx::shared_future<double *>> assemble_cross_covariance_tiles(
     const std::size_t m_tile_size,
     const std::size_t n_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Allocates a tiled vector on the device and initializes it with zeros.
@@ -198,7 +204,7 @@ std::vector<hpx::shared_future<double *>> assemble_cross_covariance_tiles(
  * @return A tiled vector of size n_tiles x n_tile_size with zeros
  */
 std::vector<hpx::shared_future<double *>>
-assemble_tiles_with_zeros(std::size_t n_tile_size, std::size_t n_tiles, gprat::CUDA_GPU &gpu);
+assemble_tiles_with_zeros(std::size_t n_tile_size, std::size_t n_tiles, CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled prior covariance matrix on the device given the
@@ -218,8 +224,8 @@ std::vector<hpx::shared_future<double *>> assemble_prior_K_tiles(
     const std::size_t m_tiles,
     const std::size_t m_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the posterior covariance matrix.
@@ -238,8 +244,8 @@ std::vector<hpx::shared_future<double *>> assemble_prior_K_tiles_full(
     const std::size_t m_tiles,
     const std::size_t m_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
-    gprat::CUDA_GPU &gpu);
+    const SEKParams sek_params,
+    CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled transpose cross covariance matrix on the device
@@ -261,7 +267,7 @@ std::vector<hpx::shared_future<double *>> assemble_t_cross_covariance_tiles(
     const std::size_t m_tiles,
     const std::size_t n_tile_size,
     const std::size_t m_tile_size,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the output vector on the device given the training output
@@ -272,7 +278,7 @@ std::vector<hpx::shared_future<double *>> assemble_t_cross_covariance_tiles(
  * @param gpu GPU target for computations
  */
 std::vector<hpx::shared_future<double *>> assemble_y_tiles(
-    const double *d_training_output, const std::size_t n_tiles, const std::size_t n_tile_size, gprat::CUDA_GPU &gpu);
+    const double *d_training_output, const std::size_t n_tiles, const std::size_t n_tile_size, CUDA_GPU &gpu);
 
 /**
  * @brief Allocates the tiled covariance matrix on the device given the training
@@ -286,7 +292,7 @@ std::vector<hpx::shared_future<double *>> assemble_y_tiles(
 std::vector<double> copy_tiled_vector_to_host_vector(std::vector<hpx::shared_future<double *>> &d_tiles,
                                                      std::size_t n_tile_size,
                                                      std::size_t n_tiles,
-                                                     gprat::CUDA_GPU &gpu);
+                                                     CUDA_GPU &gpu);
 
 /**
  * @brief Moves lower triangular tiles of the covariance matrix to the host.
@@ -302,7 +308,7 @@ std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
     const std::vector<hpx::shared_future<double *>> &d_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Frees the device memory of the lower triangular tiles of the covariance matrix.
@@ -327,4 +333,6 @@ void free_full_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_t
 
 }  // end of namespace gpu
 
-#endif  // end of GPU_GP_ALGORITHMS_H
+GPRAT_NS_END
+
+#endif

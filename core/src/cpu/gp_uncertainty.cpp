@@ -1,4 +1,6 @@
-#include "cpu/gp_uncertainty.hpp"
+#include "gprat/cpu/gp_uncertainty.hpp"
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -19,3 +21,5 @@ hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<s
 }
 
 }  // end of namespace cpu
+
+GPRAT_NS_END

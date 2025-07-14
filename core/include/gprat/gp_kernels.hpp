@@ -1,12 +1,14 @@
-#ifndef GP_KERNELS_H
-#define GP_KERNELS_H
+#ifndef GPRAT_GPKERNELS_HPP
+#define GPRAT_GPKERNELS_HPP
 
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include <cstddef>
 #include <vector>
 
-// #include <cstddef>
-
-namespace gprat_hyper
-{
+GPRAT_NS_BEGIN
 
 /**
  * @brief Squared Exponential Kernel Parameters
@@ -77,6 +79,6 @@ struct SEKParams
     const double &get_param(std::size_t index) const;
 };
 
-}  // namespace gprat_hyper
+GPRAT_NS_END
 
-#endif  // end of GP_KERNELS_H
+#endif

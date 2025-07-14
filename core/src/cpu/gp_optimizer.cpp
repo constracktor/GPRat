@@ -1,8 +1,11 @@
-#include "cpu/gp_optimizer.hpp"
+#include "gprat/cpu/gp_optimizer.hpp"
 
-#include "cpu/adapter_cblas_fp64.hpp"
+#include "gprat/cpu/adapter_cblas_fp64.hpp"
+
 #include <numbers>
 #include <numeric>
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -40,7 +43,7 @@ double compute_sigmoid(double parameter) { return 1.0 / (1.0 + exp(-parameter));
 double compute_covariance_distance(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   const gprat_hyper::SEKParams &sek_params,
+                                   const SEKParams &sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input)
 {
@@ -61,7 +64,7 @@ std::vector<double> gen_tile_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
@@ -82,11 +85,7 @@ std::vector<double> gen_tile_distance(
 }
 
 std::vector<double> gen_tile_covariance_with_distance(
-    std::size_t row,
-    std::size_t col,
-    std::size_t N,
-    const gprat_hyper::SEKParams &sek_params,
-    const std::vector<double> &distance)
+    std::size_t row, std::size_t col, std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance)
 {
     std::size_t i_global, j_global;
     double covariance;
@@ -112,8 +111,7 @@ std::vector<double> gen_tile_covariance_with_distance(
     return tile;
 }
 
-std::vector<double>
-gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance)
+std::vector<double> gen_tile_grad_v(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance)
 {
     // Preallocate required memory
     std::vector<double> tile;
@@ -130,8 +128,7 @@ gen_tile_grad_v(std::size_t N, const gprat_hyper::SEKParams &sek_params, const s
     return tile;
 }
 
-std::vector<double>
-gen_tile_grad_l(std::size_t N, const gprat_hyper::SEKParams &sek_params, const std::vector<double> &distance)
+std::vector<double> gen_tile_grad_l(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance)
 {
     // Preallocate required memory
     std::vector<double> tile;
@@ -161,11 +158,8 @@ double update_second_moment(double gradient, double v_T, double beta_2)
     return beta_2 * v_T + (1.0 - beta_2) * gradient * gradient;
 }
 
-double adam_step(const double unconstrained_hyperparam,
-                 const gprat_hyper::AdamParams &adam_params,
-                 double m_T,
-                 double v_T,
-                 std::size_t iter)
+double adam_step(
+    const double unconstrained_hyperparam, const AdamParams &adam_params, double m_T, double v_T, std::size_t iter)
 {
     // Compute decay rate
     double beta1_T = pow(adam_params.beta1, static_cast<double>(iter + 1));
@@ -245,3 +239,5 @@ double compute_trace_diag(const std::vector<double> &tile, double trace, std::si
 }
 
 }  // end of namespace cpu
+
+GPRAT_NS_END

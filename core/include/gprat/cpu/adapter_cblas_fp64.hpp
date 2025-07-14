@@ -1,14 +1,19 @@
-#ifndef CPU_ADAPTER_CBLAS_FP64_H
-#define CPU_ADAPTER_CBLAS_FP64_H
+#ifndef GPRAT_CPU_ADAPTER_CBLAS_FP64_HPP
+#define GPRAT_CPU_ADAPTER_CBLAS_FP64_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
 
 #include <hpx/future.hpp>
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 using vector_future = hpx::shared_future<std::vector<double>>;
 using vector = std::vector<double>;
 
 // Constants that are compatible with CBLAS
-
 typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
 
 typedef enum BLAS_SIDE { Blas_left = 141, Blas_right = 142 } BLAS_SIDE;
@@ -147,4 +152,6 @@ vector axpy(vector_future f_y, vector_future f_x, const int N);
  */
 double dot(std::vector<double> a, std::vector<double> b, const int N);
 
-#endif  // end of CPU_ADAPTER_CBLAS_FP64_H
+GPRAT_NS_END
+
+#endif

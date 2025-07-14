@@ -1,4 +1,6 @@
-#include "gpu/cuda/adapter_cublas.cuh"
+#include "gprat/gpu/adapter_cublas.cuh"
+
+GPRAT_NS_BEGIN
 
 // frequently used names
 using hpx::cuda::experimental::check_cuda_error;
@@ -428,3 +430,5 @@ dot(cublasHandle_t cublas,
 
     return hpx::make_ready_future(result);
 }
+
+GPRAT_NS_END

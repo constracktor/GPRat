@@ -1,8 +1,15 @@
-#ifndef CPU_ADAPTER_CBLAS_FP32_H
-#define CPU_ADAPTER_CBLAS_FP32_H
+#ifndef GPRAT_CPU_ADAPTER_CBLAS_FP32_HPP
+#define GPRAT_CPU_ADAPTER_CBLAS_FP32_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
 
 #include <hpx/future.hpp>
 #include <vector>
+
+GPRAT_NS_BEGIN
+
 using vector_future = hpx::shared_future<std::vector<float>>;
 using vector = std::vector<float>;
 
@@ -145,4 +152,6 @@ vector axpy(vector_future f_y, vector_future f_x, const int N);
  */
 float dot(std::vector<float> a, std::vector<float> b, const int N);
 
-#endif  // end of CPU_ADAPTER_CBLAS_FP32_H
+GPRAT_NS_END
+
+#endif

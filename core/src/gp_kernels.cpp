@@ -1,13 +1,13 @@
-#include "gp_kernels.hpp"
+#include "gprat/gp_kernels.hpp"
 
 #include <stdexcept>
 
-namespace gprat_hyper
-{
-SEKParams::SEKParams(double lengthscale_, double vertical_lengthscale_, double noise_variance_) :
-    lengthscale(lengthscale_),
-    vertical_lengthscale(vertical_lengthscale_),
-    noise_variance(noise_variance_)
+GPRAT_NS_BEGIN
+
+SEKParams::SEKParams(double lengthscale, double vertical_lengthscale, double noise_variance) :
+    lengthscale(lengthscale),
+    vertical_lengthscale(vertical_lengthscale),
+    noise_variance(noise_variance)
 {
     m_T.resize(this->size());
     w_T.resize(this->size());
@@ -51,4 +51,5 @@ const double &SEKParams::get_param(std::size_t index) const
     }
     throw std::invalid_argument("Get Invalid param_idx");
 }
-}  // namespace gprat_hyper
+
+GPRAT_NS_END

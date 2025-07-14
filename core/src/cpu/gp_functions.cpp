@@ -1,10 +1,12 @@
-#include "cpu/gp_functions.hpp"
+#include "gprat/cpu/gp_functions.hpp"
 
-#include "apex_utils.hpp"
-#include "cpu/gp_algorithms.hpp"
-#include "cpu/gp_optimizer.hpp"
-#include "cpu/tiled_algorithms.hpp"
+#include "gprat/cpu/gp_algorithms.hpp"
+#include "gprat/cpu/gp_optimizer.hpp"
+#include "gprat/cpu/tiled_algorithms.hpp"
+
 #include <hpx/future.hpp>
+
+GPRAT_NS_BEGIN
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -16,7 +18,7 @@ namespace cpu
 // PREDICT
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors)
@@ -81,7 +83,7 @@ std::vector<double>
 predict(const std::vector<double> &training_input,
         const std::vector<double> &training_output,
         const std::vector<double> &test_input,
-        const gprat_hyper::SEKParams &sek_params,
+        const SEKParams &sek_params,
         int n_tiles,
         int n_tile_size,
         int m_tiles,
@@ -219,7 +221,7 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -453,7 +455,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -699,7 +701,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
 // OPTIMIZATION
 double compute_loss(const std::vector<double> &training_input,
                     const std::vector<double> &training_output,
-                    const gprat_hyper::SEKParams &sek_params,
+                    const SEKParams &sek_params,
                     int n_tiles,
                     int n_tile_size,
                     int n_regressors)
@@ -786,8 +788,8 @@ optimize(const std::vector<double> &training_input,
          int n_tiles,
          int n_tile_size,
          int n_regressors,
-         const gprat_hyper::AdamParams &adam_params,
-         gprat_hyper::SEKParams &sek_params,
+         const AdamParams &adam_params,
+         SEKParams &sek_params,
          std::vector<bool> trainable_params)
 {
     /*
@@ -1034,8 +1036,8 @@ double optimize_step(const std::vector<double> &training_input,
                      int n_tiles,
                      int n_tile_size,
                      int n_regressors,
-                     gprat_hyper::AdamParams &adam_params,
-                     gprat_hyper::SEKParams &sek_params,
+                     AdamParams &adam_params,
+                     SEKParams &sek_params,
                      std::vector<bool> trainable_params,
                      int iter)
 {
@@ -1269,3 +1271,5 @@ double optimize_step(const std::vector<double> &training_input,
 }
 
 }  // end of namespace cpu
+
+GPRAT_NS_END

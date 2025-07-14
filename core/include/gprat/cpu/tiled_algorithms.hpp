@@ -1,9 +1,15 @@
-#ifndef CPU_TILED_ALGORITHMS_H
-#define CPU_TILED_ALGORITHMS_H
+#ifndef GPRAT_CPU_TILED_ALGORITHMS_H
+#define GPRAT_CPU_TILED_ALGORITHMS_H
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/gp_kernels.hpp"
+
 #include <hpx/future.hpp>
+
+GPRAT_NS_BEGIN
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -171,8 +177,8 @@ void update_hyperparameter_tiled(
     const Tiled_matrix &ft_invK,
     const Tiled_matrix &ft_gradK_param,
     const Tiled_vector &ft_alpha,
-    const gprat_hyper::AdamParams &adam_params,
-    gprat_hyper::SEKParams &sek_params,
+    const AdamParams &adam_params,
+    SEKParams &sek_params,
     int N,
     std::size_t n_tiles,
     std::size_t iter,
@@ -180,4 +186,6 @@ void update_hyperparameter_tiled(
 
 }  // end of namespace cpu
 
-#endif  // end of CPU_TILED_ALGORITHMS_H
+GPRAT_NS_END
+
+#endif

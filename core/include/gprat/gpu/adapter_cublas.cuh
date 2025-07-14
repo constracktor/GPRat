@@ -1,10 +1,18 @@
-#ifndef ADAPTER_CUBLAS_H
-#define ADAPTER_CUBLAS_H
+#ifndef GRRAT_GPU_ADAPTER_CUBLAS_HPP
+#define GPRAT_GPU_ADAPTER_CUBLAS_HPP
 
-#include <cusolverDn.h>
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/target.hpp"
+
 #include <hpx/future.hpp>
 #include <hpx/modules/async_cuda.hpp>
-#include <target.hpp>
+
+#include <cusolverDn.h>
+
+GPRAT_NS_BEGIN
 
 // Constants, compatible with cuBLAS
 
@@ -262,4 +270,6 @@ inline cublasSideMode_t opposite(cublasSideMode_t side)
     return (side == CUBLAS_SIDE_LEFT) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT;
 }
 
-#endif  // end of ADAPTER_CUBLAS_H
+GPRAT_NS_END
+
+#endif

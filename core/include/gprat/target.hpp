@@ -1,5 +1,9 @@
-#ifndef TARGET_H
-#define TARGET_H
+#ifndef GPRAT_TARGET_H
+#define GPRAT_TARGET_H
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
 
 #include <string>
 
@@ -12,8 +16,8 @@
 #include <sycl/sycl.hpp>
 #endif
 
-namespace gprat
-{
+GPRAT_NS_BEGIN
+
 struct DeviceParameters
 {
     std::size_t id;
@@ -341,6 +345,6 @@ void print_available_gpus();
  */
 int gpu_count();
 
-}  // namespace gprat
+GPRAT_NS_END
 
-#endif  // end of TARGET_H
+#endif

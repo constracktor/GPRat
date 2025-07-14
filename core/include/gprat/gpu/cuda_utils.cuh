@@ -1,5 +1,10 @@
-#ifndef CUDA_UTILS_H
-#define CUDA_UTILS_H
+#ifndef GPRAT_CUDA_UTILS_HPP
+#define GPRAT_CUDA_UTILS_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
+#include "gprat/target.hpp"
 
 #include "target.hpp"
 #include <cublas_v2.h>
@@ -9,9 +14,9 @@
 #include <hpx/async_cuda/cuda_exception.hpp>
 #include <vector>
 
-#define BLOCK_SIZE 16
+GPRAT_NS_BEGIN
 
-using hpx::cuda::experimental::check_cuda_error;
+#define BLOCK_SIZE 16
 
 /**
  * @brief Copies a vector from the host to the device using the next CUDA stream
@@ -25,8 +30,9 @@ using hpx::cuda::experimental::check_cuda_error;
  *
  * @return A pointer to the copied vector on the device
  */
-inline double *copy_to_device(const std::vector<double> &h_vector, gprat::CUDA_GPU &gpu)
+inline double *copy_to_device(const std::vector<double> &h_vector, CUDA_GPU &gpu)
 {
+    using hpx::cuda::experimental::check_cuda_error;
     double *d_vector;
     check_cuda_error(cudaMalloc(&d_vector, h_vector.size() * sizeof(double)));
     cudaStream_t stream = gpu.next_stream();
@@ -41,6 +47,7 @@ inline double *copy_to_device(const std::vector<double> &h_vector, gprat::CUDA_G
  */
 inline cusolverDnHandle_t create_cusolver_handle()
 {
+    using hpx::cuda::experimental::check_cuda_error;
     cusolverDnHandle_t handle;
     cusolverDnCreate(&handle);
     return handle;
@@ -60,10 +67,13 @@ inline void destroy(cusolverDnHandle_t handle) { cusolverDnDestroy(handle); }
  */
 inline void free(std::vector<hpx::shared_future<double *>> &vector)
 {
+    using hpx::cuda::experimental::check_cuda_error;
     for (auto &ptr : vector)
     {
         check_cuda_error(cudaFree(ptr.get()));
     }
 }
 
-#endif  // end of CUDA_UTILS_H
+GPRAT_NS_END
+
+#endif

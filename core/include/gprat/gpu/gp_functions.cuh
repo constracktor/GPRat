@@ -1,9 +1,15 @@
 #ifndef GPU_GP_FUNCTIONS_H
 #define GPU_GP_FUNCTIONS_H
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
-#include "target.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/gp_kernels.hpp"
+#include "gprat/target.hpp"
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -28,13 +34,13 @@ std::vector<double>
 predict(const std::vector<double> &training_input,
         const std::vector<double> &training_output,
         const std::vector<double> &test_input,
-        const gprat_hyper::SEKParams &sek_params,
+        const SEKParams &sek_params,
         int n_tiles,
         int n_tile_size,
         int m_tiles,
         int m_tile_size,
         int n_regressors,
-        gprat::CUDA_GPU &gpu);
+        CUDA_GPU &gpu);
 
 /**
  * @brief Compute the predictions with uncertainties.
@@ -56,13 +62,13 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
     int m_tile_size,
     int n_regressors,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Compute the predictions with full covariance matrix.
@@ -84,13 +90,13 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_data,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
     int m_tile_size,
     int n_regressors,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Compute loss for given data and Gaussian process model
@@ -107,11 +113,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
  */
 double compute_loss(const std::vector<double> &training_input,
                     const std::vector<double> &training_output,
-                    const gprat_hyper::SEKParams &sek_params,
+                    const SEKParams &sek_params,
                     int n_tiles,
                     int n_tile_size,
                     int n_regressors,
-                    gprat::CUDA_GPU &gpu);
+                    CUDA_GPU &gpu);
 
 /**
  * @brief Perform optimization for a given number of iterations
@@ -137,10 +143,10 @@ optimize(const std::vector<double> &training_input,
          int n_tiles,
          int n_tile_size,
          int n_regressors,
-         const gprat_hyper::AdamParams &adam_params,
-         gprat_hyper::SEKParams &sek_params,
+         const AdamParams &adam_params,
+         SEKParams &sek_params,
          std::vector<bool> trainable_params,
-         gprat::CUDA_GPU &gpu);
+         CUDA_GPU &gpu);
 
 /**
  * @brief Perform a single optimization step
@@ -166,11 +172,11 @@ double optimize_step(const std::vector<double> &training_input,
                      int n_tiles,
                      int n_tile_size,
                      int n_regressors,
-                     gprat_hyper::AdamParams &adam_params,
-                     gprat_hyper::SEKParams &sek_params,
+                     AdamParams &adam_params,
+                     SEKParams &sek_params,
                      std::vector<bool> trainable_params,
                      int iter,
-                     gprat::CUDA_GPU &gpu);
+                     CUDA_GPU &gpu);
 
 /**
  * @brief Perform Cholesky decompositon (+ Assembly)
@@ -188,12 +194,14 @@ double optimize_step(const std::vector<double> &training_input,
  */
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors,
-         gprat::CUDA_GPU &gpu);
+         CUDA_GPU &gpu);
 
 }  // end of namespace gpu
+
+GPRAT_NS_END
 
 #endif

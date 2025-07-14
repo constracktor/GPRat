@@ -1,8 +1,10 @@
-#include "gpu/cuda/gp_optimizer.cuh"
+#include "gprat/gpu/gp_optimizer.cuh"
 
-#include "gpu/cuda/adapter_cublas.cuh"
-#include "gpu/cuda/cuda_kernels.cuh"
-#include "gpu/cuda/cuda_utils.cuh"
+#include "gprat/gpu/adapter_cublas.cuh"
+#include "gprat/gpu/cuda_kernels.cuh"
+#include "gprat/gpu/cuda_utils.cuh"
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -36,7 +38,7 @@ double compute_sigmoid(const double parameter) { return 1.0 / (1.0 + exp(-parame
 double compute_covariance_distance(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   gprat_hyper::SEKParams sek_params,
+                                   SEKParams sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input)
 {
@@ -58,7 +60,7 @@ std::vector<double> gen_tile_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    gprat_hyper::SEKParams sek_params,
+    SEKParams sek_params,
     const std::vector<double> &input)
 {
     std::size_t i_global, j_global;
@@ -85,7 +87,7 @@ std::vector<double> gen_tile_covariance_with_distance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    gprat_hyper::SEKParams sek_params,
+    SEKParams sek_params,
     const std::vector<double> &cov_dists)
 {
     std::size_t i_global, j_global;
@@ -117,7 +119,7 @@ gen_tile_grad_v(std::size_t row,
                 std::size_t col,
                 std::size_t N,
                 std::size_t n_regressors,
-                gprat_hyper::SEKParams sek_params,
+                SEKParams sek_params,
                 const std::vector<double> &cov_dists)
 {
     // Initialize tile
@@ -140,7 +142,7 @@ gen_tile_grad_l(std::size_t row,
                 std::size_t col,
                 std::size_t N,
                 std::size_t n_regressors,
-                gprat_hyper::SEKParams sek_params,
+                SEKParams sek_params,
                 const std::vector<double> &cov_dists)
 {
     // Initialize tile
@@ -176,7 +178,7 @@ std::vector<double> gen_tile_grad_v_trans(std::size_t N, const std::vector<doubl
 }
 
 hpx::shared_future<double *>
-gen_tile_grad_l_trans(std::size_t N, const hpx::shared_future<double *> f_grad_l_tile, gprat::CUDA_GPU &gpu)
+gen_tile_grad_l_trans(std::size_t N, const hpx::shared_future<double *> f_grad_l_tile, CUDA_GPU &gpu)
 {
     double *transposed;
     check_cuda_error(cudaMalloc(&transposed, N * N * sizeof(double)));
@@ -209,7 +211,7 @@ compute_loss(const hpx::shared_future<double *> &K_diag_tile,
              const hpx::shared_future<double *> &alpha_tile,
              const hpx::shared_future<double *> &y_tile,
              std::size_t N,
-             gprat::CUDA_GPU &gpu)
+             CUDA_GPU &gpu)
 {
     auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -276,8 +278,8 @@ double update_second_moment(const double &gradient, double v_T, const double &be
 
 hpx::shared_future<double>
 update_param(const double unconstrained_hyperparam,
-             gprat_hyper::SEKParams sek_params,
-             gprat_hyper::AdamParams adam_params,
+             SEKParams sek_params,
+             AdamParams adam_params,
              double m_T,
              double v_T,
              const std::vector<double> beta1_T,
@@ -339,11 +341,8 @@ sum_gradright(const std::vector<double> &inter_alpha, const std::vector<double> 
     return 0.0;
 }
 
-double sum_noise_gradleft(const std::vector<double> &ft_invK,
-                          double grad,
-                          gprat_hyper::SEKParams sek_params,
-                          std::size_t N,
-                          std::size_t n_tiles)
+double sum_noise_gradleft(
+    const std::vector<double> &ft_invK, double grad, SEKParams sek_params, std::size_t N, std::size_t n_tiles)
 {
     double noise_der = compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));
     for (std::size_t i = 0; i < N; ++i)
@@ -353,8 +352,7 @@ double sum_noise_gradleft(const std::vector<double> &ft_invK,
     return std::move(grad);
 }
 
-double
-sum_noise_gradright(const std::vector<double> &alpha, double grad, gprat_hyper::SEKParams sek_params, std::size_t N)
+double sum_noise_gradright(const std::vector<double> &alpha, double grad, SEKParams sek_params, std::size_t N)
 {
     // double noise_der =
     //     compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));
@@ -364,3 +362,5 @@ sum_noise_gradright(const std::vector<double> &alpha, double grad, gprat_hyper::
 }
 
 }  // end of namespace gpu
+
+GPRAT_NS_END

@@ -1,8 +1,14 @@
-#ifndef CPU_GP_ALGORITHMS_H
-#define CPU_GP_ALGORITHMS_H
+#ifndef GPRAT_CPU_GP_ALGORITHMS_HPP
+#define GPRAT_CPU_GP_ALGORITHMS_HPP
 
-#include "gp_kernels.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+#include "gprat/gp_kernels.hpp"
+
 #include <vector>
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -22,7 +28,7 @@ namespace cpu
 double compute_covariance_function(std::size_t i_global,
                                    std::size_t j_global,
                                    std::size_t n_regressors,
-                                   const gprat_hyper::SEKParams &sek_params,
+                                   const SEKParams &sek_params,
                                    const std::vector<double> &i_input,
                                    const std::vector<double> &j_input);
 
@@ -44,7 +50,7 @@ std::vector<double> gen_tile_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -66,7 +72,7 @@ std::vector<double> gen_tile_full_prior_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -88,7 +94,7 @@ std::vector<double> gen_tile_prior_covariance(
     std::size_t col,
     std::size_t N,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &input);
 
 /**
@@ -111,7 +117,7 @@ std::vector<double> gen_tile_cross_covariance(
     std::size_t N_row,
     std::size_t N_col,
     std::size_t n_regressors,
-    const gprat_hyper::SEKParams &sek_params,
+    const SEKParams &sek_params,
     const std::vector<double> &row_input,
     const std::vector<double> &col_input);
 
@@ -170,4 +176,6 @@ std::vector<double> gen_tile_identity(std::size_t N);
 
 }  // end of namespace cpu
 
-#endif  // end of CPU_GP_ALGORITHMS_H
+GPRAT_NS_END
+
+#endif

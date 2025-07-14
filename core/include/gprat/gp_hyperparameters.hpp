@@ -1,10 +1,13 @@
-#ifndef GP_HYPERPARAMETERS_H
-#define GP_HYPERPARAMETERS_H
+#ifndef GPRAT_GPHYPERPARAMETERS_HPP
+#define GPRAT_GPHYPERPARAMETERS_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
 
 #include <string>
 
-namespace gprat_hyper
-{
+GPRAT_NS_BEGIN
 
 /**
  * @brief Hyperparameters for the Adam optimizer
@@ -55,6 +58,6 @@ struct AdamParams
     std::string repr() const;
 };
 
-}  // namespace gprat_hyper
+GPRAT_NS_END
 
-#endif  // GP_HYPERPARAMETERS_H
+#endif

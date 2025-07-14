@@ -1,10 +1,13 @@
-#include "cpu/tiled_algorithms.hpp"
+#include "gprat/cpu/tiled_algorithms.hpp"
 
-#include "cpu/adapter_cblas_fp64.hpp"
-#include "cpu/gp_algorithms.hpp"
-#include "cpu/gp_optimizer.hpp"
-#include "cpu/gp_uncertainty.hpp"
+#include "gprat/cpu/adapter_cblas_fp64.hpp"
+#include "gprat/cpu/gp_algorithms.hpp"
+#include "gprat/cpu/gp_optimizer.hpp"
+#include "gprat/cpu/gp_uncertainty.hpp"
+
 #include <hpx/future.hpp>
+
+GPRAT_NS_BEGIN
 
 namespace cpu
 {
@@ -297,8 +300,8 @@ void update_hyperparameter_tiled(
     const Tiled_matrix &ft_invK,
     const Tiled_matrix &ft_gradK_param,
     const Tiled_vector &ft_alpha,
-    const gprat_hyper::AdamParams &adam_params,
-    gprat_hyper::SEKParams &sek_params,
+    const AdamParams &adam_params,
+    SEKParams &sek_params,
     int N,
     std::size_t n_tiles,
     std::size_t iter,
@@ -448,3 +451,5 @@ void update_hyperparameter_tiled(
 }
 
 }  // end of namespace cpu
+
+GPRAT_NS_END

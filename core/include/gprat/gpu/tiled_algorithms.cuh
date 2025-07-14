@@ -1,11 +1,18 @@
-#ifndef GPU_TILED_ALGORITHMS_H
-#define GPU_TILED_ALGORITHMS_H
+#ifndef GPRAT_GPU_TILED_ALGORITHMS_HPP
+#define GPRAT_GPU_TILED_ALGORITHMS_HPP
 
-#include "gp_hyperparameters.hpp"
-#include "target.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/target.hpp"
+#include "gprat/gp_kernels.hpp"
+
 #include <cusolverDn.h>
-#include <gp_kernels.hpp>
 #include <hpx/modules/async_cuda.hpp>
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -26,7 +33,7 @@ namespace gpu
 void right_looking_cholesky_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                                   const std::size_t n_tile_size,
                                   const std::size_t n_tiles,
-                                  gprat::CUDA_GPU &gpu,
+                                  CUDA_GPU &gpu,
                                   const cusolverDnHandle_t &cusolver);
 
 // Tiled Triangular Solve Algorithms
@@ -44,7 +51,7 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                          std::vector<hpx::shared_future<double *>> &ft_rhs,
                          const std::size_t n_tile_size,
                          const std::size_t n_tiles,
-                         gprat::CUDA_GPU &gpu);
+                         CUDA_GPU &gpu);
 
 /**
  * @brief Perform tiled backward triangular matrix-vector solve.
@@ -59,7 +66,7 @@ void backward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                           std::vector<hpx::shared_future<double *>> &ft_rhs,
                           const std::size_t n_tile_size,
                           const std::size_t n_tiles,
-                          gprat::CUDA_GPU &gpu);
+                          CUDA_GPU &gpu);
 
 /**
  * @brief Perform tiled forward triangular matrix-matrix solve.
@@ -79,7 +86,7 @@ void forward_solve_tiled_matrix(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Perform tiled backward triangular matrix-matrix solve.
@@ -99,7 +106,7 @@ void backward_solve_tiled_matrix(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Perform tiled matrix-vector multiplication
@@ -120,7 +127,7 @@ void matrix_vector_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                          const std::size_t N_col,
                          const std::size_t n_tiles,
                          const std::size_t m_tiles,
-                         gprat::CUDA_GPU &gpu);
+                         CUDA_GPU &gpu);
 
 /**
  * @brief Perform tiled symmetric k-rank update on diagonal tiles
@@ -140,14 +147,14 @@ void symmetric_matrix_matrix_diagonal_tiled(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 void compute_gemm_of_invK_y(std::vector<hpx::shared_future<double *>> &ft_invK,
                             std::vector<hpx::shared_future<double *>> &ft_y,
                             std::vector<hpx::shared_future<double *>> &ft_alpha,
                             const std::size_t n_tile_size,
                             const std::size_t n_tiles,
-                            gprat::CUDA_GPU &gpu);
+                            CUDA_GPU &gpu);
 
 // Tiled Loss
 hpx::shared_future<double> compute_loss_tiled(
@@ -156,7 +163,7 @@ hpx::shared_future<double> compute_loss_tiled(
     std::vector<hpx::shared_future<double *>> &ft_y,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 // Tiled Diagonal of Posterior Covariance Matrix
 void symmetric_matrix_matrix_tiled(
@@ -166,7 +173,7 @@ void symmetric_matrix_matrix_tiled(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Compute the difference between two tiled vectors
@@ -183,14 +190,14 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
                              std::vector<hpx::shared_future<double *>> &ft_vector,
                              const std::size_t m_tile_size,
                              const std::size_t m_tiles,
-                             gprat::CUDA_GPU &gpu);
+                             CUDA_GPU &gpu);
 
 // Tiled Prediction Uncertainty
 void matrix_diagonal_tiled(std::vector<hpx::shared_future<double *>> &ft_priorK,
                            std::vector<hpx::shared_future<double *>> &ft_vector,
                            const std::size_t m_tile_size,
                            const std::size_t m_tiles,
-                           gprat::CUDA_GPU &gpu);
+                           CUDA_GPU &gpu);
 
 // Compute I-y*y^T*inv(K)
 void update_grad_K_tiled_mkl(std::vector<hpx::shared_future<double *>> &ft_tiles,
@@ -198,7 +205,7 @@ void update_grad_K_tiled_mkl(std::vector<hpx::shared_future<double *>> &ft_tiles
                              const std::vector<hpx::shared_future<double *>> &ft_v2,
                              const std::size_t n_tile_size,
                              const std::size_t n_tiles,
-                             gprat::CUDA_GPU &gpu);
+                             CUDA_GPU &gpu);
 
 /**
  * @brief Updates the lengthscale hyperparameter of the SEK kernel using Adam.
@@ -223,8 +230,8 @@ double update_lengthscale(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
     const std::vector<hpx::shared_future<double *>> &ft_gradparam,
     const std::vector<hpx::shared_future<double *>> &ft_alpha,
-    gprat_hyper::SEKParams sek_params,
-    gprat_hyper::AdamParams adam_params,
+    SEKParams sek_params,
+    AdamParams adam_params,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
@@ -232,7 +239,7 @@ double update_lengthscale(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Updates the vertical lengthscale hyperparameter of the SEK kernel
@@ -258,8 +265,8 @@ double update_vertical_lengthscale(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
     const std::vector<hpx::shared_future<double *>> &ft_gradparam,
     const std::vector<hpx::shared_future<double *>> &ft_alpha,
-    gprat_hyper::SEKParams sek_params,
-    gprat_hyper::AdamParams adam_params,
+    SEKParams sek_params,
+    AdamParams adam_params,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
@@ -267,7 +274,7 @@ double update_vertical_lengthscale(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 /**
  * @brief Updates a hyperparameter of the SEK kernel using Adam
@@ -290,8 +297,8 @@ double update_vertical_lengthscale(
 double update_noise_variance(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
     const std::vector<hpx::shared_future<double *>> &ft_alpha,
-    gprat_hyper::SEKParams sek_params,
-    gprat_hyper::AdamParams adam_params,
+    SEKParams sek_params,
+    AdamParams adam_params,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
@@ -299,8 +306,10 @@ double update_noise_variance(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gprat::CUDA_GPU &gpu);
+    CUDA_GPU &gpu);
 
 }  // end of namespace gpu
 
-#endif  // end of GPU_TILED_ALGORITHMS_H
+GPRAT_NS_END
+
+#endif

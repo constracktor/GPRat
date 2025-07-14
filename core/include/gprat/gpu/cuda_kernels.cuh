@@ -1,5 +1,11 @@
-#ifndef CUDA_KERNELS_H
-#define CUDA_KERNELS_H
+#ifndef GPRAT_CUDA_KERNELS_HPP
+#define GPRAT_CUDA_KERNELS_HPP
+
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+GPRAT_NS_BEGIN
 
 /**
  * @brief Kernel to transpose a matrix.
@@ -11,4 +17,6 @@
  */
 __global__ void transpose(double *transposed, double *original, std::size_t width, std::size_t height);
 
-#endif  // CUDA_KERNELS_H
+GPRAT_NS_END
+
+#endif

@@ -1,9 +1,8 @@
-#include "utils_c.hpp"
+#include "gprat/utils_c.hpp"
 
 #include <cstdio>
 
-namespace utils
-{
+GPRAT_NS_BEGIN
 
 int compute_train_tiles(int n_samples, int n_tile_size)
 {
@@ -150,4 +149,4 @@ bool compiled_with_sycl()
 #endif
 }
 
-}  // namespace utils
+GPRAT_NS_END

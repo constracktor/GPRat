@@ -1,7 +1,13 @@
-#ifndef GPU_GP_UNCERTAINTY_H
-#define GPU_GP_UNCERTAINTY_H
+#ifndef GPRAT_GPU_GP_UNCERTAINTY_HPP
+#define GPRAT_GPU_GP_UNCERTAINTY_HPP
 
-#include "target.hpp"
+#pragma once
+
+#include "gprat/detail/config.hpp"
+
+#include "gprat/target.hpp"
+
+GPRAT_NS_BEGIN
 
 namespace gpu
 {
@@ -16,7 +22,7 @@ namespace gpu
  * @return Diagonal elements of posterior covariance matrix
  */
 hpx::shared_future<double *> diag_posterior(
-    const hpx::shared_future<double *> A, const hpx::shared_future<double *> B, std::size_t M, gprat::CUDA_GPU &gpu);
+    const hpx::shared_future<double *> A, const hpx::shared_future<double *> B, std::size_t M, CUDA_GPU &gpu);
 
 /**
  * @brief Retrieve diagonal elements of posterior covariance matrix.
@@ -26,8 +32,10 @@ hpx::shared_future<double *> diag_posterior(
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-hpx::shared_future<double *> diag_tile(const hpx::shared_future<double *> A, std::size_t M, gprat::CUDA_GPU &gpu);
+hpx::shared_future<double *> diag_tile(const hpx::shared_future<double *> A, std::size_t M, CUDA_GPU &gpu);
 
 }  // end of namespace gpu
 
-#endif  // end of GPU_GP_UNCERTAINTY_H
+GPRAT_NS_END
+
+#endif
