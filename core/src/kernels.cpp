@@ -1,4 +1,4 @@
-#include "gprat/gp_kernels.hpp"
+#include "gprat/kernels.hpp"
 
 #include <stdexcept>
 

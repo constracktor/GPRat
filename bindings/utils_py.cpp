@@ -1,5 +1,5 @@
 #include "gprat/target.hpp"
-#include "gprat/utils_c.hpp"
+#include "gprat/utils.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

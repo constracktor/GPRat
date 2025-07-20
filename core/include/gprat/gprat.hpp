@@ -4,8 +4,8 @@
 #pragma once
 
 #include "gprat/detail/config.hpp"
-#include "gprat/gp_hyperparameters.hpp"
-#include "gprat/gp_kernels.hpp"
+#include "gprat/hyperparameters.hpp"
+#include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
 
 #include <memory>

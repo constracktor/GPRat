@@ -1,4 +1,4 @@
-#include "gprat/utils_c.hpp"
+#include "gprat/utils.hpp"
 
 #include <cstdio>
 

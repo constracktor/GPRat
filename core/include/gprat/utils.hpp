@@ -1,5 +1,5 @@
-#ifndef GPRAT_UTILS_C_H
-#define GPRAT_UTILS_C_H
+#ifndef GPRAT_UTILS_HPP
+#define GPRAT_UTILS_HPP
 
 #pragma once
 

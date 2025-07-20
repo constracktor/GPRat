@@ -1,9 +1,9 @@
 #include "gprat/gpu/gp_algorithms.cuh"
 
-#include "gprat/gp_kernels.hpp"
 #include "gprat/gpu/cuda_kernels.cuh"
 #include "gprat/gpu/cuda_utils.cuh"
 #include "gprat/gpu/gp_optimizer.cuh"
+#include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
 
 #include <cuda_runtime.h>

@@ -1,7 +1,7 @@
-#include "gprat/gprat_c.hpp"
+#include "gprat/gprat.hpp"
 
 #include "gprat/cpu/gp_functions.hpp"
-#include "gprat/utils_c.hpp"
+#include "gprat/utils.hpp"
 
 #if GPRAT_WITH_CUDA
 #include "gpu/cuda/gp_functions.cuh"

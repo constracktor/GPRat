@@ -1,5 +1,5 @@
-#include "gprat/gprat_c.hpp"
-#include "gprat/utils_c.hpp"
+#include "gprat/gprat.hpp"
+#include "gprat/utils.hpp"
 
 #include <chrono>
 #include <filesystem>

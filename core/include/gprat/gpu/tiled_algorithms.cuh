@@ -5,9 +5,9 @@
 
 #include "gprat/detail/config.hpp"
 
-#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/hyperparameters.hpp"
 #include "gprat/target.hpp"
-#include "gprat/gp_kernels.hpp"
+#include "gprat/kernels.hpp"
 
 #include <cusolverDn.h>
 #include <hpx/modules/async_cuda.hpp>

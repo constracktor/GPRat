@@ -1,4 +1,4 @@
-#include "gprat/gp_hyperparameters.hpp"
+#include "gprat/hyperparameters.hpp"
 
 #include <iomanip>
 #include <sstream>

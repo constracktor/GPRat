@@ -56,11 +56,11 @@ add_compile_definitions(GPRAT_APEX_CHOLESKY=$<BOOL:${GPRAT_APEX_CHOLESKY}>)
 
 # Set general GPRAT source files
 set(SOURCE_FILES
-    src/gprat_c.cpp
-    src/utils_c.cpp
+    src/gprat.cpp
+    src/utils.cpp
     src/target.cpp
-    src/gp_kernels.cpp
-    src/gp_hyperparameters.cpp
+    src/kernels.cpp
+    src/hyperparameters.cpp
     src/cpu/gp_functions.cpp
     src/cpu/gp_algorithms.cpp
     src/cpu/gp_uncertainty.cpp
