@@ -6,6 +6,7 @@
 #include "gprat/detail/config.hpp"
 #include "gprat/hyperparameters.hpp"
 #include "gprat/kernels.hpp"
+#include "gprat/tile_data.hpp"
 
 #include <vector>
 
@@ -26,7 +27,7 @@ namespace cpu
  *
  * @return The tiled Cholesky factor
  */
-std::vector<std::vector<double>>
+std::vector<mutable_tile_data<double>>
 cholesky(const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,
@@ -149,9 +150,9 @@ double compute_loss(const std::vector<double> &training_input,
 std::vector<double>
 optimize(const std::vector<double> &training_input,
          const std::vector<double> &training_output,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors,
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors,
          const AdamParams &adam_params,
          SEKParams &sek_params,
          std::vector<bool> trainable_params);
@@ -176,13 +177,13 @@ optimize(const std::vector<double> &training_input,
  */
 double optimize_step(const std::vector<double> &training_input,
                      const std::vector<double> &training_output,
-                     int n_tiles,
-                     int n_tile_size,
-                     int n_regressors,
+                     std::size_t n_tiles,
+                     std::size_t n_tile_size,
+                     std::size_t n_regressors,
                      AdamParams &adam_params,
                      SEKParams &sek_params,
                      std::vector<bool> trainable_params,
-                     int iter);
+                     std::size_t iter);
 
 }  // end of namespace cpu
 

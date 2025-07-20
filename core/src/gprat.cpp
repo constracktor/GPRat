@@ -479,8 +479,7 @@ double GP::calculate_loss()
         .get();
 }
 
-// cholesky ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::vector<double>> GP::cholesky()
+std::vector<mutable_tile_data<double>> GP::cholesky()
 {
 #if !GPRAT_WITH_SYCL
     return hpx::async(

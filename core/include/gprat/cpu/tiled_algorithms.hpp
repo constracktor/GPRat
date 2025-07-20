@@ -6,13 +6,14 @@
 #include "gprat/detail/config.hpp"
 #include "gprat/hyperparameters.hpp"
 #include "gprat/kernels.hpp"
+#include "gprat/tile_data.hpp"
 
 #include <hpx/future.hpp>
 
 GPRAT_NS_BEGIN
 
-using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
-using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
+using Tiled_matrix = std::vector<hpx::shared_future<mutable_tile_data<double>>>;
+using Tiled_vector = std::vector<hpx::shared_future<mutable_tile_data<double>>>;
 
 namespace cpu
 {

@@ -6,6 +6,7 @@
 #include "gprat/detail/config.hpp"
 #include "gprat/hyperparameters.hpp"
 #include "gprat/kernels.hpp"
+#include "gprat/tile_data.hpp"
 
 #include <vector>
 
@@ -76,7 +77,7 @@ double compute_covariance_distance(std::size_t i_global,
  *
  * @return A quadratic tile containing the distance between the features of size N x N
  */
-std::vector<double> gen_tile_distance(
+mutable_tile_data<double> gen_tile_distance(
     std::size_t row,
     std::size_t col,
     std::size_t N,
@@ -95,8 +96,12 @@ std::vector<double> gen_tile_distance(
  *
  * @return A quadratic tile of the covariance matrix of size N x N
  */
-std::vector<double> gen_tile_covariance_with_distance(
-    std::size_t row, std::size_t col, std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
+mutable_tile_data<double> gen_tile_covariance_with_distance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    const SEKParams &sek_params,
+    const const_tile_data<double> &distance);
 
 /**
  * @brief  Generate a derivative tile w.r.t. vertical_lengthscale v
@@ -107,7 +112,8 @@ std::vector<double> gen_tile_covariance_with_distance(
  *
  * @return A quadratic tile of the derivative of v of size N x N
  */
-std::vector<double> gen_tile_grad_v(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
+mutable_tile_data<double>
+gen_tile_grad_v(std::size_t N, const SEKParams &sek_params, const const_tile_data<double> &distance);
 
 /**
  * @brief  Generate a derivative tile w.r.t. lengthscale l
@@ -118,7 +124,8 @@ std::vector<double> gen_tile_grad_v(std::size_t N, const SEKParams &sek_params, 
  *
  * @return A quadratic tile of the derivative of l of size N x N
  */
-std::vector<double> gen_tile_grad_l(std::size_t N, const SEKParams &sek_params, const std::vector<double> &distance);
+mutable_tile_data<double>
+gen_tile_grad_l(std::size_t N, const SEKParams &sek_params, const const_tile_data<double> &distance);
 
 /**
  * @brief Update biased first raw moment estimate: m_T+1 = beta_1 * m_T + (1 - beta_1) * g_T.
@@ -153,8 +160,8 @@ double update_second_moment(double gradient, double v_T, double beta_2);
  *
  * @return The updated hyperparameter
  */
-double adam_step(
-    const double unconstrained_hyperparam, const AdamParams &adam_params, double m_T, double v_T, std::size_t iter);
+double
+adam_step(double unconstrained_hyperparam, const AdamParams &adam_params, double m_T, double v_T, std::size_t iter);
 
 /**
  * @brief Compute negative-log likelihood on one tile.
@@ -165,9 +172,9 @@ double adam_step(
  *
  * @return Return l = y^T * alpha + \sum_i^N log(L_ii^2)
  */
-double compute_loss(const std::vector<double> &K_diag_tile,
-                    const std::vector<double> &alpha_tile,
-                    const std::vector<double> &y_tile,
+double compute_loss(std::span<const double> K_diag_tile,
+                    std::span<const double> alpha_tile,
+                    std::span<const double> y_tile,
                     std::size_t N);
 
 /**
@@ -179,7 +186,7 @@ double compute_loss(const std::vector<double> &K_diag_tile,
  *
  * @return The added up loss plus the constant factor
  */
-double add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n);
+double add_losses(std::span<const double> losses, std::size_t N, std::size_t n);
 
 /**
  * @brief Compute the loss gradient.
@@ -201,7 +208,7 @@ double compute_gradient(double trace, double dot, std::size_t N, std::size_t n_t
  *
  * @return The updated global trace
  */
-double compute_trace(const std::vector<double> &diagonal, double trace);
+double compute_trace(std::span<const double> diagonal, double trace);
 
 /**
  * @brief Add the dot product of a vector to a global result.
@@ -212,7 +219,7 @@ double compute_trace(const std::vector<double> &diagonal, double trace);
  *
  * @return The updated global result
  */
-double compute_dot(const std::vector<double> &vector_T, const std::vector<double> &vector, double result);
+double compute_dot(std::span<const double> vector_T, std::span<const double> vector, double result);
 
 /**
  * @brief Add the local trace of a matrix tile to the global trace
@@ -223,7 +230,7 @@ double compute_dot(const std::vector<double> &vector_T, const std::vector<double
  *
  * @return The updated global trace
  */
-double compute_trace_diag(const std::vector<double> &tile, double trace, std::size_t N);
+double compute_trace_diag(std::span<const double> tile, double trace, std::size_t N);
 
 }  // end of namespace cpu
 

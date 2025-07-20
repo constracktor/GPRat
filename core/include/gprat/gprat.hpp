@@ -8,6 +8,7 @@
 #include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
 
+#include "tile_data.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -246,7 +247,7 @@ class GP
     /**
      * @brief Computes & returns cholesky decomposition
      */
-    std::vector<std::vector<double>> cholesky();
+    std::vector<mutable_tile_data<double>> cholesky();
 };
 
 GPRAT_NS_END

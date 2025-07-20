@@ -62,16 +62,37 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, const Gprat
            { "pred", boost::json::value_from(results.pred) } };
 }
 
-/**
- * @brief Searches a specified JSON object for the property `key`, converts its type to `T`, and
- *        stores its value in `t`.
- *
- * @tparam T the target type of the read value
- *
- * @param obj the JSON object that is read from
- * @param t the variable to store the value in
- * @param key the key to search for in the JSON file
- */
+template <typename T>
+std::vector<T> to_vector(const gprat::const_tile_data<T> &data)
+{
+    return { data.begin(), data.end() };
+}
+
+template <typename T>
+std::vector<std::vector<T>> to_vector(const std::vector<gprat::const_tile_data<T>> &data)
+{
+    std::vector<std::vector<T>> out;
+    out.reserve(data.size());
+    for (const auto &row : data)
+    {
+        out.emplace_back(to_vector<T>(row));
+    }
+    return out;
+}
+
+template <typename T>
+std::vector<std::vector<T>> to_vector(const std::vector<gprat::mutable_tile_data<T>> &data)
+{
+    std::vector<std::vector<T>> out;
+    out.reserve(data.size());
+    for (const auto &row : data)
+    {
+        out.emplace_back(to_vector<T>(row));
+    }
+    return out;
+}
+
+// This helper function deduces the type and assigns the value with the matching key
 template <typename T>
 inline void extract(const boost::json::object &obj, T &t, std::string_view key)
 {
@@ -186,12 +207,9 @@ GpratResults run_on_data_cpu(const std::string &train_path, const std::string &o
     // Initialize HPX with no arguments, don't run hpx_main
     gprat::start_hpx_runtime(0, nullptr);
 
-    GpratResults results_cpu;
-
-    // Cholesky decomposition
-    results_cpu.cholesky = gp_cpu.cholesky();
-
-    // Prediction
+    gprat_results results_cpu;
+    results_cpu.choleksy = to_vector(gp_cpu.cholesky());
+    results_cpu.losses = gp_cpu.optimize(hpar);
     results_cpu.sum = gp_cpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
     results_cpu.full = gp_cpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
     results_cpu.pred = gp_cpu.predict(test_input.data, test_tiles.first, test_tiles.second);
@@ -246,17 +264,12 @@ GpratResults run_on_data_gpu(const std::string &train_path, const std::string &o
 
     gprat::start_hpx_runtime(0, nullptr);
 
-    GpratResults results_gpu;
-
-    // Cholesky
-    results_gpu.cholesky = gp_gpu.cholesky();
-
-    // Prediction
-    results_gpu.sum = gp_gpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
-    results_gpu.full = gp_gpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
-    results_gpu.pred = gp_gpu.predict(test_input.data, test_tiles.first, test_tiles.second);
-
-    // GPUs do not support optimization
+    gprat_results results_gpu;
+    results_gpu.choleksy = to_vector(gp_gpu.cholesky());
+    // NOTE: optimize and optimize_step are currently not implemented for GPU
+    results_gpu.sum_no_optimize = gp_gpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.full_no_optimize = gp_gpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.pred_no_optimize = gp_gpu.predict(test_input.data, test_tiles.first, test_tiles.second);
 
     gprat::stop_hpx_runtime();
 

@@ -58,6 +58,7 @@ add_compile_definitions(GPRAT_APEX_CHOLESKY=$<BOOL:${GPRAT_APEX_CHOLESKY}>)
 set(SOURCE_FILES
     src/gprat.cpp
     src/utils.cpp
+    src/performance_counters.cpp
     src/target.cpp
     src/kernels.cpp
     src/hyperparameters.cpp

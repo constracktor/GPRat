@@ -13,9 +13,8 @@ GPRAT_NS_BEGIN
 
 // BLAS level 3 operations
 
-vector potrf(vector_future f_A, const int N)
+mutable_tile_data<float> potrf(const mutable_tile_data<float> &A, const int N)
 {
-    vector A = f_A.get();
     // POTRF: in-place Cholesky decomposition of A
     // use spotrf2 recursive version for better stability
     LAPACKE_spotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
@@ -23,16 +22,15 @@ vector potrf(vector_future f_A, const int N)
     return A;
 }
 
-vector trsm(vector_future f_L,
-            vector_future f_A,
-            const int N,
-            const int M,
-            const BLAS_TRANSPOSE transpose_L,
-            const BLAS_SIDE side_L)
+mutable_tile_data<float>
+trsm(const const_tile_data<float> &L,
+     const mutable_tile_data<float> &A,
+     const int N,
+     const int M,
+     const BLAS_TRANSPOSE transpose_L,
+     const BLAS_SIDE side_L)
 
 {
-    const vector &L = f_L.get();
-    vector A = f_A.get();
     // TRSM constants
     const float alpha = 1.0f;
     // TRSM: in-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -49,14 +47,11 @@ vector trsm(vector_future f_L,
         N,
         A.data(),
         M);
-    // return vector
     return A;
 }
 
-vector syrk(vector_future f_A, vector_future f_B, const int N)
+mutable_tile_data<float> syrk(const mutable_tile_data<float> &A, const const_tile_data<float> &B, const int N)
 {
-    const vector &B = f_B.get();
-    vector A = f_A.get();
     // SYRK constants
     const float alpha = -1.0f;
     const float beta = 1.0f;
@@ -66,18 +61,16 @@ vector syrk(vector_future f_A, vector_future f_B, const int N)
     return A;
 }
 
-vector gemm(vector_future f_A,
-            vector_future f_B,
-            vector_future f_C,
-            const int N,
-            const int M,
-            const int K,
-            const BLAS_TRANSPOSE transpose_A,
-            const BLAS_TRANSPOSE transpose_B)
+mutable_tile_data<float>
+gemm(const const_tile_data<float> &A,
+     const const_tile_data<float> &B,
+     const mutable_tile_data<float> &C,
+     const int N,
+     const int M,
+     const int K,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_TRANSPOSE transpose_B)
 {
-    vector C = f_C.get();
-    const vector &B = f_B.get();
-    const vector &A = f_A.get();
     // GEMM constants
     const float alpha = -1.0f;
     const float beta = 1.0f;
@@ -103,10 +96,9 @@ vector gemm(vector_future f_A,
 
 // BLAS level 2 operations
 
-vector trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L)
+mutable_tile_data<float>
+trsv(const const_tile_data<float> &L, const mutable_tile_data<float> &a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
-    const vector &L = f_L.get();
-    vector a = f_a.get();
     // TRSV: In-place solve L(^T) * x = a where L lower triangular
     cblas_strsv(CblasRowMajor,
                 CblasLower,
@@ -121,17 +113,15 @@ vector trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSP
     return a;
 }
 
-vector gemv(vector_future f_A,
-            vector_future f_a,
-            vector_future f_b,
-            const int N,
-            const int M,
-            const BLAS_ALPHA alpha,
-            const BLAS_TRANSPOSE transpose_A)
+mutable_tile_data<float>
+gemv(const const_tile_data<float> &A,
+     const const_tile_data<float> &a,
+     const mutable_tile_data<float> &b,
+     const int N,
+     const int M,
+     const BLAS_ALPHA alpha,
+     const BLAS_TRANSPOSE transpose_A)
 {
-    const vector &A = f_A.get();
-    const vector &a = f_a.get();
-    vector b = f_b.get();
     // GEMV constants
     // const float alpha = -1.0;
     const float beta = 1.0f;
@@ -153,43 +143,47 @@ vector gemv(vector_future f_A,
     return b;
 }
 
-vector dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M)
+mutable_tile_data<float>
+dot_diag_syrk(const const_tile_data<float> &A, const mutable_tile_data<float> &r, const int N, const int M)
 {
-    const vector &A = f_A.get();
-    vector r = f_r.get();
+    auto r_p = r.data();
+    auto A_p = A.data();
     // r = r + diag(A^T * A)
     for (std::size_t j = 0; j < static_cast<std::size_t>(M); ++j)
     {
         // Extract the j-th column and compute the dot product with itself
-        r[j] += cblas_sdot(N, &A[j], M, &A[j], M);
+        r_p[j] += cblas_sdot(N, &A_p[j], M, &A_p[j], M);
     }
     return r;
 }
 
-vector dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M)
+mutable_tile_data<float>
+dot_diag_gemm(const const_tile_data<float> &A,
+              const const_tile_data<float> &B,
+              const mutable_tile_data<float> &r,
+              const int N,
+              const int M)
 {
-    const vector &A = f_A.get();
-    const vector &B = f_B.get();
-    vector r = f_r.get();
+    auto r_p = r.data();
+    auto A_p = A.data();
+    auto B_p = B.data();
     // r = r + diag(A * B)
     for (std::size_t i = 0; i < static_cast<std::size_t>(N); ++i)
     {
-        r[i] += cblas_sdot(M, &A[i * static_cast<std::size_t>(M)], 1, &B[i], N);
+        r_p[i] += cblas_sdot(M, &A_p[i * static_cast<std::size_t>(M)], 1, &B_p[i], N);
     }
     return r;
 }
 
 // BLAS level 1 operations
 
-vector axpy(vector_future f_y, vector_future f_x, const int N)
+mutable_tile_data<float> axpy(const mutable_tile_data<float> &y, const const_tile_data<float> &x, const int N)
 {
-    vector y = f_y.get();
-    const vector &x = f_x.get();
-    cblas_saxpy(N, -1.0f, x.data(), 1, y.data(), 1);
+    cblas_saxpy(N, -1.0, x.data(), 1, y.data(), 1);
     return y;
 }
 
-float dot(vector a, vector b, const int N)
+float dot(std::span<const float> a, std::span<const float> b, const int N)
 {
     // DOT: a * b
     return cblas_sdot(N, a.data(), 1, b.data(), 1);

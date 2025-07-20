@@ -4,9 +4,7 @@
 #pragma once
 
 #include "gprat/detail/config.hpp"
-
-#include <hpx/future.hpp>
-#include <vector>
+#include "gprat/tile_data.hpp"
 
 GPRAT_NS_BEGIN
 
@@ -21,8 +19,7 @@ namespace cpu
  *
  * @return Diagonal element vector of the matrix A of size M
  */
-// std::vector<double> get_matrix_diagonal(const std::vector<double> &A, std::size_t M);
-hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M);
+mutable_tile_data<double> get_matrix_diagonal(const const_tile_data<double> &A, std::size_t M);
 
 }  // end of namespace cpu
 

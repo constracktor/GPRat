@@ -4,6 +4,7 @@
 #include "gprat/cpu/gp_algorithms.hpp"
 #include "gprat/cpu/gp_optimizer.hpp"
 #include "gprat/cpu/gp_uncertainty.hpp"
+#include "gprat/detail/async_helpers.hpp"
 
 #include <hpx/future.hpp>
 
@@ -19,33 +20,23 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
     for (std::size_t k = 0; k < n_tiles; k++)
     {
         // POTRF: Compute Cholesky factor L
-        ft_tiles[k * n_tiles + k] =
-            hpx::dataflow(hpx::annotated_function(potrf, "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+        ft_tiles[k * n_tiles + k] = detail::named_dataflow<potrf>("cholesky_tiled", ft_tiles[k * n_tiles + k], N);
         for (std::size_t m = k + 1; m < n_tiles; m++)
         {
             // TRSM:  Solve X * L^T = A
-            ft_tiles[m * n_tiles + k] = hpx::dataflow(
-                hpx::annotated_function(trsm, "cholesky_tiled"),
-                ft_tiles[k * n_tiles + k],
-                ft_tiles[m * n_tiles + k],
-                N,
-                N,
-                Blas_trans,
-                Blas_right);
+            ft_tiles[m * n_tiles + k] = detail::named_dataflow<trsm>(
+                "cholesky_tiled", ft_tiles[k * n_tiles + k], ft_tiles[m * n_tiles + k], N, N, Blas_trans, Blas_right);
         }
         for (std::size_t m = k + 1; m < n_tiles; m++)
         {
             // SYRK:  A = A - B * B^T
-            ft_tiles[m * n_tiles + m] = hpx::dataflow(
-                hpx::annotated_function(syrk, "cholesky_tiled"),
-                ft_tiles[m * n_tiles + m],
-                ft_tiles[m * n_tiles + k],
-                N);
+            ft_tiles[m * n_tiles + m] =
+                detail::named_dataflow<syrk>("cholesky_tiled", ft_tiles[m * n_tiles + m], ft_tiles[m * n_tiles + k], N);
             for (std::size_t n = k + 1; n < m; n++)
             {
                 // GEMM: C = C - A * B^T
-                ft_tiles[m * n_tiles + n] = hpx::dataflow(
-                    hpx::annotated_function(gemm, "cholesky_tiled"),
+                ft_tiles[m * n_tiles + n] = detail::named_dataflow<gemm>(
+                    "cholesky_tiled",
                     ft_tiles[m * n_tiles + k],
                     ft_tiles[n * n_tiles + k],
                     ft_tiles[m * n_tiles + n],
@@ -66,17 +57,13 @@ void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, st
     for (std::size_t k = 0; k < n_tiles; k++)
     {
         // TRSM: Solve L * x = a
-        ft_rhs[k] = hpx::dataflow(
-            hpx::annotated_function(trsv, "triangular_solve_tiled"),
-            ft_tiles[k * n_tiles + k],
-            ft_rhs[k],
-            N,
-            Blas_no_trans);
+        ft_rhs[k] = detail::named_dataflow<trsv>(
+            "triangular_solve_tiled", ft_tiles[k * n_tiles + k], ft_rhs[k], N, Blas_no_trans);
         for (std::size_t m = k + 1; m < n_tiles; m++)
         {
             // GEMV: b = b - A * a
-            ft_rhs[m] = hpx::dataflow(
-                hpx::annotated_function(gemv, "triangular_solve_tiled"),
+            ft_rhs[m] = detail::named_dataflow<gemv>(
+                "triangular_solve_tiled",
                 ft_tiles[m * n_tiles + k],
                 ft_rhs[k],
                 ft_rhs[m],
@@ -94,18 +81,14 @@ void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, s
     {
         std::size_t k = static_cast<std::size_t>(k_);
         // TRSM: Solve L^T * x = a
-        ft_rhs[k] = hpx::dataflow(
-            hpx::annotated_function(trsv, "triangular_solve_tiled"),
-            ft_tiles[k * n_tiles + k],
-            ft_rhs[k],
-            N,
-            Blas_trans);
+        ft_rhs[k] =
+            detail::named_dataflow<trsv>("triangular_solve_tiled", ft_tiles[k * n_tiles + k], ft_rhs[k], N, Blas_trans);
         for (int m_ = k_ - 1; m_ >= 0; m_--)  // int instead of std::size_t for last comparison
         {
             std::size_t m = static_cast<std::size_t>(m_);
             // GEMV:b = b - A^T * a
-            ft_rhs[m] = hpx::dataflow(
-                hpx::annotated_function(gemv, "triangular_solve_tiled"),
+            ft_rhs[m] = detail::named_dataflow<gemv>(
+                "triangular_solve_tiled",
                 ft_tiles[k * n_tiles + m],
                 ft_rhs[k],
                 ft_rhs[m],
@@ -125,8 +108,8 @@ void forward_solve_tiled_matrix(
         for (std::size_t k = 0; k < n_tiles; k++)
         {
             // TRSM: solve L * X = A
-            ft_rhs[k * m_tiles + c] = hpx::dataflow(
-                hpx::annotated_function(trsm, "triangular_solve_tiled_matrix"),
+            ft_rhs[k * m_tiles + c] = detail::named_dataflow<trsm>(
+                "triangular_solve_tiled_matrix",
                 ft_tiles[k * n_tiles + k],
                 ft_rhs[k * m_tiles + c],
                 N,
@@ -136,8 +119,8 @@ void forward_solve_tiled_matrix(
             for (std::size_t m = k + 1; m < n_tiles; m++)
             {
                 // GEMM: C = C - A * B
-                ft_rhs[m * m_tiles + c] = hpx::dataflow(
-                    hpx::annotated_function(gemm, "triangular_solve_tiled_matrix"),
+                ft_rhs[m * m_tiles + c] = detail::named_dataflow<gemm>(
+                    "triangular_solve_tiled_matrix",
                     ft_tiles[m * n_tiles + k],
                     ft_rhs[k * m_tiles + c],
                     ft_rhs[m * m_tiles + c],
@@ -160,8 +143,8 @@ void backward_solve_tiled_matrix(
         {
             std::size_t k = static_cast<std::size_t>(k_);
             // TRSM: solve L^T * X = A
-            ft_rhs[k * m_tiles + c] = hpx::dataflow(
-                hpx::annotated_function(trsm, "triangular_solve_tiled_matrix"),
+            ft_rhs[k * m_tiles + c] = detail::named_dataflow<trsm>(
+                "triangular_solve_tiled_matrix",
                 ft_tiles[k * n_tiles + k],
                 ft_rhs[k * m_tiles + c],
                 N,
@@ -172,8 +155,8 @@ void backward_solve_tiled_matrix(
             {
                 std::size_t m = static_cast<std::size_t>(m_);
                 // GEMM: C = C - A^T * B
-                ft_rhs[m * m_tiles + c] = hpx::dataflow(
-                    hpx::annotated_function(gemm, "triangular_solve_tiled_matrix"),
+                ft_rhs[m * m_tiles + c] = detail::named_dataflow<gemm>(
+                    "triangular_solve_tiled_matrix",
                     ft_tiles[k * n_tiles + m],
                     ft_rhs[k * m_tiles + c],
                     ft_rhs[m * m_tiles + c],
@@ -199,8 +182,8 @@ void matrix_vector_tiled(Tiled_matrix &ft_tiles,
     {
         for (std::size_t m = 0; m < n_tiles; m++)
         {
-            ft_rhs[k] = hpx::dataflow(
-                hpx::annotated_function(gemv, "prediction_tiled"),
+            ft_rhs[k] = detail::named_dataflow<gemv>(
+                "prediction_tiled",
                 ft_tiles[k * n_tiles + m],
                 ft_vector[m],
                 ft_rhs[k],
@@ -220,12 +203,8 @@ void symmetric_matrix_matrix_diagonal_tiled(
         for (std::size_t n = 0; n < n_tiles; ++n)
         {  // Compute inner product to obtain diagonal elements of
            // V^T * V  <=> cross(K) * K^-1 * cross(K)^T
-            ft_vector[i] = hpx::dataflow(
-                hpx::annotated_function(dot_diag_syrk, "posterior_tiled"),
-                ft_tiles[n * m_tiles + i],
-                ft_vector[i],
-                N,
-                M);
+            ft_vector[i] =
+                detail::named_dataflow<dot_diag_syrk>("posterior_tiled", ft_tiles[n * m_tiles + i], ft_vector[i], N, M);
         }
     }
 }
@@ -241,8 +220,8 @@ void symmetric_matrix_matrix_tiled(
             {
                 // (SYRK for (c == k) possible)
                 // GEMM:  C = C - A^T * B
-                ft_result[c * m_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(&gemm, "triangular_solve_tiled_matrix"),
+                ft_result[c * m_tiles + k] = detail::named_dataflow<gemm>(
+                    "triangular_solve_tiled_matrix",
                     ft_tiles[m * m_tiles + c],
                     ft_tiles[m * m_tiles + k],
                     ft_result[c * m_tiles + k],
@@ -260,8 +239,7 @@ void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_subtrahe
 {
     for (std::size_t i = 0; i < m_tiles; i++)
     {
-        ft_subtrahend[i] =
-            hpx::dataflow(hpx::annotated_function(&axpy, "uncertainty_tiled"), ft_minuend[i], ft_subtrahend[i], M);
+        ft_subtrahend[i] = detail::named_dataflow<axpy>("uncertainty_tiled", ft_minuend[i], ft_subtrahend[i], M);
     }
 }
 
@@ -269,8 +247,7 @@ void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int 
 {
     for (std::size_t i = 0; i < m_tiles; i++)
     {
-        ft_vector[i] = hpx::dataflow(
-            hpx::annotated_function(get_matrix_diagonal, "uncertainty_tiled"), ft_tiles[i * m_tiles + i], M);
+        ft_vector[i] = detail::named_dataflow<get_matrix_diagonal>("uncertainty_tiled", ft_tiles[i * m_tiles + i], M);
     }
 }
 
@@ -285,15 +262,11 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
     loss_tiled.reserve(n_tiles);
     for (std::size_t k = 0; k < n_tiles; k++)
     {
-        loss_tiled.push_back(hpx::dataflow(
-            hpx::annotated_function(hpx::unwrapping(&compute_loss), "loss_tiled"),
-            ft_tiles[k * n_tiles + k],
-            ft_alpha[k],
-            ft_y[k],
-            N));
+        loss_tiled.push_back(
+            detail::named_dataflow<compute_loss>("loss_tiled", ft_tiles[k * n_tiles + k], ft_alpha[k], ft_y[k], N));
     }
 
-    loss = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&add_losses), "loss_tiled"), loss_tiled, N, n_tiles);
+    loss = detail::named_dataflow<add_losses>("loss_tiled", loss_tiled, N, n_tiles);
 }
 
 void update_hyperparameter_tiled(
@@ -336,8 +309,8 @@ void update_hyperparameter_tiled(
         // Asynchrnonous initialization
         for (std::size_t d = 0; d < n_tiles; d++)
         {
-            diag_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble"), N));
-            inter_alpha.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble"), N));
+            diag_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble", N));
+            inter_alpha.push_back(detail::named_async<gen_tile_zeros>("assemble", N));
         }
 
         ////////////////////////////////////
@@ -348,20 +321,14 @@ void update_hyperparameter_tiled(
         {
             for (std::size_t j = 0; j < n_tiles; ++j)
             {
-                diag_tiles[i] = hpx::dataflow(
-                    hpx::annotated_function(dot_diag_gemm, "trace"),
-                    ft_invK[i * n_tiles + j],
-                    ft_gradK_param[j * n_tiles + i],
-                    diag_tiles[i],
-                    N,
-                    N);
+                diag_tiles[i] = detail::named_dataflow<dot_diag_gemm>(
+                    "trace", ft_invK[i * n_tiles + j], ft_gradK_param[j * n_tiles + i], diag_tiles[i], N, N);
             }
         }
         // Compute the trace of the diagonal tiles
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
-            trace =
-                hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&compute_trace), "trace"), diag_tiles[j], trace);
+            trace = detail::named_dataflow<compute_trace>("trace", diag_tiles[j], trace);
         }
         // Not sure if can be done this way
         // Step 2: Compute alpha^T * grad(K)_param * alpha (with alpha = inv(K) * y)
@@ -370,8 +337,8 @@ void update_hyperparameter_tiled(
         {
             for (std::size_t m = 0; m < n_tiles; m++)
             {
-                inter_alpha[k] = hpx::dataflow(
-                    hpx::annotated_function(gemv, "gemv"),
+                inter_alpha[k] = detail::named_dataflow<gemv>(
+                    "gemv",
                     ft_gradK_param[k * n_tiles + m],
                     ft_alpha[m],
                     inter_alpha[k],
@@ -384,10 +351,7 @@ void update_hyperparameter_tiled(
         // Compute alpha^T * inter_alpha
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
-            dot = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&compute_dot), "grad_right_tiled"),
-                                inter_alpha[j],
-                                ft_alpha[j],
-                                dot);
+            dot = detail::named_dataflow<compute_dot>("grad_right_tiled", inter_alpha[j], ft_alpha[j], dot);
         }
     }
     else if (param_idx == 2)  // @2: noise_variance
@@ -398,19 +362,13 @@ void update_hyperparameter_tiled(
         // Step 1: Compute the trace of inv(K) * noise_variance
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
-            trace = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&compute_trace_diag), "grad_left_tiled"),
-                                  ft_invK[j * n_tiles + j],
-                                  trace,
-                                  N);
+            trace = detail::named_dataflow<compute_trace_diag>("grad_left_tiled", ft_invK[j * n_tiles + j], trace, N);
         }
         ////////////////////////////////////
         // Step 2: Compute the alpha^T * alpha * noise_variance
         for (std::size_t j = 0; j < n_tiles; ++j)
         {
-            dot = hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&compute_dot), "grad_right_tiled"),
-                                ft_alpha[j],
-                                ft_alpha[j],
-                                dot);
+            dot = detail::named_dataflow<compute_dot>("grad_right_tiled", ft_alpha[j], ft_alpha[j], dot);
         }
 
         factor = compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));
@@ -423,10 +381,7 @@ void update_hyperparameter_tiled(
 
     // Compute gradient = trace + dot
     double gradient =
-        factor
-        * hpx::dataflow(
-              hpx::annotated_function(hpx::unwrapping(&compute_gradient), "update_hyperparam"), trace, dot, N, n_tiles)
-              .get();
+        factor * detail::named_dataflow<compute_gradient>("update_hyperparam", trace, dot, N, n_tiles).get();
 
     ////////////////////////////////////
     // PART 2: Update parameter

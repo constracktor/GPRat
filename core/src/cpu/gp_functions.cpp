@@ -3,33 +3,25 @@
 #include "gprat/cpu/gp_algorithms.hpp"
 #include "gprat/cpu/gp_optimizer.hpp"
 #include "gprat/cpu/tiled_algorithms.hpp"
+#include "gprat/detail/async_helpers.hpp"
 
 #include <hpx/future.hpp>
 
 GPRAT_NS_BEGIN
-
-using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
-using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 
 namespace cpu
 {
 
 ///////////////////////////////////////////////////////////////////////////
 // PREDICT
-std::vector<std::vector<double>>
+std::vector<mutable_tile_data<double>>
 cholesky(const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors)
 {
-    std::vector<std::vector<double>> result;
-
-#if GPRAT_APEX_CHOLESKY
-    GPRAT_START_TIMER(assembly_cholesky_timer);
-#endif
-    GPRAT_START_STEP(assembly_timer);
-
+    std::vector<mutable_tile_data<double>> result;
     // Tiled future data structures
     Tiled_matrix K_tiles;  // Tiled covariance matrix
 
@@ -43,14 +35,8 @@ cholesky(const std::vector<double> &training_input,
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_covariance, "assemble_tiled_K"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+                "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
@@ -129,43 +115,29 @@ predict(const std::vector<double> &training_input,
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_covariance, "assemble_tiled_K"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+                "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
     for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
     {
-        alpha_tiles.push_back(hpx::async(
-            hpx::annotated_function(gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, training_output));
+        alpha_tiles.push_back(
+            detail::named_async<gen_tile_output>("assemble_tiled_alpha", i, n_tile_size, training_output));
     }
 
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
         for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
         {
-            cross_covariance_tiles.push_back(hpx::async(
-                hpx::annotated_function(gen_tile_cross_covariance, "assemble_pred"),
-                i,
-                j,
-                m_tile_size,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                test_input,
-                training_input));
+            cross_covariance_tiles.push_back(detail::named_async<gen_tile_cross_covariance>(
+                "assemble_pred", i, j, m_tile_size, n_tile_size, n_regressors, sek_params, test_input, training_input));
         }
     }
 
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
-        prediction_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), m_tile_size));
+        prediction_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_tiled", m_tile_size));
     }
 
     GPRAT_END_STEP(
@@ -209,7 +181,7 @@ predict(const std::vector<double> &training_input,
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
         auto tile = prediction_tiles[i].get();
-        std::copy(tile.begin(), tile.end(), std::back_inserter(prediction_result));
+        std::copy_n(tile.data(), tile.size(), std::back_inserter(prediction_result));
     }
 
     GPRAT_END_STEP(prediction_timer, "predict_step prediction");
@@ -284,14 +256,8 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_covariance, "assemble_tiled_K"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+                "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
@@ -438,14 +404,14 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
         auto tile = prediction_tiles[i].get();
-        std::copy(tile.begin(), tile.end(), std::back_inserter(prediction_result));
+        std::copy_n(tile.begin(), tile.size(), std::back_inserter(prediction_result));
     }
 
     // Synchronize uncertainty
     for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
     {
         auto tile = uncertainty_tiles[i].get();
-        std::copy(tile.begin(), tile.end(), std::back_inserter(uncertainty_result));
+        std::copy_n(tile.begin(), tile.size(), std::back_inserter(uncertainty_result));
     }
 
     return std::vector<std::vector<double>>{ std::move(prediction_result), std::move(uncertainty_result) };
@@ -785,9 +751,9 @@ double compute_loss(const std::vector<double> &training_input,
 std::vector<double>
 optimize(const std::vector<double> &training_input,
          const std::vector<double> &training_output,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors,
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors,
          const AdamParams &adam_params,
          SEKParams &sek_params,
          std::vector<bool> trainable_params)
@@ -841,18 +807,18 @@ optimize(const std::vector<double> &training_input,
 
     // Preallocate memory
     losses.reserve(static_cast<std::size_t>(adam_params.opt_iter));
-    y_tiles.reserve(static_cast<std::size_t>(n_tiles));
+    y_tiles.reserve(n_tiles);
 
-    alpha_tiles.resize(static_cast<std::size_t>(n_tiles));            // for now resize since reset in loop
-    K_inv_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // for now resize since reset in loop
+    alpha_tiles.resize(n_tiles);            // for now resize since reset in loop
+    K_inv_tiles.resize(n_tiles * n_tiles);  // for now resize since reset in loop
 
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));       // No reserve because of triangular structure
-    grad_v_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    grad_l_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
+    K_tiles.resize(n_tiles * n_tiles);       // No reserve because of triangular structure
+    grad_v_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    grad_l_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly of output y
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         y_tiles.push_back(
             hpx::async(hpx::annotated_function(gen_tile_output, "assemble_y"), i, n_tile_size, training_output));
@@ -866,150 +832,92 @@ optimize(const std::vector<double> &training_input,
         // Launch asynchronous assembly of tiled covariance matrix, derivative of covariance matrix
         // vector w.r.t. to vertical lengthscale and derivative of covariance
         // matrix vector w.r.t. to lengthscale
-        for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+        for (std::size_t i = 0; i < n_tiles; i++)
         {
             for (std::size_t j = 0; j <= i; j++)
             {
                 // Compute the distance (z_i - z_j) of K entries to reuse
-                hpx::shared_future<std::vector<double>> cov_dists = hpx::async(
-                    hpx::annotated_function(gen_tile_distance, "assemble_cov_dist"),
-                    i,
-                    j,
-                    n_tile_size,
-                    n_regressors,
-                    sek_params,
-                    training_input);
+                hpx::shared_future<mutable_tile_data<double>> cov_dists = detail::named_async<gen_tile_distance>(
+                    "assemble_cov_dist", i, j, n_tile_size, n_regressors, sek_params, training_input);
 
-                K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_covariance_with_distance), "assemble_K"),
-                    i,
-                    j,
-                    n_tile_size,
-                    sek_params,
-                    cov_dists);
+                K_tiles[i * n_tiles + j] = detail::named_dataflow<gen_tile_covariance_with_distance>(
+                    "assemble_K", i, j, n_tile_size, sek_params, cov_dists);
                 if (trainable_params[0])
                 {
-                    grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l), "assemble_gradl"),
-                        n_tile_size,
-                        sek_params,
-                        cov_dists);
+                    grad_l_tiles[i * n_tiles + j] =
+                        detail::named_dataflow<gen_tile_grad_l>("assemble_gradl", n_tile_size, sek_params, cov_dists);
                     if (i != j)
                     {
-                        grad_l_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
-                            hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradl_t"),
-                            n_tile_size,
-                            n_tile_size,
-                            grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
+                        grad_l_tiles[j * n_tiles + i] = detail::named_dataflow<gen_tile_transpose>(
+                            "assemble_gradl_t", n_tile_size, n_tile_size, grad_l_tiles[i * n_tiles + j]);
                     }
                 }
 
                 if (trainable_params[1])
                 {
-                    grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_v), "assemble_gradv"),
-                        n_tile_size,
-                        sek_params,
-                        cov_dists);
+                    grad_v_tiles[i * n_tiles + j] =
+                        detail::named_dataflow<gen_tile_grad_v>("assemble_gradv", n_tile_size, sek_params, cov_dists);
                     if (i != j)
                     {
-                        grad_v_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
-                            hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradv_t"),
-                            n_tile_size,
-                            n_tile_size,
-                            grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
+                        grad_v_tiles[j * n_tiles + i] = detail::named_dataflow<gen_tile_transpose>(
+                            "assemble_gradv_t", n_tile_size, n_tile_size, grad_v_tiles[i * n_tiles + j]);
                     }
                 }
             }
         }
 
         // Assembly with reallocation -> optimize to only set existing values
-        for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+        for (std::size_t i = 0; i < n_tiles; i++)
         {
-            alpha_tiles[i] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), n_tile_size);
+            alpha_tiles[i] = detail::named_async<gen_tile_zeros>("assemble_tiled", n_tile_size);
         }
 
-        for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+        for (std::size_t i = 0; i < n_tiles; i++)
         {
-            for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+            for (std::size_t j = 0; j < n_tiles; j++)
             {
                 if (i == j)
                 {
-                    K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] =
-                        hpx::async(hpx::annotated_function(gen_tile_identity, "assemble_identity_matrix"), n_tile_size);
+                    K_inv_tiles[i * n_tiles + j] =
+                        detail::named_async<gen_tile_identity>("assemble_identity_matrix", n_tile_size);
                 }
                 else
                 {
-                    K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                        hpx::annotated_function(gen_tile_zeros, "assemble_identity_matrix"), n_tile_size * n_tile_size);
+                    K_inv_tiles[i * n_tiles + j] =
+                        detail::named_async<gen_tile_zeros>("assemble_identity_matrix", n_tile_size * n_tile_size);
                 }
             }
         }
 
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous Cholesky decomposition: K = L * L^T
-        right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+        right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous compute K^-1 through L* (L^T * X) = I
-        forward_solve_tiled_matrix(
-            K_tiles,
-            K_inv_tiles,
-            n_tile_size,
-            n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(n_tiles));
-        backward_solve_tiled_matrix(
-            K_tiles,
-            K_inv_tiles,
-            n_tile_size,
-            n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(n_tiles));
+        forward_solve_tiled_matrix(K_tiles, K_inv_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
+        backward_solve_tiled_matrix(K_tiles, K_inv_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
 
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous compute beta = inv(K) * y
-        matrix_vector_tiled(
-            K_inv_tiles,
-            y_tiles,
-            alpha_tiles,
-            n_tile_size,
-            n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(n_tiles));
+        matrix_vector_tiled(K_inv_tiles, y_tiles, alpha_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
 
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous loss computation where
         // loss(theta) = 0.5 * ( log(det(K)) - y^T * K^-1 * y - N * log(2 * pi) )
-        compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, static_cast<std::size_t>(n_tiles));
+        compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, n_tiles);
 
         ///////////////////////////////////////////////////////////////////////////
         // Launch asynchronous update of the hyperparameters
         if (trainable_params[0])
         {  // lengthscale
             update_hyperparameter_tiled(
-                K_inv_tiles,
-                grad_l_tiles,
-                alpha_tiles,
-                adam_params,
-                sek_params,
-                n_tile_size,
-                static_cast<std::size_t>(n_tiles),
-                iter,
-                0);
+                K_inv_tiles, grad_l_tiles, alpha_tiles, adam_params, sek_params, n_tile_size, n_tiles, iter, 0);
         }
         if (trainable_params[1])
         {  // vertical_lengthscale
             update_hyperparameter_tiled(
-                K_inv_tiles,
-                grad_v_tiles,
-                alpha_tiles,
-                adam_params,
-                sek_params,
-                n_tile_size,
-                static_cast<std::size_t>(n_tiles),
-                iter,
-                1);
+                K_inv_tiles, grad_v_tiles, alpha_tiles, adam_params, sek_params, n_tile_size, n_tiles, iter, 1);
         }
         if (trainable_params[2])
         {  // noise_variance
@@ -1020,7 +928,7 @@ optimize(const std::vector<double> &training_input,
                 adam_params,
                 sek_params,
                 n_tile_size,
-                static_cast<std::size_t>(n_tiles),
+                n_tiles,
                 iter,
                 2);
         }
@@ -1033,13 +941,13 @@ optimize(const std::vector<double> &training_input,
 
 double optimize_step(const std::vector<double> &training_input,
                      const std::vector<double> &training_output,
-                     int n_tiles,
-                     int n_tile_size,
-                     int n_regressors,
+                     std::size_t n_tiles,
+                     std::size_t n_tile_size,
+                     std::size_t n_regressors,
                      AdamParams &adam_params,
                      SEKParams &sek_params,
                      std::vector<bool> trainable_params,
-                     int iter)
+                     std::size_t iter)
 {
     /*
      * - Hyperparameters theta={v, l, v_n}
@@ -1085,18 +993,18 @@ double optimize_step(const std::vector<double> &training_input,
     Tiled_matrix grad_l_tiles;  // Tiled covariance with gradient l
 
     // Preallocate memory
-    y_tiles.reserve(static_cast<std::size_t>(n_tiles));
+    y_tiles.reserve(n_tiles);
 
-    alpha_tiles.resize(static_cast<std::size_t>(n_tiles));            // for now resize since reset in loop
-    K_inv_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // for now resize since reset in loop
+    alpha_tiles.resize(n_tiles);            // for now resize since reset in loop
+    K_inv_tiles.resize(n_tiles * n_tiles);  // for now resize since reset in loop
 
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));       // No reserve because of triangular structure
-    grad_v_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    grad_l_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
+    K_tiles.resize(n_tiles * n_tiles);       // No reserve because of triangular structure
+    grad_v_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    grad_l_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly of output y
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         y_tiles.push_back(
             hpx::async(hpx::annotated_function(gen_tile_output, "assemble_y"), i, n_tile_size, training_output));
@@ -1108,12 +1016,12 @@ double optimize_step(const std::vector<double> &training_input,
     // Launch asynchronous assembly of tiled covariance matrix, derivative of covariance matrix
     // vector w.r.t. to vertical lengthscale and derivative of covariance
     // matrix vector w.r.t. to lengthscale
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
             // Compute the distance (z_i - z_j) of K entries to reuse
-            hpx::shared_future<std::vector<double>> cov_dists = hpx::async(
+            hpx::shared_future<mutable_tile_data<double>> cov_dists = hpx::async(
                 hpx::annotated_function(gen_tile_distance, "assemble_cov_dist"),
                 i,
                 j,
@@ -1122,7 +1030,7 @@ double optimize_step(const std::vector<double> &training_input,
                 sek_params,
                 training_input);
 
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
+            K_tiles[i * n_tiles + j] = hpx::dataflow(
                 hpx::annotated_function(hpx::unwrapping(&gen_tile_covariance_with_distance), "assemble_K"),
                 i,
                 j,
@@ -1132,58 +1040,58 @@ double optimize_step(const std::vector<double> &training_input,
 
             if (trainable_params[0])
             {
-                grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
+                grad_l_tiles[i * n_tiles + j] = hpx::dataflow(
                     hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l), "assemble_gradl"),
                     n_tile_size,
                     sek_params,
                     cov_dists);
                 if (i != j)
                 {
-                    grad_l_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
+                    grad_l_tiles[j * n_tiles + i] = hpx::dataflow(
                         hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradl_t"),
                         n_tile_size,
                         n_tile_size,
-                        grad_l_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
+                        grad_l_tiles[i * n_tiles + j]);
                 }
             }
 
             if (trainable_params[1])
             {
-                grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::dataflow(
+                grad_v_tiles[i * n_tiles + j] = hpx::dataflow(
                     hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_v), "assemble_gradv"),
                     n_tile_size,
                     sek_params,
                     cov_dists);
                 if (i != j)
                 {
-                    grad_v_tiles[j * static_cast<std::size_t>(n_tiles) + i] = hpx::dataflow(
+                    grad_v_tiles[j * n_tiles + i] = hpx::dataflow(
                         hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradv_t"),
                         n_tile_size,
                         n_tile_size,
-                        grad_v_tiles[i * static_cast<std::size_t>(n_tiles) + j]);
+                        grad_v_tiles[i * n_tiles + j]);
                 }
             }
         }
     }
 
     // Assembly with reallocation -> optimize to only set existing values
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles[i] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), n_tile_size);
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+        for (std::size_t j = 0; j < n_tiles; j++)
         {
             if (i == j)
             {
-                K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] =
+                K_inv_tiles[i * n_tiles + j] =
                     hpx::async(hpx::annotated_function(gen_tile_identity, "assemble_identity_matrix"), n_tile_size);
             }
             else
             {
-                K_inv_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
+                K_inv_tiles[i * n_tiles + j] = hpx::async(
                     hpx::annotated_function(gen_tile_zeros, "assemble_identity_matrix"), n_tile_size * n_tile_size);
             }
         }
@@ -1191,68 +1099,33 @@ double optimize_step(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous compute K^-1 through L* (L^T * X) = I
-    forward_solve_tiled_matrix(
-        K_tiles,
-        K_inv_tiles,
-        n_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(n_tiles));
-    backward_solve_tiled_matrix(
-        K_tiles,
-        K_inv_tiles,
-        n_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(n_tiles));
+    forward_solve_tiled_matrix(K_tiles, K_inv_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
+    backward_solve_tiled_matrix(K_tiles, K_inv_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous compute beta = inv(K) * y
-    matrix_vector_tiled(
-        K_inv_tiles,
-        y_tiles,
-        alpha_tiles,
-        n_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(n_tiles));
+    matrix_vector_tiled(K_inv_tiles, y_tiles, alpha_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous loss computation where
     // loss(theta) = 0.5 * ( log(det(K)) - y^T * K^-1 * y - N * log(2 * pi) )
-    compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, static_cast<std::size_t>(n_tiles));
+    compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous update of the hyperparameters
     if (trainable_params[0])
     {  // lengthscale
         update_hyperparameter_tiled(
-            K_inv_tiles,
-            grad_l_tiles,
-            alpha_tiles,
-            adam_params,
-            sek_params,
-            n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(iter),
-            0);
+            K_inv_tiles, grad_l_tiles, alpha_tiles, adam_params, sek_params, n_tile_size, n_tiles, iter, 0);
     }
     if (trainable_params[1])
     {  // vertical_lengthscale
         update_hyperparameter_tiled(
-            K_inv_tiles,
-            grad_v_tiles,
-            alpha_tiles,
-            adam_params,
-            sek_params,
-            n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(iter),
-            1);
+            K_inv_tiles, grad_v_tiles, alpha_tiles, adam_params, sek_params, n_tile_size, n_tiles, iter, 1);
     }
     if (trainable_params[2])
     {  // noise_variance
@@ -1263,8 +1136,8 @@ double optimize_step(const std::vector<double> &training_input,
             adam_params,
             sek_params,
             n_tile_size,
-            static_cast<std::size_t>(n_tiles),
-            static_cast<std::size_t>(iter),
+            n_tiles,
+            iter,
             2);
     }
     return loss_value.get();
