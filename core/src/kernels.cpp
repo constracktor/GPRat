@@ -4,10 +4,10 @@
 
 GPRAT_NS_BEGIN
 
-SEKParams::SEKParams(double lengthscale, double vertical_lengthscale, double noise_variance) :
-    lengthscale(lengthscale),
-    vertical_lengthscale(vertical_lengthscale),
-    noise_variance(noise_variance)
+SEKParams::SEKParams(double in_lengthscale, double in_vertical_lengthscale, double in_noise_variance) :
+    lengthscale(in_lengthscale),
+    vertical_lengthscale(in_vertical_lengthscale),
+    noise_variance(in_noise_variance)
 {
     m_T.resize(this->size());
     w_T.resize(this->size());
