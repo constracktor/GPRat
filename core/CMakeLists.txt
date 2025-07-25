@@ -60,6 +60,7 @@ set(SOURCE_FILES
     src/utils.cpp
     src/performance_counters.cpp
     src/target.cpp
+    src/tile_data.cpp
     src/kernels.cpp
     src/hyperparameters.cpp
     src/cpu/gp_functions.cpp
