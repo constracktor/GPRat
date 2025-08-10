@@ -6,8 +6,7 @@
 #include "gprat/detail/config.hpp"
 #include "gprat/tile_data.hpp"
 
-#include <hpx/future.hpp>
-#include <vector>
+#include <span>
 
 GPRAT_NS_BEGIN
 

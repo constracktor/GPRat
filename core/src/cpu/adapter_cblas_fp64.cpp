@@ -1,5 +1,11 @@
 #include "gprat/cpu/adapter_cblas_fp64.hpp"
 
+#include "gprat/performance_counters.hpp"
+
+#ifdef HPX_HAVE_MODULE_PERFORMANCE_COUNTERS
+#include <hpx/performance_counters/manage_counter_type.hpp>
+#endif
+
 #ifdef GPRAT_ENABLE_MKL
 // MKL CBLAS and LAPACKE
 #include "mkl_cblas.h"
@@ -15,6 +21,7 @@ GPRAT_NS_BEGIN
 
 mutable_tile_data<double> potrf(const mutable_tile_data<double> &A, const int N)
 {
+    GPRAT_TIME_FUNCTION(&potrf);
     // POTRF: in-place Cholesky decomposition of A
     // use dpotrf2 recursive version for better stability
     LAPACKE_dpotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
@@ -29,8 +36,8 @@ trsm(const const_tile_data<double> &L,
      const int M,
      const BLAS_TRANSPOSE transpose_L,
      const BLAS_SIDE side_L)
-
 {
+    GPRAT_TIME_FUNCTION(&trsm);
     // TRSM constants
     const double alpha = 1.0;
     // TRSM: in-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -53,6 +60,7 @@ trsm(const const_tile_data<double> &L,
 
 mutable_tile_data<double> syrk(const mutable_tile_data<double> &A, const const_tile_data<double> &B, const int N)
 {
+    GPRAT_TIME_FUNCTION(&syrk);
     // SYRK constants
     const double alpha = -1.0;
     const double beta = 1.0;
@@ -72,6 +80,7 @@ gemm(const const_tile_data<double> &A,
      const BLAS_TRANSPOSE transpose_A,
      const BLAS_TRANSPOSE transpose_B)
 {
+    GPRAT_TIME_FUNCTION(&gemm);
     // GEMM constants
     const double alpha = -1.0;
     const double beta = 1.0;
@@ -100,6 +109,7 @@ gemm(const const_tile_data<double> &A,
 mutable_tile_data<double> trsv(
     const const_tile_data<double> &L, const mutable_tile_data<double> &a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
+    GPRAT_TIME_FUNCTION(&trsv);
     // TRSV: In-place solve L(^T) * x = a where L lower triangular
     cblas_dtrsv(CblasRowMajor,
                 CblasLower,
@@ -123,6 +133,7 @@ gemv(const const_tile_data<double> &A,
      const BLAS_ALPHA alpha,
      const BLAS_TRANSPOSE transpose_A)
 {
+    GPRAT_TIME_FUNCTION(&gemv);
     // GEMV constants
     // const double alpha = -1.0;
     const double beta = 1.0;
@@ -147,6 +158,7 @@ gemv(const const_tile_data<double> &A,
 mutable_tile_data<double>
 dot_diag_syrk(const const_tile_data<double> &A, const mutable_tile_data<double> &r, const int N, const int M)
 {
+    GPRAT_TIME_FUNCTION(&dot_diag_syrk);
     auto r_p = r.data();
     auto A_p = A.data();
     // r = r + diag(A^T * A)
@@ -165,6 +177,7 @@ dot_diag_gemm(const const_tile_data<double> &A,
               const int N,
               const int M)
 {
+    GPRAT_TIME_FUNCTION(&dot_diag_gemm);
     auto r_p = r.data();
     auto A_p = A.data();
     auto B_p = B.data();
@@ -180,14 +193,46 @@ dot_diag_gemm(const const_tile_data<double> &A,
 
 mutable_tile_data<double> axpy(const mutable_tile_data<double> &y, const const_tile_data<double> &x, const int N)
 {
+    GPRAT_TIME_FUNCTION(&axpy);
     cblas_daxpy(N, -1.0, x.data(), 1, y.data(), 1);
     return y;
 }
 
 double dot(std::span<const double> a, std::span<const double> b, const int N)
 {
+    GPRAT_TIME_FUNCTION(&dot);
     // DOT: a * b
     return cblas_ddot(N, a.data(), 1, b.data(), 1);
 }
+
+#ifdef HPX_HAVE_MODULE_PERFORMANCE_COUNTERS
+namespace detail
+{
+void register_fp64_performance_counters()
+{
+    // XXX: you can do this with templates, but it's quite a bit more complicated
+#define GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(name, fn_expr)                                                              \
+    hpx::performance_counters::install_counter_type(                                                                   \
+        name,                                                                                                          \
+        get_and_reset_function_elapsed<fn_expr>,                                                                       \
+        #fn_expr,                                                                                                      \
+        "",                                                                                                            \
+        hpx::performance_counters::counter_type::monotonically_increasing)
+
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/potrf64/time", &potrf);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsm64/time", &trsm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/syrk64/time", &syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemm64/time", &gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsv64/time", &trsv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemv64/time", &gemv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_syrk64/time", &dot_diag_syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_gemm64/time", &dot_diag_gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/axpy64/time", &axpy);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot64/time", &dot);
+
+#undef GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR
+}
+}  // namespace detail
+#endif
 
 GPRAT_NS_END

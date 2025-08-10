@@ -6,8 +6,7 @@
 #include "gprat/detail/config.hpp"
 #include "gprat/tile_data.hpp"
 
-#include <hpx/future.hpp>
-#include <vector>
+#include <span>
 
 GPRAT_NS_BEGIN
 
@@ -96,11 +95,11 @@ trsv(const const_tile_data<float> &L, const mutable_tile_data<float> &a, int N, 
 
 /**
  * @brief FP32 General matrix-vector multiplication: b = b - A(^T) * a
- * @param f_A update matrix
- * @param f_a update vector
- * @param f_b base vector
+ * @param A update matrix
+ * @param a update vector
+ * @param b base vector
  * @param N matrix dimension
- * @param alpha add or substract update to base vector
+ * @param alpha add or subtract update to base vector
  * @param transpose_A transpose update matrix
  * @return updated vector b
  */
@@ -140,8 +139,8 @@ mutable_tile_data<float> dot_diag_gemm(
 
 /**
  * @brief FP32 AXPY: y - x
- * @param f_y left vector
- * @param f_x right vector
+ * @param y left vector
+ * @param x right vector
  * @param N vector length
  * @return y - x
  */
@@ -149,8 +148,8 @@ mutable_tile_data<float> axpy(const mutable_tile_data<float> &y, const const_til
 
 /**
  * @brief FP32 Dot product: a * b
- * @param f_a left vector
- * @param f_b right vector
+ * @param a left vector
+ * @param b right vector
  * @param N vector length
  * @return a * b
  */
