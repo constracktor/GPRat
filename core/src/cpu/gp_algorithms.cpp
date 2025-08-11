@@ -147,7 +147,7 @@ mutable_tile_data<double> gen_tile_transpose(std::size_t N_row, std::size_t N_co
 mutable_tile_data<double> gen_tile_output(std::size_t row, std::size_t N, std::span<const double> output)
 {
     mutable_tile_data<double> tile(N);
-    std::copy(output.begin() + (N * row), output.begin() + (N * (row + 1)), tile.data());
+    std::copy(output.data() + (N * row), output.data() + (N * (row + 1)), tile.data());
     return tile;
 }
 

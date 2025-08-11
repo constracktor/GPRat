@@ -15,7 +15,7 @@ namespace cpu
 
 // Tiled Cholesky Algorithm
 
-void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_tiles)
+void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, std::size_t N, std::size_t n_tiles)
 {
     for (std::size_t k = 0; k < n_tiles; k++)
     {
@@ -52,7 +52,7 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
 
 // Tiled Triangular Solve Algorithms
 
-void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, std::size_t n_tiles)
+void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, std::size_t N, std::size_t n_tiles)
 {
     for (std::size_t k = 0; k < n_tiles; k++)
     {
@@ -75,7 +75,7 @@ void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, st
     }
 }
 
-void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, std::size_t n_tiles)
+void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, std::size_t N, std::size_t n_tiles)
 {
     for (int k_ = static_cast<int>(n_tiles) - 1; k_ >= 0; k_--)  // int instead of std::size_t for last comparison
     {
@@ -100,8 +100,12 @@ void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, s
     }
 }
 
-void forward_solve_tiled_matrix(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_rhs, int N, int M, std::size_t n_tiles, std::size_t m_tiles)
+void forward_solve_tiled_matrix(Tiled_matrix &ft_tiles,
+                                Tiled_matrix &ft_rhs,
+                                std::size_t N,
+                                std::size_t M,
+                                std::size_t n_tiles,
+                                std::size_t m_tiles)
 {
     for (std::size_t c = 0; c < m_tiles; c++)
     {
@@ -134,8 +138,12 @@ void forward_solve_tiled_matrix(
     }
 }
 
-void backward_solve_tiled_matrix(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_rhs, int N, int M, std::size_t n_tiles, std::size_t m_tiles)
+void backward_solve_tiled_matrix(Tiled_matrix &ft_tiles,
+                                 Tiled_matrix &ft_rhs,
+                                 std::size_t N,
+                                 std::size_t M,
+                                 std::size_t n_tiles,
+                                 std::size_t m_tiles)
 {
     for (std::size_t c = 0; c < m_tiles; c++)
     {
@@ -173,8 +181,8 @@ void backward_solve_tiled_matrix(
 void matrix_vector_tiled(Tiled_matrix &ft_tiles,
                          Tiled_vector &ft_vector,
                          Tiled_vector &ft_rhs,
-                         int N_row,
-                         int N_col,
+                         std::size_t N_row,
+                         std::size_t N_col,
                          std::size_t n_tiles,
                          std::size_t m_tiles)
 {
@@ -196,7 +204,12 @@ void matrix_vector_tiled(Tiled_matrix &ft_tiles,
 }
 
 void symmetric_matrix_matrix_diagonal_tiled(
-    Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int N, int M, std::size_t n_tiles, std::size_t m_tiles)
+    Tiled_matrix &ft_tiles,
+    Tiled_vector &ft_vector,
+    std::size_t N,
+    std::size_t M,
+    std::size_t n_tiles,
+    std::size_t m_tiles)
 {
     for (std::size_t i = 0; i < m_tiles; ++i)
     {
@@ -209,8 +222,12 @@ void symmetric_matrix_matrix_diagonal_tiled(
     }
 }
 
-void symmetric_matrix_matrix_tiled(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_result, int N, int M, std::size_t n_tiles, std::size_t m_tiles)
+void symmetric_matrix_matrix_tiled(Tiled_matrix &ft_tiles,
+                                   Tiled_matrix &ft_result,
+                                   std::size_t N,
+                                   std::size_t M,
+                                   std::size_t n_tiles,
+                                   std::size_t m_tiles)
 {
     for (std::size_t c = 0; c < m_tiles; c++)
     {
@@ -235,7 +252,7 @@ void symmetric_matrix_matrix_tiled(
     }
 }
 
-void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_subtrahend, int M, std::size_t m_tiles)
+void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_subtrahend, std::size_t M, std::size_t m_tiles)
 {
     for (std::size_t i = 0; i < m_tiles; i++)
     {
@@ -243,7 +260,7 @@ void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_subtrahe
     }
 }
 
-void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int M, std::size_t m_tiles)
+void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, std::size_t M, std::size_t m_tiles)
 {
     for (std::size_t i = 0; i < m_tiles; i++)
     {
@@ -255,7 +272,7 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
                         Tiled_vector &ft_alpha,
                         Tiled_vector &ft_y,
                         hpx::shared_future<double> &loss,
-                        int N,
+                        std::size_t N,
                         std::size_t n_tiles)
 {
     std::vector<hpx::shared_future<double>> loss_tiled;
@@ -275,7 +292,7 @@ void update_hyperparameter_tiled(
     const Tiled_vector &ft_alpha,
     const AdamParams &adam_params,
     SEKParams &sek_params,
-    int N,
+    std::size_t N,
     std::size_t n_tiles,
     std::size_t iter,
     std::size_t param_idx)

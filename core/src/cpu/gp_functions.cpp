@@ -17,25 +17,25 @@ namespace cpu
 std::vector<mutable_tile_data<double>>
 cholesky(const std::vector<double> &training_input,
          const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors)
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors)
 {
     std::vector<mutable_tile_data<double>> result;
     // Tiled future data structures
     Tiled_matrix K_tiles;  // Tiled covariance matrix
 
     // Preallocate memory
-    result.resize(static_cast<std::size_t>(n_tiles * n_tiles));
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
+    result.resize(n_tiles * n_tiles);
+    K_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+            K_tiles[i * n_tiles + j] = detail::named_async<gen_tile_covariance>(
                 "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
@@ -45,7 +45,7 @@ cholesky(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(cholesky_timer, "cholesky_step cholesky", K_tiles);
 #if GPRAT_APEX_CHOLESKY
@@ -54,12 +54,11 @@ cholesky(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            result[i * static_cast<std::size_t>(n_tiles) + j] =
-                K_tiles[i * static_cast<std::size_t>(n_tiles) + j].get();
+            result[i * n_tiles + j] = K_tiles[i * n_tiles + j].get();
         }
     }
     return result;
@@ -70,11 +69,11 @@ predict(const std::vector<double> &training_input,
         const std::vector<double> &training_output,
         const std::vector<double> &test_input,
         const SEKParams &sek_params,
-        int n_tiles,
-        int n_tile_size,
-        int m_tiles,
-        int m_tile_size,
-        int n_regressors)
+        std::size_t n_tiles,
+        std::size_t n_tile_size,
+        std::size_t m_tiles,
+        std::size_t m_tile_size,
+        std::size_t n_regressors)
 {
     /*
      * Prediction: hat(y)_M = cross(K)_MxN * K^-1_NxN * y_N
@@ -104,38 +103,38 @@ predict(const std::vector<double> &training_input,
     // Preallocate memory
     prediction_result.reserve(test_input.size());
 
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    alpha_tiles.reserve(static_cast<std::size_t>(n_tiles));
-    cross_covariance_tiles.reserve(static_cast<std::size_t>(m_tiles) * static_cast<std::size_t>(n_tiles));
-    prediction_tiles.reserve(static_cast<std::size_t>(m_tiles));
+    K_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    alpha_tiles.reserve(n_tiles);
+    cross_covariance_tiles.reserve(m_tiles * n_tiles);
+    prediction_tiles.reserve(m_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+            K_tiles[i * n_tiles + j] = detail::named_async<gen_tile_covariance>(
                 "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles.push_back(
             detail::named_async<gen_tile_output>("assemble_tiled_alpha", i, n_tile_size, training_output));
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+        for (std::size_t j = 0; j < n_tiles; j++)
         {
             cross_covariance_tiles.push_back(detail::named_async<gen_tile_cross_covariance>(
                 "assemble_pred", i, j, m_tile_size, n_tile_size, n_regressors, sek_params, test_input, training_input));
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         prediction_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_tiled", m_tile_size));
     }
@@ -146,21 +145,15 @@ predict(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(cholesky_timer, "predict_step cholesky", K_tiles);
     GPRAT_START_STEP(forward_timer);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
-    // First, forward solve L * beta = y
-    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
-
-    GPRAT_END_STEP(forward_timer, "predict_step forward", alpha_tiles);
-    GPRAT_START_STEP(backward_timer);
-
-    // Second, backward solve L^T * alpha = beta
-    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
+    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(backward_timer, "predict_step backward", alpha_tiles);
     GPRAT_START_STEP(prediction_timer);
@@ -168,17 +161,11 @@ predict(const std::vector<double> &training_input,
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous prediction computation solve: \hat{y} = K_cross_cov * alpha
     matrix_vector_tiled(
-        cross_covariance_tiles,
-        alpha_tiles,
-        prediction_tiles,
-        m_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
+        cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize prediction
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         auto tile = prediction_tiles[i].get();
         std::copy_n(tile.data(), tile.size(), std::back_inserter(prediction_result));
@@ -194,11 +181,11 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
     const SEKParams &sek_params,
-    int n_tiles,
-    int n_tile_size,
-    int m_tiles,
-    int m_tile_size,
-    int n_regressors)
+    std::size_t n_tiles,
+    std::size_t n_tile_size,
+    std::size_t m_tiles,
+    std::size_t m_tile_size,
+    std::size_t n_regressors)
 {
     /*
      * Prediction: hat(y) = cross(K) * K^-1 * y
@@ -241,82 +228,64 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     prediction_result.reserve(test_input.size());
     uncertainty_result.reserve(test_input.size());
 
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    cross_covariance_tiles.reserve(static_cast<std::size_t>(m_tiles) * static_cast<std::size_t>(n_tiles));
-    prediction_tiles.reserve(static_cast<std::size_t>(m_tiles));
-    alpha_tiles.reserve(static_cast<std::size_t>(n_tiles));
+    K_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    cross_covariance_tiles.reserve(m_tiles * n_tiles);
+    prediction_tiles.reserve(m_tiles);
+    alpha_tiles.reserve(n_tiles);
 
-    t_cross_covariance_tiles.reserve(static_cast<std::size_t>(n_tiles) * static_cast<std::size_t>(m_tiles));
-    prior_K_tiles.reserve(static_cast<std::size_t>(m_tiles));
-    uncertainty_tiles.reserve(static_cast<std::size_t>(m_tiles));
+    t_cross_covariance_tiles.reserve(n_tiles * m_tiles);
+    prior_K_tiles.reserve(m_tiles);
+    uncertainty_tiles.reserve(m_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = detail::named_async<gen_tile_covariance>(
+            K_tiles[i * n_tiles + j] = detail::named_async<gen_tile_covariance>(
                 "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        alpha_tiles.push_back(hpx::async(
-            hpx::annotated_function(gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, training_output));
+        alpha_tiles.push_back(
+            detail::named_async<gen_tile_output>("assemble_tiled_alpha", i, n_tile_size, training_output));
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+        for (std::size_t j = 0; j < n_tiles; j++)
         {
-            cross_covariance_tiles.push_back(hpx::async(
-                hpx::annotated_function(gen_tile_cross_covariance, "assemble_pred"),
-                i,
-                j,
-                m_tile_size,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                test_input,
-                training_input));
+            cross_covariance_tiles.push_back(detail::named_async<gen_tile_cross_covariance>(
+                "assemble_pred", i, j, m_tile_size, n_tile_size, n_regressors, sek_params, test_input, training_input));
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        prediction_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), m_tile_size));
+        prediction_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_tiled", m_tile_size));
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        prior_K_tiles.push_back(hpx::async(
-            hpx::annotated_function(gen_tile_prior_covariance, "assemble_tiled"),
-            i,
-            i,
-            m_tile_size,
-            n_regressors,
-            sek_params,
-            test_input));
+        prior_K_tiles.push_back(detail::named_async<gen_tile_prior_covariance>(
+            "assemble_tiled", i, i, m_tile_size, n_regressors, sek_params, test_input));
     }
 
-    for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+    for (std::size_t j = 0; j < n_tiles; j++)
     {
-        for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+        for (std::size_t i = 0; i < m_tiles; i++)
         {
-            t_cross_covariance_tiles.push_back(hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_pred"),
-                m_tile_size,
-                n_tile_size,
-                cross_covariance_tiles[i * static_cast<std::size_t>(n_tiles) + j]));
+            t_cross_covariance_tiles.push_back(detail::named_dataflow<gen_tile_transpose>(
+                "assemble_pred", m_tile_size, n_tile_size, cross_covariance_tiles[i * n_tiles + j]));
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        uncertainty_tiles.push_back(
-            hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_prior_inter"), m_tile_size));
+        uncertainty_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_prior_inter", m_tile_size));
     }
 
     GPRAT_END_STEP(
@@ -334,21 +303,15 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     // Prediction
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(cholesky_timer, "predict_uncer_step cholesky", K_tiles);
     GPRAT_START_STEP(forward_timer);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
-    // First, forward solve L * beta = y
-    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
-
-    GPRAT_END_STEP(forward_timer, "predict_uncer_step forward", alpha_tiles);
-    GPRAT_START_STEP(backward_timer);
-
-    // Second, backward solve L^T * alpha = beta
-    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
+    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(backward_timer, "predict_uncer_step backward", alpha_tiles);
     GPRAT_START_STEP(prediction_timer);
@@ -356,26 +319,14 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous prediction computation solve: hat(y) = cross(K) * alpha
     matrix_vector_tiled(
-        cross_covariance_tiles,
-        alpha_tiles,
-        prediction_tiles,
-        m_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
+        cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
     GPRAT_END_STEP(prediction_timer, "predict_uncer_step prediction", prediction_tiles);
     GPRAT_START_STEP(uncertainty_timer);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous triangular solve L * V = cross(K)^T
-    forward_solve_tiled_matrix(
-        K_tiles,
-        t_cross_covariance_tiles,
-        n_tile_size,
-        m_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
+    forward_solve_tiled_matrix(K_tiles, t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles);
 
     GPRAT_END_STEP(uncertainty_timer, "predict_uncer_step forward KcK", t_cross_covariance_tiles);
     GPRAT_START_STEP(posterior_covariance_timer);
@@ -383,32 +334,27 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous computation diag(W) = diag(V^T * V)
     symmetric_matrix_matrix_diagonal_tiled(
-        t_cross_covariance_tiles,
-        uncertainty_tiles,
-        n_tile_size,
-        m_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
+        t_cross_covariance_tiles, uncertainty_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles);
 
     GPRAT_END_STEP(posterior_covariance_timer, "predict_uncer_step posterior covariance", uncertainty_tiles);
     GPRAT_START_STEP(prediction_uncertainty_timer);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous computation diag(Sigma) = diag(prior(K)) - diag(W)
-    vector_difference_tiled(prior_K_tiles, uncertainty_tiles, m_tile_size, static_cast<std::size_t>(m_tiles));
+    vector_difference_tiled(prior_K_tiles, uncertainty_tiles, m_tile_size, m_tiles);
 
     GPRAT_END_STEP(prediction_uncertainty_timer, "predict_uncer_step prediction uncertainty", uncertainty_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize prediction
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         auto tile = prediction_tiles[i].get();
         std::copy_n(tile.begin(), tile.size(), std::back_inserter(prediction_result));
     }
 
     // Synchronize uncertainty
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         auto tile = uncertainty_tiles[i].get();
         std::copy_n(tile.begin(), tile.size(), std::back_inserter(uncertainty_result));
@@ -422,11 +368,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
     const SEKParams &sek_params,
-    int n_tiles,
-    int n_tile_size,
-    int m_tiles,
-    int m_tile_size,
-    int n_regressors)
+    std::size_t n_tiles,
+    std::size_t n_tile_size,
+    std::size_t m_tiles,
+    std::size_t m_tile_size,
+    std::size_t n_regressors)
 {
     /*
      * Prediction: hat(y)_M = cross(K) * K^-1 * y
@@ -471,100 +417,74 @@ std::vector<std::vector<double>> predict_with_full_cov(
     prediction_result.reserve(test_input.size());
     uncertainty_result.reserve(test_input.size());
 
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    cross_covariance_tiles.reserve(static_cast<std::size_t>(m_tiles) * static_cast<std::size_t>(n_tiles));
-    prediction_tiles.reserve(static_cast<std::size_t>(m_tiles));
-    alpha_tiles.reserve(static_cast<std::size_t>(n_tiles));
+    K_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    cross_covariance_tiles.reserve(m_tiles * n_tiles);
+    prediction_tiles.reserve(m_tiles);
+    alpha_tiles.reserve(n_tiles);
 
-    t_cross_covariance_tiles.reserve(static_cast<std::size_t>(n_tiles) * static_cast<std::size_t>(m_tiles));
-    prior_K_tiles.resize(static_cast<std::size_t>(m_tiles * m_tiles));
-    uncertainty_tiles.reserve(static_cast<std::size_t>(m_tiles));
+    t_cross_covariance_tiles.reserve(n_tiles * m_tiles);
+    prior_K_tiles.resize(m_tiles * m_tiles);
+    uncertainty_tiles.reserve(m_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_covariance, "assemble_tiled_K"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            K_tiles[i * n_tiles + j] = detail::named_async<gen_tile_covariance>(
+                "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        alpha_tiles.push_back(hpx::async(
-            hpx::annotated_function(gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, training_output));
+        alpha_tiles.push_back(
+            detail::named_async<gen_tile_output>("assemble_tiled_alpha", i, n_tile_size, training_output));
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+        for (std::size_t j = 0; j < n_tiles; j++)
         {
-            cross_covariance_tiles.push_back(hpx::async(
-                hpx::annotated_function(gen_tile_cross_covariance, "assemble_pred"),
-                i,
-                j,
-                m_tile_size,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                test_input,
-                training_input));
+            cross_covariance_tiles.push_back(detail::named_async<gen_tile_cross_covariance>(
+                "assemble_pred", i, j, m_tile_size, n_tile_size, n_regressors, sek_params, test_input, training_input));
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        prediction_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), m_tile_size));
+        prediction_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_tiled", m_tile_size));
     }
 
     // Assemble prior covariance matrix vector
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            prior_K_tiles[i * static_cast<std::size_t>(m_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_full_prior_covariance, "assemble_prior_tiled"),
-                i,
-                j,
-                m_tile_size,
-                n_regressors,
-                sek_params,
-                test_input);
+            prior_K_tiles[i * m_tiles + j] = detail::named_async<gen_tile_full_prior_covariance>(
+                "assemble_prior_tiled", i, j, m_tile_size, n_regressors, sek_params, test_input);
 
             if (i != j)
             {
-                prior_K_tiles[j * static_cast<std::size_t>(m_tiles) + i] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_prior_tiled"),
-                    m_tile_size,
-                    m_tile_size,
-                    prior_K_tiles[i * static_cast<std::size_t>(m_tiles) + j]);
+                prior_K_tiles[j * m_tiles + i] = detail::named_dataflow<gen_tile_transpose>(
+                    "assemble_prior_tiled", m_tile_size, m_tile_size, prior_K_tiles[i * m_tiles + j]);
             }
         }
     }
 
-    for (std::size_t j = 0; j < static_cast<std::size_t>(n_tiles); j++)
+    for (std::size_t j = 0; j < n_tiles; j++)
     {
-        for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+        for (std::size_t i = 0; i < m_tiles; i++)
         {
-            t_cross_covariance_tiles.push_back(hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_pred"),
-                m_tile_size,
-                n_tile_size,
-                cross_covariance_tiles[i * static_cast<std::size_t>(n_tiles) + j]));
+            t_cross_covariance_tiles.push_back(detail::named_dataflow<gen_tile_transpose>(
+                "assemble_pred", m_tile_size, n_tile_size, cross_covariance_tiles[i * n_tiles + j]));
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
-        uncertainty_tiles.push_back(hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), m_tile_size));
+        uncertainty_tiles.push_back(detail::named_async<gen_tile_zeros>("assemble_tiled", m_tile_size));
     }
 
     GPRAT_END_STEP(
@@ -582,19 +502,15 @@ std::vector<std::vector<double>> predict_with_full_cov(
     // Prediction
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(cholesky_timer, "predict_full_cov_step cholesky", K_tiles);
     GPRAT_START_STEP(forward_timer);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
-    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
-
-    GPRAT_END_STEP(forward_timer, "predict_full_cov_step forward", alpha_tiles);
-    GPRAT_START_STEP(backward_timer);
-
-    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
+    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
     GPRAT_END_STEP(backward_timer, "predict_full_cov_step backward", alpha_tiles);
     GPRAT_START_STEP(forward_KcK_timer);
@@ -615,46 +531,31 @@ std::vector<std::vector<double>> predict_with_full_cov(
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous prediction computation solve: hat(y) = K_cross_cov * alpha
     matrix_vector_tiled(
-        cross_covariance_tiles,
-        alpha_tiles,
-        prediction_tiles,
-        m_tile_size,
-        n_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
+        cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
-    GPRAT_END_STEP(prediction_timer, "predict_full_cov_step prediction", prediction_tiles);
-    GPRAT_START_STEP(full_cov_timer);
+    ///////////////////////////////////////////////////////////////////////////
+    // Launch asynchronous triangular solve L * V = cross(K)^T
+    forward_solve_tiled_matrix(K_tiles, t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous computation of full covariance Sigma = prior(K) - V^T * V
-    symmetric_matrix_matrix_tiled(
-        t_cross_covariance_tiles,
-        prior_K_tiles,
-        n_tile_size,
-        m_tile_size,
-        static_cast<std::size_t>(n_tiles),
-        static_cast<std::size_t>(m_tiles));
-
-    GPRAT_END_STEP(full_cov_timer, "predict_full_cov_step full cov", prior_K_tiles);
-    GPRAT_START_STEP(prediction_uncertainty_timer);
-
+    symmetric_matrix_matrix_tiled(t_cross_covariance_tiles, prior_K_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles);
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous computation of uncertainty diag(Sigma)
-    matrix_diagonal_tiled(prior_K_tiles, uncertainty_tiles, m_tile_size, static_cast<std::size_t>(m_tiles));
+    matrix_diagonal_tiled(prior_K_tiles, uncertainty_tiles, m_tile_size, m_tiles);
 
     GPRAT_END_STEP(prediction_uncertainty_timer, "predict_full_cov_step pred uncer", uncertainty_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize prediction
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         auto tile = prediction_tiles[i].get();
         std::copy(tile.begin(), tile.end(), std::back_inserter(prediction_result));
     }
 
     // Synchronize uncertainty
-    for (std::size_t i = 0; i < static_cast<std::size_t>(m_tiles); i++)
+    for (std::size_t i = 0; i < m_tiles; i++)
     {
         auto tile = uncertainty_tiles[i].get();
         std::copy(tile.begin(), tile.end(), std::back_inserter(uncertainty_result));
@@ -668,9 +569,9 @@ std::vector<std::vector<double>> predict_with_full_cov(
 double compute_loss(const std::vector<double> &training_input,
                     const std::vector<double> &training_output,
                     const SEKParams &sek_params,
-                    int n_tiles,
-                    int n_tile_size,
-                    int n_regressors)
+                    std::size_t n_tiles,
+                    std::size_t n_tile_size,
+                    std::size_t n_regressors)
 {
     /*
      * Negative log likelihood loss:
@@ -699,51 +600,44 @@ double compute_loss(const std::vector<double> &training_input,
     Tiled_vector alpha_tiles;  // Tiled intermediate solution
 
     // Preallocate memory
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-    y_tiles.reserve(static_cast<std::size_t>(n_tiles));
-    alpha_tiles.reserve(static_cast<std::size_t>(n_tiles));
+    K_tiles.resize(n_tiles * n_tiles);  // No reserve because of triangular structure
+    y_tiles.reserve(n_tiles);
+    alpha_tiles.reserve(n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous assembly
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
-                hpx::annotated_function(gen_tile_covariance, "assemble_tiled_K"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            K_tiles[i * n_tiles + j] = detail::named_async<gen_tile_covariance>(
+                "assemble_tiled_K", i, j, n_tile_size, n_regressors, sek_params, training_input);
         }
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        y_tiles.push_back(
-            hpx::async(hpx::annotated_function(gen_tile_output, "assemble_tiled_y"), i, n_tile_size, training_output));
+        y_tiles.push_back(detail::named_async<gen_tile_output>("assemble_tiled_y", i, n_tile_size, training_output));
     }
 
-    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        alpha_tiles.push_back(hpx::async(
-            hpx::annotated_function(gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, training_output));
+        alpha_tiles.push_back(
+            detail::named_async<gen_tile_output>("assemble_tiled_alpha", i, n_tile_size, training_output));
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
-    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
-    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
+    backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous loss computation
-    compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, static_cast<std::size_t>(n_tiles));
+    compute_loss_tiled(K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, n_tiles);
 
     return loss_value.get();
 }
@@ -820,8 +714,7 @@ optimize(const std::vector<double> &training_input,
     // Launch asynchronous assembly of output y
     for (std::size_t i = 0; i < n_tiles; i++)
     {
-        y_tiles.push_back(
-            hpx::async(hpx::annotated_function(gen_tile_output, "assemble_y"), i, n_tile_size, training_output));
+        y_tiles.push_back(detail::named_async<gen_tile_output>("assemble_y", i, n_tile_size, training_output));
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -1006,8 +899,7 @@ double optimize_step(const std::vector<double> &training_input,
     // Launch asynchronous assembly of output y
     for (std::size_t i = 0; i < n_tiles; i++)
     {
-        y_tiles.push_back(
-            hpx::async(hpx::annotated_function(gen_tile_output, "assemble_y"), i, n_tile_size, training_output));
+        y_tiles.push_back(detail::named_async<gen_tile_output>("assemble_y", i, n_tile_size, training_output));
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -1021,54 +913,31 @@ double optimize_step(const std::vector<double> &training_input,
         for (std::size_t j = 0; j <= i; j++)
         {
             // Compute the distance (z_i - z_j) of K entries to reuse
-            hpx::shared_future<mutable_tile_data<double>> cov_dists = hpx::async(
-                hpx::annotated_function(gen_tile_distance, "assemble_cov_dist"),
-                i,
-                j,
-                n_tile_size,
-                n_regressors,
-                sek_params,
-                training_input);
+            auto cov_dists = detail::named_async<gen_tile_distance>(
+                "assemble_cov_dist", i, j, n_tile_size, n_regressors, sek_params, training_input);
 
-            K_tiles[i * n_tiles + j] = hpx::dataflow(
-                hpx::annotated_function(hpx::unwrapping(&gen_tile_covariance_with_distance), "assemble_K"),
-                i,
-                j,
-                n_tile_size,
-                sek_params,
-                cov_dists);
+            K_tiles[i * n_tiles + j] = detail::named_dataflow<gen_tile_covariance_with_distance>(
+                "assemble_K", i, j, n_tile_size, sek_params, cov_dists);
 
             if (trainable_params[0])
             {
-                grad_l_tiles[i * n_tiles + j] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_l), "assemble_gradl"),
-                    n_tile_size,
-                    sek_params,
-                    cov_dists);
+                grad_l_tiles[i * n_tiles + j] =
+                    detail::named_dataflow<gen_tile_grad_l>("assemble_gradl", n_tile_size, sek_params, cov_dists);
                 if (i != j)
                 {
-                    grad_l_tiles[j * n_tiles + i] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradl_t"),
-                        n_tile_size,
-                        n_tile_size,
-                        grad_l_tiles[i * n_tiles + j]);
+                    grad_l_tiles[j * n_tiles + i] = detail::named_dataflow<gen_tile_transpose>(
+                        "assemble_gradl_t", n_tile_size, n_tile_size, grad_l_tiles[i * n_tiles + j]);
                 }
             }
 
             if (trainable_params[1])
             {
-                grad_v_tiles[i * n_tiles + j] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&gen_tile_grad_v), "assemble_gradv"),
-                    n_tile_size,
-                    sek_params,
-                    cov_dists);
+                grad_v_tiles[i * n_tiles + j] =
+                    detail::named_dataflow<gen_tile_grad_v>("assemble_gradv", n_tile_size, sek_params, cov_dists);
                 if (i != j)
                 {
-                    grad_v_tiles[j * n_tiles + i] = hpx::dataflow(
-                        hpx::annotated_function(hpx::unwrapping(&gen_tile_transpose), "assemble_gradv_t"),
-                        n_tile_size,
-                        n_tile_size,
-                        grad_v_tiles[i * n_tiles + j]);
+                    grad_v_tiles[j * n_tiles + i] = detail::named_dataflow<gen_tile_transpose>(
+                        "assemble_gradv_t", n_tile_size, n_tile_size, grad_v_tiles[i * n_tiles + j]);
                 }
             }
         }
@@ -1077,7 +946,7 @@ double optimize_step(const std::vector<double> &training_input,
     // Assembly with reallocation -> optimize to only set existing values
     for (std::size_t i = 0; i < n_tiles; i++)
     {
-        alpha_tiles[i] = hpx::async(hpx::annotated_function(gen_tile_zeros, "assemble_tiled"), n_tile_size);
+        alpha_tiles[i] = detail::named_async<gen_tile_zeros>("assemble_tiled", n_tile_size);
     }
 
     for (std::size_t i = 0; i < n_tiles; i++)
@@ -1087,12 +956,12 @@ double optimize_step(const std::vector<double> &training_input,
             if (i == j)
             {
                 K_inv_tiles[i * n_tiles + j] =
-                    hpx::async(hpx::annotated_function(gen_tile_identity, "assemble_identity_matrix"), n_tile_size);
+                    detail::named_async<gen_tile_identity>("assemble_identity_matrix", n_tile_size);
             }
             else
             {
-                K_inv_tiles[i * n_tiles + j] = hpx::async(
-                    hpx::annotated_function(gen_tile_zeros, "assemble_identity_matrix"), n_tile_size * n_tile_size);
+                K_inv_tiles[i * n_tiles + j] =
+                    detail::named_async<gen_tile_zeros>("assemble_identity_matrix", n_tile_size * n_tile_size);
             }
         }
     }

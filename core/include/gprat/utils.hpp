@@ -20,16 +20,16 @@ GPRAT_NS_BEGIN
  * @param n_samples Number of samples
  * @param n_tile_size Size of each tile
  */
-int compute_train_tiles(int n_samples, int n_tile_size);
+std::size_t compute_train_tiles(std::size_t n_samples, std::size_t n_tile_size);
 
 /**
  * @brief Compute the number of tiles for training data, given the number of
  * samples and the size of each tile.
  *
  * @param n_samples Number of samples
- * @param n_tile_size Size of each tile
+ * @param n_tiles Size of each tile
  */
-int compute_train_tile_size(int n_samples, int n_tiles);
+std::size_t compute_train_tile_size(std::size_t n_samples, std::size_t n_tiles);
 
 /**
  * @brief Compute the number of test tiles and the size of a test tile.
@@ -41,7 +41,8 @@ int compute_train_tile_size(int n_samples, int n_tiles);
  * @param n_tiles Number of tiles
  * @param n_tile_size Size of each tile
  */
-std::pair<int, int> compute_test_tiles(int n_test, int n_tiles, int n_tile_size);
+std::pair<std::size_t, std::size_t>
+compute_test_tiles(std::size_t n_test, std::size_t n_tiles, std::size_t n_tile_size);
 
 /**
  * @brief Load data from file
@@ -49,7 +50,7 @@ std::pair<int, int> compute_test_tiles(int n_test, int n_tiles, int n_tile_size)
  * @param file_path Path to the file
  * @param n_samples Number of samples to load
  */
-std::vector<double> load_data(const std::string &file_path, int n_samples, int offset);
+std::vector<double> load_data(const std::string &file_path, std::size_t n_samples, std::size_t offset);
 
 /**
  * @brief Print a vector

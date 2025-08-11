@@ -4,7 +4,7 @@
 
 GPRAT_NS_BEGIN
 
-int compute_train_tiles(int n_samples, int n_tile_size)
+std::size_t compute_train_tiles(std::size_t n_samples, std::size_t n_tile_size)
 {
     if (n_tile_size > 0)
     {
@@ -17,7 +17,7 @@ int compute_train_tiles(int n_samples, int n_tile_size)
     }
 }
 
-int compute_train_tile_size(int n_samples, int n_tiles)
+std::size_t compute_train_tile_size(std::size_t n_samples, std::size_t n_tiles)
 {
     if (n_tiles > 0)
     {
@@ -30,10 +30,10 @@ int compute_train_tile_size(int n_samples, int n_tiles)
     }
 }
 
-std::pair<int, int> compute_test_tiles(int n_test, int n_tiles, int n_tile_size)
+std::pair<std::size_t, std::size_t> compute_test_tiles(std::size_t n_test, std::size_t n_tiles, std::size_t n_tile_size)
 {
-    int m_tiles;
-    int m_tile_size;
+    std::size_t m_tiles;
+    std::size_t m_tile_size;
 
     // if n_test is not divisible by (incl. smaller than) n_tile_size, use the same number of tiles
     if ((n_test % n_tile_size) > 0)
@@ -50,10 +50,10 @@ std::pair<int, int> compute_test_tiles(int n_test, int n_tiles, int n_tile_size)
     return { m_tiles, m_tile_size };
 }
 
-std::vector<double> load_data(const std::string &file_path, int n_samples, int offset)
+std::vector<double> load_data(const std::string &file_path, std::size_t n_samples, std::size_t offset)
 {
     std::vector<double> _data;
-    _data.resize(static_cast<std::size_t>(n_samples + offset), 0.0);
+    _data.resize(n_samples + offset, 0.0);
 
     FILE *input_file = fopen(file_path.c_str(), "r");
     if (input_file == NULL)
@@ -62,11 +62,14 @@ std::vector<double> load_data(const std::string &file_path, int n_samples, int o
     }
 
     // load data
-    int scanned_elements = 0;
-    for (int i = 0; i < n_samples; i++)
+    std::size_t scanned_elements = 0;
+    for (std::size_t i = 0; i < n_samples; i++)
     {
-        scanned_elements +=
-            fscanf(input_file, "%lf", &_data[static_cast<std::size_t>(i + offset)]);  // scanned_elements++;
+        const auto r = fscanf(input_file, "%lf", &_data[(i + offset)]);
+        if (r > 0)
+        {
+            scanned_elements += static_cast<std::size_t>(r);
+        }
     }
 
     fclose(input_file);

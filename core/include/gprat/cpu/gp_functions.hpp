@@ -30,9 +30,9 @@ namespace cpu
 std::vector<mutable_tile_data<double>>
 cholesky(const std::vector<double> &training_input,
          const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors);
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors);
 
 /**
  * @brief Compute the predictions without uncertainties.
@@ -54,11 +54,11 @@ predict(const std::vector<double> &training_input,
         const std::vector<double> &training_output,
         const std::vector<double> &test_input,
         const SEKParams &sek_params,
-        int n_tiles,
-        int n_tile_size,
-        int m_tiles,
-        int m_tile_size,
-        int n_regressors);
+        std::size_t n_tiles,
+        std::size_t n_tile_size,
+        std::size_t m_tiles,
+        std::size_t m_tile_size,
+        std::size_t n_regressors);
 
 /**
  * @brief Compute the predictions with uncertainties.
@@ -80,11 +80,11 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
     const SEKParams &sek_params,
-    int n_tiles,
-    int n_tile_size,
-    int m_tiles,
-    int m_tile_size,
-    int n_regressors);
+    std::size_t n_tiles,
+    std::size_t n_tile_size,
+    std::size_t m_tiles,
+    std::size_t m_tile_size,
+    std::size_t n_regressors);
 
 /**
  * @brief Compute the predictions with full covariance matrix.
@@ -106,11 +106,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_output,
     const std::vector<double> &test_data,
     const SEKParams &sek_params,
-    int n_tiles,
-    int n_tile_size,
-    int m_tiles,
-    int m_tile_size,
-    int n_regressors);
+    std::size_t n_tiles,
+    std::size_t n_tile_size,
+    std::size_t m_tiles,
+    std::size_t m_tile_size,
+    std::size_t n_regressors);
 
 /**
  * @brief Compute loss for given data and Gaussian process model
@@ -127,9 +127,9 @@ std::vector<std::vector<double>> predict_with_full_cov(
 double compute_loss(const std::vector<double> &training_input,
                     const std::vector<double> &training_output,
                     const SEKParams &sek_params,
-                    int n_tiles,
-                    int n_tile_size,
-                    int n_regressors);
+                    std::size_t n_tiles,
+                    std::size_t n_tile_size,
+                    std::size_t n_regressors);
 
 /**
  * @brief Perform optimization for a given number of iterations

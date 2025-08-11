@@ -38,7 +38,7 @@ struct AdamParams
     /**
      * @brief Number of optimization iterations
      */
-    int opt_iter;
+    std::size_t opt_iter;
 
     /**
      * @brief Initialize hyperparameters
@@ -48,10 +48,8 @@ struct AdamParams
      * @param b2 beta2
      * @param eps epsilon
      * @param opt_i number of optimization iterationsgp op
-     * @param M_T_init initial values for first moment vector
-     * @param V_T_init initial values for second moment vector
      */
-    AdamParams(double lr = 0.001, double b1 = 0.9, double b2 = 0.999, double eps = 1e-8, int opt_i = 0);
+    AdamParams(double lr = 0.001, double b1 = 0.9, double b2 = 0.999, double eps = 1e-8, std::size_t opt_i = 0);
 
     /**
      * @brief Returns a string representation of the hyperparameters

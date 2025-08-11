@@ -5,7 +5,7 @@
 
 GPRAT_NS_BEGIN
 
-AdamParams::AdamParams(double lr, double b1, double b2, double eps, int opt_i) :
+AdamParams::AdamParams(double lr, double b1, double b2, double eps, std::size_t opt_i) :
     learning_rate(lr),
     beta1(b1),
     beta2(b2),

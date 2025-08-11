@@ -28,7 +28,7 @@ namespace cpu
  * @param N Tile size per dimension.
  * @param n_tiles Number of tiles per dimension.
  */
-void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_tiles);
+void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, std::size_t N, std::size_t n_tiles);
 
 // Tiled Triangular Solve Algorithms
 
@@ -40,7 +40,7 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
  * @param N Tile size per dimension.
  * @param n_tiles Number of tiles per dimension.
  */
-void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, std::size_t n_tiles);
+void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, std::size_t N, std::size_t n_tiles);
 
 /**
  * @brief Perform tiled backward triangular matrix-vector solve.
@@ -50,7 +50,7 @@ void forward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, st
  * @param N Tile size per dimension.
  * @param n_tiles Number of tiles per dimension.
  */
-void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, std::size_t n_tiles);
+void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, std::size_t N, std::size_t n_tiles);
 
 /**
  * @brief Perform tiled forward triangular matrix-matrix solve.
@@ -62,8 +62,12 @@ void backward_solve_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_rhs, int N, s
  * @param n_tiles Number of tiles in first dimension.
  * @param m_tiles Number of tiles in second dimension.
  */
-void forward_solve_tiled_matrix(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_rhs, int N, int M, std::size_t n_tiles, std::size_t m_tiles);
+void forward_solve_tiled_matrix(Tiled_matrix &ft_tiles,
+                                Tiled_matrix &ft_rhs,
+                                std::size_t N,
+                                std::size_t M,
+                                std::size_t n_tiles,
+                                std::size_t m_tiles);
 
 /**
  * @brief Perform tiled backward triangular matrix-matrix solve.
@@ -75,15 +79,19 @@ void forward_solve_tiled_matrix(
  * @param n_tiles Number of tiles in first dimension.
  * @param m_tiles Number of tiles in second dimension.
  */
-void backward_solve_tiled_matrix(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_rhs, int N, int M, std::size_t n_tiles, std::size_t m_tiles);
+void backward_solve_tiled_matrix(Tiled_matrix &ft_tiles,
+                                 Tiled_matrix &ft_rhs,
+                                 std::size_t N,
+                                 std::size_t M,
+                                 std::size_t n_tiles,
+                                 std::size_t m_tiles);
 
 /**
  * @brief Perform tiled matrix-vector multiplication
  *
  * @param ft_tiles Tiled matrix represented as a vector of futurized tiles.
  * @param ft_vector Tiled vector represented as a vector of futurized tiles.
- * @param ft_rhsTiled solution represented as a vector of futurized tiles.
+ * @param ft_rhs Tiled solution represented as a vector of futurized tiles.
  * @param N_row Tile size of first dimension.
  * @param N_col Tile size of second dimension.
  * @param n_tiles Number of tiles in first dimension.
@@ -92,8 +100,8 @@ void backward_solve_tiled_matrix(
 void matrix_vector_tiled(Tiled_matrix &ft_tiles,
                          Tiled_vector &ft_vector,
                          Tiled_vector &ft_rhs,
-                         int N_row,
-                         int N_col,
+                         std::size_t N_row,
+                         std::size_t N_col,
                          std::size_t n_tiles,
                          std::size_t m_tiles);
 
@@ -108,7 +116,12 @@ void matrix_vector_tiled(Tiled_matrix &ft_tiles,
  * @param m_tiles Number of tiles in second dimension.
  */
 void symmetric_matrix_matrix_diagonal_tiled(
-    Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int N, int M, std::size_t n_tiles, std::size_t m_tiles);
+    Tiled_matrix &ft_tiles,
+    Tiled_vector &ft_vector,
+    std::size_t N,
+    std::size_t M,
+    std::size_t n_tiles,
+    std::size_t m_tiles);
 
 /**
  * @brief Perform tiled symmetric k-rank update (ft_tiles^T * ft_tiles)
@@ -120,18 +133,21 @@ void symmetric_matrix_matrix_diagonal_tiled(
  * @param n_tiles Number of tiles in first dimension.
  * @param m_tiles Number of tiles in second dimension.
  */
-void symmetric_matrix_matrix_tiled(
-    Tiled_matrix &ft_tiles, Tiled_matrix &ft_result, int N, int M, std::size_t n_tiles, std::size_t m_tiles);
+void symmetric_matrix_matrix_tiled(Tiled_matrix &ft_tiles,
+                                   Tiled_matrix &ft_result,
+                                   std::size_t N,
+                                   std::size_t M,
+                                   std::size_t n_tiles,
+                                   std::size_t m_tiles);
 
 /**
  * @brief Compute the difference between two tiled vectors
  * @param ft_minuend Tiled vector that is being subtracted from.
  * @param ft_subtrahend Tiled vector that is being subtracted.
- * @param ft_difference Tiled vector that contains the result of the substraction.
  * @param M Tile size dimension.
  * @param m_tiles Number of tiles.
  */
-void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_substrahend, int M, std::size_t m_tiles);
+void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_subtrahend, std::size_t M, std::size_t m_tiles);
 
 /**
  * @brief Extract the tiled diagonals of a tiled matrix
@@ -140,7 +156,7 @@ void vector_difference_tiled(Tiled_vector &ft_minuend, Tiled_vector &ft_substrah
  * @param M Tile size per dimension.
  * @param m_tiles Number of tiles per dimension.
  */
-void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, int M, std::size_t m_tiles);
+void matrix_diagonal_tiled(Tiled_matrix &ft_tiles, Tiled_vector &ft_vector, std::size_t M, std::size_t m_tiles);
 
 /**
  * @brief Compute the negative log likelihood loss with a tiled covariance matrix K.
@@ -158,14 +174,14 @@ void compute_loss_tiled(Tiled_matrix &ft_tiles,
                         Tiled_vector &ft_alpha,
                         Tiled_vector &ft_y,
                         hpx::shared_future<double> &loss,
-                        int N,
+                        std::size_t N,
                         std::size_t n_tiles);
 
 /**
  * @brief Updates a hyperparameter of the SEK kernel using Adam
  *
  * @param ft_invK Tiled inverse of the covariance matrix K represented as a vector of futurized tiles.
- * @param ft_grad_param Tiled covariance matrix gradient w.r.t. a hyperparameter.
+ * @param ft_gradK_param Tiled covariance matrix gradient w.r.t. a hyperparameter.
  * @param ft_alpha Tiled vector containing the precomputed inv(K) * y where y is the training output.
  * @param adam_params Hyperparameter of the Adam optimizer
  * @param sek_params Hyperparameters of the SEK kernel
@@ -180,7 +196,7 @@ void update_hyperparameter_tiled(
     const Tiled_vector &ft_alpha,
     const AdamParams &adam_params,
     SEKParams &sek_params,
-    int N,
+    std::size_t N,
     std::size_t n_tiles,
     std::size_t iter,
     std::size_t param_idx);

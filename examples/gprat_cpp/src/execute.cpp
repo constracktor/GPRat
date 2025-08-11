@@ -245,7 +245,10 @@ int main(int argc, char *argv[])
 {
     gprat::example::GpratSettings settings;
 
-    bool use_gpu = false;
+    const std::size_t n_test = 1024;
+    const std::size_t N_CORES = 4;
+    const std::size_t n_tiles = 16;
+    const std::size_t n_reg = 8;
 
     std::ifstream ifs(GPRAT_CPP_CONFIG_PATH);
     if (!ifs.fail())
@@ -315,15 +318,12 @@ int main(int argc, char *argv[])
         // Loop over tiles
         for (int n_tiles = settings.n_tiles_start; n_tiles <= settings.n_tiles_end; n_tiles *= settings.step_tiles)
         {
-            training_baseline = settings.train_size_start > n_tiles ? settings.train_size_start : n_tiles;
-
-            // Loop over training sizes
-            for (int train_size = training_baseline; train_size <= settings.train_size_end;
-                 train_size *= settings.train_size_step)
+            const auto n_train = start;
+            for (std::size_t l = 0; l < LOOP; l++)
             {
                 // Compute tile sizes and number of predict tiles
-                int tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
-                auto result = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+                const auto tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
+                const auto result = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
                 /////////////////////
                 ///// hyperparams
                 gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
