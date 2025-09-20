@@ -114,62 +114,10 @@ std::vector<double> GP::get_training_output() const { return training_output_; }
 
 std::vector<double> GP::predict(const std::vector<double> &test_input, std::size_t m_tiles, std::size_t m_tile_size)
 {
-#if !GPRAT_WITH_SYCL
-
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-
-#else
-                   return cpu::predict(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-
-#endif
-               })
-        .get();
-
-#else
-
-    if (!target_->is_cpu())
+    if (target_->is_gpu())
     {
-        return sycl_backend::predict(
+        return gpu::predict(
             training_input_,
             training_output_,
             test_input,
@@ -179,84 +127,32 @@ std::vector<double> GP::predict(const std::vector<double> &test_input, std::size
             m_tiles,
             m_tile_size,
             n_reg,
-            *std::dynamic_pointer_cast<gprat::SYCL_DEVICE>(target_));
+            *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
-    else
-    {
-        return cpu::predict(
-            training_input_,
-            training_output_,
-            test_input,
-            kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg);
-    }
-
 #endif
+
+    tiled_scheduler_local scheduler;
+    return cpu::predict(
+        scheduler,
+        training_input_,
+        training_output_,
+        test_input,
+        kernel_params,
+        n_tiles_,
+        n_tile_size_,
+        m_tiles,
+        m_tile_size,
+        n_reg);
 }
 
 // predict_with_uncertainty ///////////////////////////////////////////////////////////////////////////////////////////
 std::vector<std::vector<double>>
 GP::predict_with_uncertainty(const std::vector<double> &test_input, std::size_t m_tiles, std::size_t m_tile_size)
 {
-#if !GPRAT_WITH_SYCL
-
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict_with_uncertainty(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict_with_uncertainty(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-
-#else
-                   return cpu::predict_with_uncertainty(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-
-#endif
-               })
-        .get();
-#else
-
-    if (!target_->is_cpu())
+    if (target_->is_gpu())
     {
-        return sycl_backend::predict_with_uncertainty(
+        return gpu::predict_with_uncertainty(
             training_input_,
             training_output_,
             test_input,
@@ -266,84 +162,31 @@ GP::predict_with_uncertainty(const std::vector<double> &test_input, std::size_t 
             m_tiles,
             m_tile_size,
             n_reg,
-            *std::dynamic_pointer_cast<gprat::SYCL_DEVICE>(target_));
+            *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
-    else
-    {
-        return cpu::predict_with_uncertainty(
-            training_input_,
-            training_output_,
-            test_input,
-            kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg);
-    }
-
 #endif
+    tiled_scheduler_local scheduler;
+    return cpu::predict_with_uncertainty(
+        scheduler,
+        training_input_,
+        training_output_,
+        test_input,
+        kernel_params,
+        n_tiles_,
+        n_tile_size_,
+        m_tiles,
+        m_tile_size,
+        n_reg);
 }
 
 // predict_with_full_cov //////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<std::vector<double>>
 GP::predict_with_full_cov(const std::vector<double> &test_input, std::size_t m_tiles, std::size_t m_tile_size)
 {
-#if !GPRAT_WITH_SYCL
-
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict_with_full_cov(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict_with_full_cov(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-
-#else
-                   return cpu::predict_with_full_cov(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-
-#endif
-               })
-        .get();
-#else
-
-    if (!target_->is_cpu())
+    if (target_->is_gpu())
     {
-        return sycl_backend::predict_with_full_cov(
+        return gpu::predict_with_full_cov(
             training_input_,
             training_output_,
             test_input,
@@ -353,171 +196,105 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, std::size_t m_t
             m_tiles,
             m_tile_size,
             n_reg,
-            *std::dynamic_pointer_cast<gprat::SYCL_DEVICE>(target_));
+            *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
-    else
-    {
-        return cpu::predict_with_full_cov(
-            training_input_,
-            training_output_,
-            test_input,
-            kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg);
-    }
-
 #endif
+    tiled_scheduler_local scheduler;
+    return cpu::predict_with_full_cov(
+        scheduler,
+        training_input_,
+        training_output_,
+        test_input,
+        kernel_params,
+        n_tiles_,
+        n_tile_size_,
+        m_tiles,
+        m_tile_size,
+        n_reg);
 }
 
 std::vector<double> GP::optimize(const AdamParams &adam_params)
 {
-    return hpx::async(
-               [this, &adam_params]()
-               {
-#if GPRAT_WITH_CUDA || GPRAT_WITH_SYCL
-                   if (target_->is_gpu())
-                   {
-                       std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                                 << "Instead, this operation executes the CPU implementation." << std::endl;
-                   }
+#if GPRAT_WITH_CUDA
+    if (target_->is_gpu())
+    {
+        std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
+                  << "Instead, this operation executes the CPU implementation." << std::endl;
+    }
 #endif
-                   return cpu::optimize(
-                       training_input_,
-                       training_output_,
-                       n_tiles_,
-                       n_tile_size_,
-                       n_reg,
-                       adam_params,
-                       kernel_params,
-                       trainable_params_);
-               })
-        .get();
+    tiled_scheduler_local scheduler;
+    return cpu::optimize(
+        scheduler,
+        training_input_,
+        training_output_,
+        n_tiles_,
+        n_tile_size_,
+        n_reg,
+        adam_params,
+        kernel_params,
+        trainable_params_);
 }
 
 double GP::optimize_step(AdamParams &adam_params, std::size_t iter)
 {
-    return hpx::async(
-               [this, &adam_params, iter]()
-               {
-#if GPRAT_WITH_CUDA || GPRAT_WITH_SYCL
-                   if (target_->is_gpu())
-                   {
-                       std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                                 << "Instead, this operation executes the CPU implementation." << std::endl;
-                   }
-
+#if GPRAT_WITH_CUDA
+    if (target_->is_gpu())
+    {
+        std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
+                  << "Instead, this operation executes the CPU implementation." << std::endl;
+    }
 #endif
-                   return cpu::optimize_step(
-                       training_input_,
-                       training_output_,
-                       n_tiles_,
-                       n_tile_size_,
-                       n_reg,
-                       adam_params,
-                       kernel_params,
-                       trainable_params_,
-                       iter);
-               })
-        .get();
+    tiled_scheduler_local scheduler;
+    return cpu::optimize_step(
+        scheduler,
+        training_input_,
+        training_output_,
+        n_tiles_,
+        n_tile_size_,
+        n_reg,
+        adam_params,
+        kernel_params,
+        trainable_params_,
+        iter);
 }
 
 // calculate_loss /////////////////////////////////////////////////////////////////////////////////////////////////////
 double GP::calculate_loss()
 {
-    return hpx::async(
-               [this]()
-               {
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::compute_loss(
-                           training_input_,
-                           training_output_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::compute_loss(
-                           training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
-
-#elif GPRAT_WITH_SYCL
-                   if (!target_->is_cpu())
-                   {
-                       return sycl_backend::compute_loss(
-                           training_input_,
-                           training_output_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::SYCL_DEVICE>(target_));
-                   }
-                   else
-                   {
-                       return cpu::compute_loss(
-                           training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
-
-#else
-                   return cpu::compute_loss(
-                       training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    if (target_->is_gpu())
+    {
+        return gpu::compute_loss(
+            training_input_,
+            training_output_,
+            kernel_params,
+            n_tiles_,
+            n_tile_size_,
+            n_reg,
+            *std::dynamic_pointer_cast<CUDA_GPU>(target_));
+    }
 #endif
-               })
-        .get();
+    tiled_scheduler_local scheduler;
+    return cpu::calculate_loss(
+        scheduler, training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 std::vector<mutable_tile_data<double>> GP::cholesky()
 {
-#if !GPRAT_WITH_SYCL
-    return hpx::async(
-               [this]()
-               {
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::cholesky(
-                           training_input_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
-#else
-                   return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-#endif
-               })
-        .get();
-#else
-
-    if (!target_->is_cpu())
+    if (target_->is_gpu())
     {
-        return sycl_backend::cholesky(
+        return gpu::cholesky(
             training_input_,
             kernel_params,
             n_tiles_,
             n_tile_size_,
             n_reg,
-            *std::dynamic_pointer_cast<gprat::SYCL_DEVICE>(target_));
+            *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
-    else
-    {
-        return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-    }
-
 #endif
+    tiled_scheduler_local sched;
+    return cpu::cholesky(sched, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 GPRAT_NS_END
