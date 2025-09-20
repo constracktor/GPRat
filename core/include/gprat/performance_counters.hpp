@@ -67,6 +67,12 @@ std::uint64_t get_and_reset_function_elapsed(bool reset)
     return hpx::util::get_and_reset_value(function_performance_metrics<F>::elapsed_ns, reset);
 }
 
+template <auto F>
+std::uint64_t get_and_reset_function_calls(bool reset)
+{
+    return hpx::util::get_and_reset_value(function_performance_metrics<F>::num_calls, reset);
+}
+
 void track_tile_data_allocation(std::size_t size);
 void track_tile_data_deallocation(std::size_t size);
 

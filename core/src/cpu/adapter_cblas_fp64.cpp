@@ -213,22 +213,28 @@ void register_fp64_performance_counters()
     // XXX: you can do this with templates, but it's quite a bit more complicated
 #define GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(name, fn_expr)                                                              \
     hpx::performance_counters::install_counter_type(                                                                   \
-        name,                                                                                                          \
+        name "/time",                                                                                                  \
         get_and_reset_function_elapsed<fn_expr>,                                                                       \
+        #fn_expr,                                                                                                      \
+        "",                                                                                                            \
+        hpx::performance_counters::counter_type::monotonically_increasing);                                            \
+    hpx::performance_counters::install_counter_type(                                                                   \
+        name "/calls",                                                                                                 \
+        get_and_reset_function_calls<fn_expr>,                                                                         \
         #fn_expr,                                                                                                      \
         "",                                                                                                            \
         hpx::performance_counters::counter_type::monotonically_increasing)
 
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/potrf64/time", &potrf);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsm64/time", &trsm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/syrk64/time", &syrk);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemm64/time", &gemm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsv64/time", &trsv);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemv64/time", &gemv);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_syrk64/time", &dot_diag_syrk);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_gemm64/time", &dot_diag_gemm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/axpy64/time", &axpy);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot64/time", &dot);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/potrf64", &potrf);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsm64", &trsm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/syrk64", &syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemm64", &gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsv64", &trsv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemv64", &gemv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_syrk64", &dot_diag_syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_gemm64", &dot_diag_gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/axpy64", &axpy);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot64", &dot);
 
 #undef GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR
 }

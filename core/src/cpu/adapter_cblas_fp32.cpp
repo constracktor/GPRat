@@ -212,22 +212,28 @@ void register_fp32_performance_counters()
     // XXX: you can do this with templates, but it's quite a bit more complicated
 #define GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(name, fn_expr)                                                              \
     hpx::performance_counters::install_counter_type(                                                                   \
-        name,                                                                                                          \
+        name "/time",                                                                                                  \
         get_and_reset_function_elapsed<fn_expr>,                                                                       \
+        #fn_expr,                                                                                                      \
+        "",                                                                                                            \
+        hpx::performance_counters::counter_type::monotonically_increasing);                                            \
+    hpx::performance_counters::install_counter_type(                                                                   \
+        name "/calls",                                                                                                 \
+        get_and_reset_function_calls<fn_expr>,                                                                         \
         #fn_expr,                                                                                                      \
         "",                                                                                                            \
         hpx::performance_counters::counter_type::monotonically_increasing)
 
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/potrf32/time", &potrf);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsm32/time", &trsm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/syrk32/time", &syrk);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemm32/time", &gemm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsv32/time", &trsv);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemv32/time", &gemv);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_syrk32/time", &dot_diag_syrk);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_gemm32/time", &dot_diag_gemm);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/axpy32/time", &axpy);
-    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot32/time", &dot);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/potrf32", &potrf);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsm32", &trsm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/syrk32", &syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemm32", &gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/trsv32", &trsv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/gemv32", &gemv);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_syrk32", &dot_diag_syrk);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot_diag_gemm32", &dot_diag_gemm);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/axpy32", &axpy);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/dot32", &dot);
 
 #undef GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR
 }

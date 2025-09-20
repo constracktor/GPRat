@@ -1,6 +1,6 @@
 #include "gprat/cpu/gp_algorithms.hpp"
-
 #include "gprat/tile_data.hpp"
+#include "gprat/performance_counters.hpp"
 
 #include <cmath>
 
@@ -16,6 +16,7 @@ double compute_covariance_function(std::size_t n_regressors,
                                    std::span<const double> i_input,
                                    std::span<const double> j_input)
 {
+    GPRAT_TIME_FUNCTION(&compute_covariance_function);
     // k(z_i,z_j) = vertical_lengthscale * exp(-0.5 / lengthscale^2 * (z_i - z_j)^2)
     double distance = 0.0;
     for (std::size_t k = 0; k < n_regressors; k++)
@@ -35,6 +36,7 @@ mutable_tile_data<double> gen_tile_covariance(
     const SEKParams &sek_params,
     std::span<const double> input)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_covariance);
     mutable_tile_data<double> tile(N * N);
     for (std::size_t i = 0; i < N; i++)
     {
@@ -66,6 +68,7 @@ mutable_tile_data<double> gen_tile_full_prior_covariance(
     const SEKParams &sek_params,
     std::span<const double> input)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_full_prior_covariance);
     mutable_tile_data<double> tile(N * N);
     for (std::size_t i = 0; i < N; i++)
     {
@@ -89,6 +92,7 @@ mutable_tile_data<double> gen_tile_prior_covariance(
     const SEKParams &sek_params,
     std::span<const double> input)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_prior_covariance);
     mutable_tile_data<double> tile(N);
     for (std::size_t i = 0; i < N; i++)
     {
@@ -111,6 +115,7 @@ mutable_tile_data<double> gen_tile_cross_covariance(
     std::span<const double> row_input,
     std::span<const double> col_input)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_cross_covariance);
     mutable_tile_data<double> tile(N_row * N_col);
     for (std::size_t i = 0; i < N_row; i++)
     {
@@ -131,6 +136,7 @@ mutable_tile_data<double> gen_tile_cross_covariance(
 
 mutable_tile_data<double> gen_tile_transpose(std::size_t N_row, std::size_t N_col, std::span<const double> tile)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_transpose);
     mutable_tile_data<double> transposed(N_row * N_col);
     // Transpose entries
     for (std::size_t j = 0; j < N_col; j++)
@@ -146,6 +152,7 @@ mutable_tile_data<double> gen_tile_transpose(std::size_t N_row, std::size_t N_co
 
 mutable_tile_data<double> gen_tile_output(std::size_t row, std::size_t N, std::span<const double> output)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_output);
     mutable_tile_data<double> tile(N);
     std::copy(output.data() + (N * row), output.data() + (N * (row + 1)), tile.data());
     return tile;
@@ -153,6 +160,7 @@ mutable_tile_data<double> gen_tile_output(std::size_t row, std::size_t N, std::s
 
 mutable_tile_data<double> gen_tile_zeros(std::size_t N)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_zeros);
     mutable_tile_data<double> tile(N);
     std::fill_n(tile.data(), N, 0.0);
     return tile;
@@ -160,6 +168,7 @@ mutable_tile_data<double> gen_tile_zeros(std::size_t N)
 
 mutable_tile_data<double> gen_tile_identity(std::size_t N)
 {
+    GPRAT_TIME_FUNCTION(&gen_tile_identity);
     mutable_tile_data<double> tile(N * N);
     // Initialize zero tile
     std::fill_n(tile.data(), N * N, 0.0);
@@ -178,6 +187,7 @@ double compute_error_norm(std::size_t n_tiles,
                           const std::vector<double> &b,
                           const std::vector<std::vector<double>> &tiles)
 {
+    GPRAT_TIME_FUNCTION(&compute_error_norm);
     double error = 0.0;
     for (std::size_t k = 0; k < n_tiles; k++)
     {
