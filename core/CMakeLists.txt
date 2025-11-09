@@ -224,7 +224,12 @@ else()
   target_link_libraries(gprat_core PUBLIC ${OpenBLAS_LIB})
 endif()
 
-target_compile_definitions(gprat_core PUBLIC GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
+target_compile_definitions(gprat_core
+                           PUBLIC GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
+if(GPRAT_ENABLE_BENCHMARK_CACHE_EVICTIONS)
+  target_compile_definitions(gprat_core
+                             PUBLIC GPRAT_ENABLE_BENCHMARK_CACHE_EVICTIONS)
+endif()
 target_compile_features(gprat_core PUBLIC cxx_std_20)
 
 set_property(TARGET gprat_core PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -21,6 +21,7 @@ GPRAT_NS_BEGIN
 
 mutable_tile_data<double> potrf(const mutable_tile_data<double> &A, const int N)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
     GPRAT_TIME_FUNCTION(&potrf);
     // POTRF: in-place Cholesky decomposition of A
     // use dpotrf2 recursive version for better stability
@@ -37,6 +38,8 @@ trsm(const const_tile_data<double> &L,
      const BLAS_TRANSPOSE transpose_L,
      const BLAS_SIDE side_L)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(L.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
     GPRAT_TIME_FUNCTION(&trsm);
     // TRSM constants
     const double alpha = 1.0;
@@ -60,6 +63,8 @@ trsm(const const_tile_data<double> &L,
 
 mutable_tile_data<double> syrk(const mutable_tile_data<double> &A, const const_tile_data<double> &B, const int N)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(B.as_span());
     GPRAT_TIME_FUNCTION(&syrk);
     // SYRK constants
     const double alpha = -1.0;
@@ -80,6 +85,9 @@ gemm(const const_tile_data<double> &A,
      const BLAS_TRANSPOSE transpose_A,
      const BLAS_TRANSPOSE transpose_B)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(B.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(C.as_span());
     GPRAT_TIME_FUNCTION(&gemm);
     // GEMM constants
     const double alpha = -1.0;
@@ -109,6 +117,8 @@ gemm(const const_tile_data<double> &A,
 mutable_tile_data<double> trsv(
     const const_tile_data<double> &L, const mutable_tile_data<double> &a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(L.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(a.as_span());
     GPRAT_TIME_FUNCTION(&trsv);
     // TRSV: In-place solve L(^T) * x = a where L lower triangular
     cblas_dtrsv(CblasRowMajor,
@@ -133,6 +143,9 @@ gemv(const const_tile_data<double> &A,
      const BLAS_ALPHA alpha,
      const BLAS_TRANSPOSE transpose_A)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(a.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(b.as_span());
     GPRAT_TIME_FUNCTION(&gemv);
     // GEMV constants
     // const double alpha = -1.0;
@@ -158,6 +171,8 @@ gemv(const const_tile_data<double> &A,
 mutable_tile_data<double>
 dot_diag_syrk(const const_tile_data<double> &A, const mutable_tile_data<double> &r, const int N, const int M)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(r.as_span());
     GPRAT_TIME_FUNCTION(&dot_diag_syrk);
     auto r_p = r.data();
     auto A_p = A.data();
@@ -177,6 +192,9 @@ dot_diag_gemm(const const_tile_data<double> &A,
               const int N,
               const int M)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(A.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(B.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(r.as_span());
     GPRAT_TIME_FUNCTION(&dot_diag_gemm);
     auto r_p = r.data();
     auto A_p = A.data();
@@ -193,6 +211,8 @@ dot_diag_gemm(const const_tile_data<double> &A,
 
 mutable_tile_data<double> axpy(const mutable_tile_data<double> &y, const const_tile_data<double> &x, const int N)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(y.as_span());
+    GPRAT_BENCHMARK_FORCE_EVICT(x.as_span());
     GPRAT_TIME_FUNCTION(&axpy);
     cblas_daxpy(N, -1.0, x.data(), 1, y.data(), 1);
     return y;
@@ -200,6 +220,8 @@ mutable_tile_data<double> axpy(const mutable_tile_data<double> &y, const const_t
 
 double dot(std::span<const double> a, std::span<const double> b, const int N)
 {
+    GPRAT_BENCHMARK_FORCE_EVICT(a);
+    GPRAT_BENCHMARK_FORCE_EVICT(b);
     GPRAT_TIME_FUNCTION(&dot);
     // DOT: a * b
     return cblas_ddot(N, a.data(), 1, b.data(), 1);

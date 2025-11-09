@@ -11,6 +11,7 @@
 #include <hpx/modules/assertion.hpp>
 #include <hpx/timing/high_resolution_timer.hpp>
 #include <hpx/util/get_and_reset_value.hpp>
+#include <span>
 
 GPRAT_NS_BEGIN
 
@@ -77,6 +78,24 @@ void track_tile_data_allocation(std::size_t size);
 void track_tile_data_deallocation(std::size_t size);
 
 void register_performance_counters();
+
+void force_evict_memory(const void *start, std::size_t size);
+
+template <typename T>
+void force_evict_memory(std::span<const T> data)
+{
+    force_evict_memory(data.data(), data.size_bytes());
+}
+
+#ifdef GPRAT_ENABLE_BENCHMARK_CACHE_EVICTIONS
+/// @brief Force-evict a memory span from the cache for benchmarking purposes.
+/// @param data The memory region to evict
+#define GPRAT_BENCHMARK_FORCE_EVICT(data) force_evict_memory(data)
+#else
+/// @brief Force-evict a memory span from the cache for benchmarking purposes.
+/// @param data The memory region to evict
+#define GPRAT_BENCHMARK_FORCE_EVICT(data) (void) data
+#endif
 
 GPRAT_NS_END
 

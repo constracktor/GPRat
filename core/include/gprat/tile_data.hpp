@@ -112,6 +112,8 @@ class const_tile_data
 
     [[nodiscard]] const T &operator[](std::size_t idx) const { return cpu_data_[idx]; }
 
+    [[nodiscard]] std::span<const T> as_span() const noexcept { return { cpu_data_.data(), cpu_data_.size() }; }
+
     // ReSharper disable once CppNonExplicitConversionOperator
     operator std::span<const T>() const noexcept  // NOLINT(*-explicit-constructor)
     {
@@ -157,10 +159,10 @@ class mutable_tile_data : public const_tile_data<T>
     [[nodiscard]] T &operator[](std::size_t idx) const { return this->cpu_data_[idx]; }
 
     // ReSharper disable once CppNonExplicitConversionOperator
-    operator std::span<T>() noexcept
+    operator std::span<T>() noexcept  // NOLINT(*-explicit-constructor)
     {
         return { this->cpu_data_.data(), this->cpu_data_.size() };
-    }  // NOLINT(*-explicit-constructor)
+    }
 };
 
 GPRAT_NS_END
