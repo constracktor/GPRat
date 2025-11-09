@@ -18,6 +18,8 @@ GPRAT_NS_BEGIN
 
 #define BLOCK_SIZE 16
 
+using hpx::cuda::experimental::check_cuda_error;
+
 /**
  * @brief Copies a vector from the host to the device using the next CUDA stream
  *        of gpu.
@@ -32,7 +34,6 @@ GPRAT_NS_BEGIN
  */
 inline double *copy_to_device(const std::vector<double> &h_vector, CUDA_GPU &gpu)
 {
-    using hpx::cuda::experimental::check_cuda_error;
     double *d_vector;
     check_cuda_error(cudaMalloc(&d_vector, h_vector.size() * sizeof(double)));
     cudaStream_t stream = gpu.next_stream();
@@ -47,7 +48,6 @@ inline double *copy_to_device(const std::vector<double> &h_vector, CUDA_GPU &gpu
  */
 inline cusolverDnHandle_t create_cusolver_handle()
 {
-    using hpx::cuda::experimental::check_cuda_error;
     cusolverDnHandle_t handle;
     cusolverDnCreate(&handle);
     return handle;
@@ -67,7 +67,6 @@ inline void destroy(cusolverDnHandle_t handle) { cusolverDnDestroy(handle); }
  */
 inline void free(std::vector<hpx::shared_future<double *>> &vector)
 {
-    using hpx::cuda::experimental::check_cuda_error;
     for (auto &ptr : vector)
     {
         check_cuda_error(cudaFree(ptr.get()));

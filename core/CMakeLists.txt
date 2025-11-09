@@ -30,6 +30,8 @@ add_compile_definitions(GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>
                         GPRAT_WITH_SYCL=$<BOOL:${GPRAT_WITH_SYCL}>)
 
 if(GPRAT_WITH_CUDA)
+  set(CMAKE_CUDA_STANDARD 20)
+  set(CMAKE_CUDA_EXTENSIONS OFF)
   enable_language(CUDA)
 endif()
 
@@ -137,7 +139,10 @@ target_link_libraries(gprat_core PUBLIC HPX::hpx)
 
 # Link CUDA libaries if enabled
 if(GPRAT_WITH_CUDA)
+  find_package(CUDAToolkit MODULE REQUIRED)
   target_link_libraries(gprat_core PUBLIC CUDA::cusolver CUDA::cublas)
+  # Flag not working for CLANG CUDA
+  target_compile_features(gprat_core PUBLIC cuda_std_${CMAKE_CUDA_STANDARD})
 endif()
 
 # SYCL / oneMath linking
@@ -219,6 +224,7 @@ else()
   target_link_libraries(gprat_core PUBLIC ${OpenBLAS_LIB})
 endif()
 
+target_compile_definitions(gprat_core PUBLIC GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
 target_compile_features(gprat_core PUBLIC cxx_std_20)
 
 set_property(TARGET gprat_core PROPERTY POSITION_INDEPENDENT_CODE ON)

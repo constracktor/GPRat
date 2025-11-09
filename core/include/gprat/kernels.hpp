@@ -96,7 +96,7 @@ void load_construct_data(Archive &ar, SEKParams *v, const unsigned int)
     ar >> vertical_lengthscale;
     ar >> noise_variance;
 
-    std::construct_at(v, lengthscale, vertical_lengthscale, noise_variance);
+    new (v) SEKParams(lengthscale, vertical_lengthscale, noise_variance);
 }
 
 template <typename Archive>

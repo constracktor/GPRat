@@ -5,6 +5,7 @@
 #include "gprat/gpu/gp_optimizer.cuh"
 #include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
+#include "gprat/tile_data.hpp"
 
 #include <cuda_runtime.h>
 #include <hpx/algorithm.hpp>
@@ -533,13 +534,13 @@ std::vector<double> copy_tiled_vector_to_host_vector(
     return h_vector;
 }
 
-std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
+std::vector<mutable_tile_data<double>> move_lower_tiled_matrix_to_host(
     const std::vector<hpx::shared_future<double *>> &d_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     CUDA_GPU &gpu)
 {
-    std::vector<std::vector<double>> h_tiles(n_tiles * n_tiles);
+    std::vector<mutable_tile_data<double>> h_tiles(n_tiles * n_tiles);
 
     std::vector<cudaStream_t> streams(n_tiles * (n_tiles + 1) / 2);
     for (std::size_t i = 0; i < n_tiles; ++i)
@@ -547,7 +548,7 @@ std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
         for (std::size_t j = 0; j <= i; ++j)
         {
             streams[i] = gpu.next_stream();
-            h_tiles[i * n_tiles + j].resize(n_tile_size * n_tile_size);
+            h_tiles[i * n_tiles + j] = mutable_tile_data<double>(n_tile_size * n_tile_size);
             check_cuda_error(cudaMemcpyAsync(
                 h_tiles[i * n_tiles + j].data(),
                 d_tiles[i * n_tiles + j].get(),

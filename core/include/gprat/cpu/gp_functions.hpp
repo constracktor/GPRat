@@ -730,12 +730,12 @@ std::vector<std::vector<double>> predict_with_full_cov(
  */
 template <typename Scheduler = tiled_scheduler_local>
 double calculate_loss(Scheduler &sched,
-                    const std::vector<double> &training_input,
-                    const std::vector<double> &training_output,
-                    const SEKParams &sek_params,
-                    std::size_t n_tiles,
-                    std::size_t n_tile_size,
-                    std::size_t n_regressors)
+                      const std::vector<double> &training_input,
+                      const std::vector<double> &training_output,
+                      const SEKParams &sek_params,
+                      std::size_t n_tiles,
+                      std::size_t n_tile_size,
+                      std::size_t n_regressors)
 {
     /*
      * Negative log likelihood loss:

@@ -78,7 +78,7 @@ void load_construct_data(Archive &ar, AdamParams *v, const unsigned int)
     ar >> epsilon;
     ar >> opt_iter;
 
-    std::construct_at(v, learning_rate, beta1, beta2, epsilon, opt_iter);
+    new (v) AdamParams(learning_rate, beta1, beta2, epsilon, opt_iter);
 }
 
 GPRAT_NS_END

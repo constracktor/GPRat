@@ -4,9 +4,10 @@
 #pragma once
 
 #include "gprat/detail/config.hpp"
-
 #include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
+#include "gprat/tile_data.hpp"
+
 #include <hpx/future.hpp>
 #include <vector>
 
@@ -304,7 +305,7 @@ std::vector<double> copy_tiled_vector_to_host_vector(std::vector<hpx::shared_fut
  * @param n_tiles The number of tiles
  * @param gpu GPU target for computations
  */
-std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
+std::vector<mutable_tile_data<double>> move_lower_tiled_matrix_to_host(
     const std::vector<hpx::shared_future<double *>> &d_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,

@@ -4,10 +4,10 @@
 #pragma once
 
 #include "gprat/detail/config.hpp"
-
 #include "gprat/hyperparameters.hpp"
 #include "gprat/kernels.hpp"
 #include "gprat/target.hpp"
+#include "gprat/tile_data.hpp"
 
 GPRAT_NS_BEGIN
 
@@ -192,7 +192,7 @@ double optimize_step(const std::vector<double> &training_input,
  *
  * @return The tiled Cholesky factor
  */
-std::vector<std::vector<double>>
+std::vector<mutable_tile_data<double>>
 cholesky(const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,

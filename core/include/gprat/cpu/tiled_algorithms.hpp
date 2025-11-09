@@ -633,13 +633,15 @@ void update_hyperparameter_tiled_noise_variance(
     // Step 1: Compute the trace of inv(K) * noise_variance
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
-        trace = detail::named_dataflow<compute_trace_diag>(sched, schedule::K_inv_tile(sched, n_tiles, j, j), "grad_left_tiled", ft_invK[j * n_tiles + j], trace, N);
+        trace = detail::named_dataflow<compute_trace_diag>(
+            sched, schedule::K_inv_tile(sched, n_tiles, j, j), "grad_left_tiled", ft_invK[j * n_tiles + j], trace, N);
     }
     ////////////////////////////////////
     // Step 2: Compute the alpha^T * alpha * noise_variance
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
-        dot = detail::named_dataflow<compute_dot>(sched, schedule::alpha_tile(sched, n_tiles, j),"grad_right_tiled", ft_alpha[j], ft_alpha[j], dot);
+        dot = detail::named_dataflow<compute_dot>(
+            sched, schedule::alpha_tile(sched, n_tiles, j), "grad_right_tiled", ft_alpha[j], ft_alpha[j], dot);
     }
 
     factor = compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));

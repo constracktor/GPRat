@@ -45,7 +45,7 @@ void update_parameters(
     sek_params.set_param(param_idx, to_constrained(updated_param, jitter));
 }
 
-}
+}  // namespace impl
 
 }  // end of namespace cpu
 

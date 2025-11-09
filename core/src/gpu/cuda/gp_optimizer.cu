@@ -4,6 +4,8 @@
 #include "gprat/gpu/cuda_kernels.cuh"
 #include "gprat/gpu/cuda_utils.cuh"
 
+#include <numbers>
+
 GPRAT_NS_BEGIN
 
 namespace gpu
@@ -235,7 +237,7 @@ add_losses(const std::vector<hpx::shared_future<double>> &losses, std::size_t n_
     {
         l += losses[i].get();
     }
-    l += n_tile_size * n_tiles * log(2.0 * M_PI);
+    l += n_tile_size * n_tiles * log(2.0 * std::numbers::pi);
 
     return hpx::make_ready_future(0.5 * l / (n_tile_size * n_tiles));
 }

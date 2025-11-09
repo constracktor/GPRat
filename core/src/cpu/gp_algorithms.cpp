@@ -1,6 +1,7 @@
 #include "gprat/cpu/gp_algorithms.hpp"
-#include "gprat/tile_data.hpp"
+
 #include "gprat/performance_counters.hpp"
+#include "gprat/tile_data.hpp"
 
 #include <cmath>
 

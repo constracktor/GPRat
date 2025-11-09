@@ -4,8 +4,7 @@
 #include <vector>
 
 #if GPRAT_WITH_CUDA
-#include "gpu/cuda/cuda_utils.cuh"
-using hpx::cuda::experimental::check_cuda_error;
+#include "gprat/gpu/cuda_utils.cuh"
 #endif
 
 #if GPRAT_WITH_SYCL

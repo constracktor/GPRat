@@ -4,7 +4,7 @@
 #include "gprat/utils.hpp"
 
 #if GPRAT_WITH_CUDA
-#include "gpu/cuda/gp_functions.cuh"
+#include "gprat/gpu/gp_functions.cuh"
 #endif
 
 #if GPRAT_WITH_SYCL
