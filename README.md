@@ -21,6 +21,9 @@ A script to install and setup spack for `GPRat` is provided in [`spack-repo`](sp
 Spack environment configurations and setup scripts for CPU and GPU use are provided in
 [`spack-repo/environments`](spack-repo/environments).
 
+Since Spack is not available on Windows, we also support dependency installation using vcpkg.
+For now, vcpkg builds are only tested on Windows.
+
 ## How To Compile
 
 GPRat makes use of [CMake presets][1] to simplify the process of configuring the project.
