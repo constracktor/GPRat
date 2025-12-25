@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
                     init_time = end_init - start_init;
 
                     auto start_cholesky = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> choleksy_cpu = gp_cpu.cholesky();
+                    //std::vector<std::vector<double>> choleksy_cpu = gp_cpu.cholesky();
+                    std::vector<std::vector<double>> choleksy_cpu = gp_cpu.cholesky_synchronous();
                     auto end_cholesky = std::chrono::high_resolution_clock::now();
                     cholesky_time = end_cholesky - start_cholesky;
                     std::cout << "CPU: Cholesky time: " << cholesky_time.count() << std::endl;

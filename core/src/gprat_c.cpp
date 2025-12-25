@@ -2,26 +2,6 @@
 
 #include "cpu/functions.hpp"
 #include "utils_c.hpp"
-#include <cstdio>
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-
-#include <hpx/algorithm.hpp>
-#include <hpx/assert.hpp>
-#include <hpx/chrono.hpp>
-#include <hpx/execution.hpp>
-#include <hpx/future.hpp>
-#include <hpx/init.hpp>
-#include <hpx/modules/async_cuda.hpp>
-#include <hpx/modules/testing.hpp>
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <iostream>
-#include <random>
-#include <sstream>
-#include <utility>
-#include <vector>
 
 #if GPRAT_WITH_CUDA
 #include "gpu/functions.cuh"
@@ -128,5 +108,15 @@ std::vector<std::vector<double>> GP::cholesky()
 #else
                    return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 #endif
+}
+
+std::vector<std::vector<double>> GP::cholesky_synchronous()
+{
+                return cpu::cholesky_synchronous(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+}
+
+std::vector<std::vector<double>> GP::cholesky_loop()
+{
+                return cpu::cholesky_loop(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 }  // namespace gprat

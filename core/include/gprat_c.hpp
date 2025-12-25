@@ -152,9 +152,19 @@ class GP
     std::vector<double> get_training_output() const;
 
     /**
-     * @brief Computes & returns cholesky decomposition
+     * @brief Computes (asynchronous) & returns cholesky decomposition
      */
     std::vector<std::vector<double>> cholesky();
+
+    /**
+     * @brief Computes (synchronous) & returns cholesky decomposition
+     */
+    std::vector<std::vector<double>> cholesky_synchronous();
+
+        /**
+     * @brief Computes (asynchronous) & returns cholesky decomposition
+     */
+    std::vector<std::vector<double>> cholesky_loop();
 };
 }  // namespace gprat
 
