@@ -1,12 +1,7 @@
-#ifndef GP_KERNELS_H
-#define GP_KERNELS_H
+#ifndef GP_HYPERPARAMETER_H
+#define GP_HYPERPARAMETER_H
 
 #include <vector>
-
-// #include <cstddef>
-
-namespace gprat_hyper
-{
 
 /**
  * @brief Squared Exponential Kernel Parameters
@@ -77,6 +72,4 @@ struct SEKParams
     const double &get_param(std::size_t index) const;
 };
 
-}  // namespace gprat_hyper
-
-#endif  // end of GP_KERNELS_H
+#endif  // end of GP_HYPERPARAMETER_H

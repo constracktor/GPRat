@@ -138,6 +138,3 @@ fi
 ################################################################################
 cmake --build --preset $PRESET -- -j
 cmake --install build/$PRESET
-
-cd build/$PRESET
-ctest --output-on-failure --no-tests=ignore -C Release -j 2

@@ -1,7 +1,7 @@
-#ifndef GPU_GP_ALGORITHMS_H
-#define GPU_GP_ALGORITHMS_H
+#ifndef GPU_GP_KERNEL_H
+#define GPU_GP_KERNEL_H
 
-#include "gp_kernels.hpp"
+#include "gp_hyperparameter.hpp"
 #include "target.hpp"
 #include <hpx/future.hpp>
 #include <vector>
@@ -28,7 +28,7 @@ double *gen_tile_covariance(const double *d_input,
                             const std::size_t tile_column,
                             const std::size_t n_tile_size,
                             const std::size_t n_regressors,
-                            const gprat_hyper::SEKParams sek_params,
+                            const SEKParams sek_params,
                             gprat::CUDA_GPU &gpu);
 /**
  * @brief Allocates the tiled covariance matrix on the device given the training
@@ -46,7 +46,7 @@ std::vector<hpx::shared_future<double *>> assemble_tiled_covariance_matrix(
     const std::size_t n_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
+    const SEKParams sek_params,
     gprat::CUDA_GPU &gpu);
 
 /**
@@ -89,4 +89,4 @@ void free_lower_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_
 
 }  // end of namespace gpu
 
-#endif  // end of GPU_GP_ALGORITHMS_H
+#endif  // end of GPU_GP_KERNEL_H

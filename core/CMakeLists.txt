@@ -11,11 +11,10 @@ set(SOURCE_FILES
     src/gprat_c.cpp
     src/utils_c.cpp
     src/target.cpp
-    src/gp_kernels.cpp
-    src/gp_hyperparameters.cpp
-    src/cpu/gp_functions.cpp
-    src/cpu/gp_algorithms.cpp
-    src/cpu/tiled_algorithms.cpp
+    src/gp_hyperparameter.cpp
+    src/cpu/functions.cpp
+    src/cpu/gp_kernel.cpp
+    src/cpu/cholesky_factor.cpp
     src/cpu/adapter_cblas_fp32.cpp
     src/cpu/adapter_cblas_fp64.cpp)
 
@@ -23,9 +22,9 @@ if(GPRAT_WITH_CUDA)
   list(
     APPEND
     SOURCE_FILES
-    src/gpu/gp_functions.cu
-    src/gpu/gp_algorithms.cu
-    src/gpu/tiled_algorithms.cu
+    src/gpu/functions.cu
+    src/gpu/gp_kernel.cu
+    src/gpu/cholesky_factor.cu
     src/gpu/adapter_cublas.cu
     src/gpu/cuda_kernels.cu)
 endif()

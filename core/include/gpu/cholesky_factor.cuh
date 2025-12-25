@@ -1,10 +1,9 @@
-#ifndef GPU_TILED_ALGORITHMS_H
-#define GPU_TILED_ALGORITHMS_H
+#ifndef GPU_CHOLESKY_FACTOR_H
+#define GPU_CHOLESKY_FACTOR_H
 
-#include "gp_hyperparameters.hpp"
+#include "gp_hyperparameter.hpp"
 #include "target.hpp"
 #include <cusolverDn.h>
-#include <gp_kernels.hpp>
 #include <hpx/modules/async_cuda.hpp>
 
 namespace gpu
@@ -30,4 +29,4 @@ void right_looking_cholesky_tiled(std::vector<hpx::shared_future<double *>> &ft_
                                   const cusolverDnHandle_t &cusolver);
 }  // end of namespace gpu
 
-#endif  // end of GPU_TILED_ALGORITHMS_H
+#endif  // end of GPU_CHOLESKY_FACTOR_H

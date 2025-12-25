@@ -1,4 +1,4 @@
-#include "gpu/tiled_algorithms.cuh"
+#include "gpu/cholesky_factor.cuh"
 
 #include "gpu/adapter_cublas.cuh"
 #include <hpx/algorithm.hpp>

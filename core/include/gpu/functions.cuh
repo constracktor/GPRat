@@ -1,8 +1,7 @@
-#ifndef GPU_GP_FUNCTIONS_H
-#define GPU_GP_FUNCTIONS_H
+#ifndef GPU_FUNCTIONS_H
+#define GPU_FUNCTIONS_H
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
+#include "gp_hyperparameter.hpp"
 #include "target.hpp"
 
 namespace gpu
@@ -23,7 +22,7 @@ namespace gpu
  */
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors,

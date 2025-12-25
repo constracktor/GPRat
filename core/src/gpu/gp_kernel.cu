@@ -1,6 +1,6 @@
-#include "gpu/gp_algorithms.cuh"
+#include "gpu/gp_kernel.cuh"
 
-#include "gp_kernels.hpp"
+#include "gp_hyperparameter.hpp"
 #include "gpu/cuda_kernels.cuh"
 #include "gpu/cuda_utils.cuh"
 #include "target.hpp"
@@ -19,7 +19,7 @@ __global__ void gen_tile_covariance_kernel(
     const std::size_t n_regressors,
     const std::size_t tile_row,
     const std::size_t tile_column,
-    const gprat_hyper::SEKParams sek_params)
+    const SEKParams sek_params)
 {
     // Compute the global indices of the thread
     unsigned int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -58,7 +58,7 @@ double *gen_tile_covariance(const double *d_input,
                             const std::size_t tile_column,
                             const std::size_t n_tile_size,
                             const std::size_t n_regressors,
-                            const gprat_hyper::SEKParams sek_params,
+                            const SEKParams sek_params,
                             gprat::CUDA_GPU &gpu)
 {
     double *d_tile;
@@ -82,7 +82,7 @@ std::vector<hpx::shared_future<double *>> assemble_tiled_covariance_matrix(
     const std::size_t n_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_regressors,
-    const gprat_hyper::SEKParams sek_params,
+    const SEKParams sek_params,
     gprat::CUDA_GPU &gpu)
 {
     std::vector<hpx::shared_future<double *>> d_tiles(n_tiles * n_tiles);

@@ -1,9 +1,8 @@
-#include "gpu/gp_functions.cuh"
+#include "gpu/functions.cuh"
 
-#include "gp_kernels.hpp"
+#include "gpu/cholesky_factor.cuh"
 #include "gpu/cuda_utils.cuh"
-#include "gpu/gp_algorithms.cuh"
-#include "gpu/tiled_algorithms.cuh"
+#include "gpu/gp_kernel.cuh"
 #include "target.hpp"
 #include <cuda_runtime.h>
 #include <hpx/algorithm.hpp>
@@ -13,7 +12,7 @@ namespace gpu
 {
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &h_training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors,

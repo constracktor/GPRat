@@ -1,7 +1,7 @@
-#include "cpu/gp_functions.hpp"
+#include "cpu/functions.hpp"
 
-#include "cpu/gp_algorithms.hpp"
-#include "cpu/tiled_algorithms.hpp"
+#include "cpu/gp_kernel.hpp"
+#include "cpu/cholesky_factor.hpp"
 #include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -12,7 +12,7 @@ namespace cpu
 
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors)

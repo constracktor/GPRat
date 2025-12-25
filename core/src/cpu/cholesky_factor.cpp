@@ -1,7 +1,7 @@
-#include "cpu/tiled_algorithms.hpp"
+#include "cpu/cholesky_factor.hpp"
 
 #include "cpu/adapter_cblas_fp64.hpp"
-#include "cpu/gp_algorithms.hpp"
+#include "cpu/gp_kernel.hpp"
 #include <hpx/future.hpp>
 
 namespace cpu
@@ -15,12 +15,12 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
     {
         // POTRF: Compute Cholesky factor L
         ft_tiles[k * n_tiles + k] =
-            hpx::dataflow(hpx::annotated_function(potrf, "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+            hpx::dataflow(hpx::annotated_function(potrf, "cholesky_potrf"), ft_tiles[k * n_tiles + k], N);
         for (std::size_t m = k + 1; m < n_tiles; m++)
         {
             // TRSM:  Solve X * L^T = A
             ft_tiles[m * n_tiles + k] = hpx::dataflow(
-                hpx::annotated_function(trsm, "cholesky_tiled"),
+                hpx::annotated_function(trsm, "cholesky_trsm"),
                 ft_tiles[k * n_tiles + k],
                 ft_tiles[m * n_tiles + k],
                 N,
@@ -32,7 +32,7 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
         {
             // SYRK:  A = A - B * B^T
             ft_tiles[m * n_tiles + m] = hpx::dataflow(
-                hpx::annotated_function(syrk, "cholesky_tiled"),
+                hpx::annotated_function(syrk, "cholesky_syrk"),
                 ft_tiles[m * n_tiles + m],
                 ft_tiles[m * n_tiles + k],
                 N);
@@ -40,7 +40,7 @@ void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_t
             {
                 // GEMM: C = C - A * B^T
                 ft_tiles[m * n_tiles + n] = hpx::dataflow(
-                    hpx::annotated_function(gemm, "cholesky_tiled"),
+                    hpx::annotated_function(gemm, "cholesky_gemm"),
                     ft_tiles[m * n_tiles + k],
                     ft_tiles[n * n_tiles + k],
                     ft_tiles[m * n_tiles + n],

@@ -1,8 +1,7 @@
 #ifndef GPRAT_C_H
 #define GPRAT_C_H
 
-#include "gp_hyperparameters.hpp"
-#include "gp_kernels.hpp"
+#include "gp_hyperparameter.hpp"
 #include "target.hpp"
 #include <memory>
 #include <string>
@@ -67,12 +66,6 @@ class GP
     int n_tile_size_;
 
     /**
-     * @brief List of bools indicating trainable parameters: lengthscale,
-     * vertical lengthscale, noise variance
-     */
-    std::vector<bool> trainable_params_;
-
-    /**
      * @brief Target handle pointing to the unit used for computation.
      */
     std::shared_ptr<Target> target_;
@@ -84,74 +77,62 @@ class GP
     /**
      * @brief Hyperarameters of the squared exponential kernel
      */
-    gprat_hyper::SEKParams kernel_params;
+    SEKParams kernel_params;
 
     /**
      * @brief Constructs a Gaussian Process (GP)
      *
      * @param input Input data for training of the GP
-     * @param output Expected output data for training of the GP
      * @param n_tiles Number of tiles
      * @param n_tile_size Size of each tile in each dimension
      * @param n_regressors Number of regressors
      * @param kernel_hyperparams Vector including lengthscale,
      *                           vertical lengthscale, and noise variance
      *                           parameter of squared exponential kernel
-     * @param trainable_bool Vector indicating which parameters are trainable
      * @param target Target for computations
      */
     GP(std::vector<double> input,
-       std::vector<double> output,
        int n_tiles,
        int n_tile_size,
        int n_regressors,
        std::vector<double> kernel_hyperparams,
-       std::vector<bool> trainable_bool,
        std::shared_ptr<Target> target);
 
     /**
      * @brief Constructs a Gaussian Process (GP) for CPU computations
      *
      * @param input Input data for training of the GP
-     * @param output Expected output data for training of the GP
      * @param n_tiles Number of tiles
      * @param n_tile_size Size of each tile in each dimension
      * @param n_regressors Number of regressors
      * @param kernel_hyperparams Vector including lengthscale,
      *                           vertical lengthscale, and noise variance
      *                           parameter of squared exponential kernel
-     * @param trainable_bool Vector indicating which parameters are trainable
      */
     GP(std::vector<double> input,
-       std::vector<double> output,
        int n_tiles,
        int n_tile_size,
        int n_regressors,
-       std::vector<double> kernel_hyperparams,
-       std::vector<bool> trainable_bool);
+       std::vector<double> kernel_hyperparams);
 
     /**
      * @brief Constructs a Gaussian Process (GP) for GPU computations
      *
      * @param input Input data for training of the GP
-     * @param output Expected output data for training of the GP
      * @param n_tiles Number of tiles
      * @param n_tile_size Size of each tile in each dimension
      * @param n_regressors Number of regressors
      * @param kernel_hyperparams Vector including lengthscale,
      *                           vertical lengthscale, and noise variance
      *                           parameter of squared exponential kernel
-     * @param trainable_bool Vector indicating which parameters are trainable
      * @param gpu_id GPU identifier
      * @param n_streams Number of CUDA streams for GPU computations
      */
     GP(std::vector<double> input,
-       std::vector<double> output,
        int n_tiles,
        int n_tile_size,
        int n_regressors,
        std::vector<double> kernel_hyperparams,
-       std::vector<bool> trainable_bool,
        int gpu_id,
        int n_streams);
 
@@ -173,8 +154,7 @@ class GP
     /**
      * @brief Computes & returns cholesky decomposition
      */
-    //std::vector<std::vector<double>> 
-      void cholesky();
+    std::vector<std::vector<double>> cholesky();
 };
 }  // namespace gprat
 

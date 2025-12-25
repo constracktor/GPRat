@@ -100,7 +100,7 @@ export APEX_DISABLE=1
 rm -rf build && mkdir build && cd build
 export CUBLASLT_DISABLE=1
 # Configure the project
-cmake .. -DCMAKE_BUILD_TYPE=Release \
+cmake .. -DCMAKE_BUILD_TYPE=Debug \
          -DGPRat_DIR=./lib$ADD/cmake/GPRat \
          -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA} \
          -DHPX_DIR=$HPX_CMAKE \
@@ -121,5 +121,4 @@ make -j
 # Run code
 ################################################################################
 
-compute-sanitizer ./gprat_cpp --hpx:threads=1
-#$use_gpu
+compute-sanitizer ./gprat_cpp $use_gpu

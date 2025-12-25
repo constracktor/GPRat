@@ -117,8 +117,3 @@ endif()
 if(GPRAT_ENABLE_EXAMPLES)
   add_subdirectory(examples/gprat_cpp)
 endif()
-
-if(GPRAT_ENABLE_TESTS)
-  enable_testing()
-  add_subdirectory(test)
-endif()

@@ -1,9 +1,7 @@
-#include "gp_kernels.hpp"
+#include "gp_hyperparameter.hpp"
 
 #include <stdexcept>
 
-namespace gprat_hyper
-{
 SEKParams::SEKParams(double lengthscale_, double vertical_lengthscale_, double noise_variance_) :
     lengthscale(lengthscale_),
     vertical_lengthscale(vertical_lengthscale_),
@@ -51,4 +49,3 @@ const double &SEKParams::get_param(std::size_t index) const
     }
     throw std::invalid_argument("Get Invalid param_idx");
 }
-}  // namespace gprat_hyper
