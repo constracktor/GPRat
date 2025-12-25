@@ -128,8 +128,8 @@ void print_available_gpus()
             << "  Total Constant Memory: " << deviceProp.totalConstMem << "\n"
             << "  Compute Capability: " << deviceProp.major << "." << deviceProp.minor << "\n"
             << "  Multiprocessor Count: " << deviceProp.multiProcessorCount << "\n"
-            << "  Clock Rate: " << deviceProp.clockRate << " kHz\n"
-            << "  Memory Clock Rate: " << deviceProp.memoryClockRate << " kHz\n"
+//           << "  Clock Rate: " << deviceProp.clockRate << " kHz\n"
+//<< "  Memory Clock Rate: " << deviceProp.memoryClockRate << " kHz\n"
             << "  Memory Bus Width: " << deviceProp.memoryBusWidth << " bits" << std::endl;
         // clang-format on
     }

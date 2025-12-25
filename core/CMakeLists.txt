@@ -15,8 +15,6 @@ set(SOURCE_FILES
     src/gp_hyperparameters.cpp
     src/cpu/gp_functions.cpp
     src/cpu/gp_algorithms.cpp
-    src/cpu/gp_uncertainty.cpp
-    src/cpu/gp_optimizer.cpp
     src/cpu/tiled_algorithms.cpp
     src/cpu/adapter_cblas_fp32.cpp
     src/cpu/adapter_cblas_fp64.cpp)
@@ -27,8 +25,6 @@ if(GPRAT_WITH_CUDA)
     SOURCE_FILES
     src/gpu/gp_functions.cu
     src/gpu/gp_algorithms.cu
-    src/gpu/gp_uncertainty.cu
-    src/gpu/gp_optimizer.cu
     src/gpu/tiled_algorithms.cu
     src/gpu/adapter_cublas.cu
     src/gpu/cuda_kernels.cu)

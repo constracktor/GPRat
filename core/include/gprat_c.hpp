@@ -171,60 +171,10 @@ class GP
     std::vector<double> get_training_output() const;
 
     /**
-     * @brief Predict output for test input
-     */
-    std::vector<double> predict(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
-
-    /**
-     * @brief Predict output for test input and additionally provide
-     * uncertainty for the predictions.
-     */
-    std::vector<std::vector<double>>
-    predict_with_uncertainty(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
-
-    /**
-     * @brief Predict output for test input and additionally compute full
-     * posterior covariance matrix.
-     *
-     * @param test_input Test input data
-     * @param m_tiles Number of tiles
-     * @param m_tile_size Size of each tile
-     *
-     * @return Full covariance matrix
-     */
-    std::vector<std::vector<double>>
-    predict_with_full_cov(const std::vector<double> &test_data, int m_tiles, int m_tile_size);
-
-    /**
-     * @brief Optimize hyperparameters
-     *
-     * @param hyperparams Hyperparameters of squared exponential kernel:
-     *        lengthscale, vertical_lengthscale, noise_variance
-     *
-     * @return losses
-     */
-    std::vector<double> optimize(const gprat_hyper::AdamParams &adam_params);
-
-    /**
-     * @brief Perform a single optimization step
-     *
-     * @param hyperparams Hyperparameters of squared exponential kernel:
-     *        lengthscale, vertical_lengthscale, noise_variance
-     * @param iter number of iterations
-     *
-     * @return loss
-     */
-    double optimize_step(gprat_hyper::AdamParams &adam_params, int iter);
-
-    /**
-     * @brief Calculate loss for given data and Gaussian process model
-     */
-    double calculate_loss();
-
-    /**
      * @brief Computes & returns cholesky decomposition
      */
-    std::vector<std::vector<double>> cholesky();
+    //std::vector<std::vector<double>> 
+      void cholesky();
 };
 }  // namespace gprat
 

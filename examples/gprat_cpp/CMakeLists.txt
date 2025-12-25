@@ -9,6 +9,7 @@ if(TARGET GPRat::core)
 else()
   message("Using out-of-tree GPRat::core")
   find_package(GPRat REQUIRED)
+  find_package(HPX REQUIRED)
   if(USE_MKL)
     # Try to find Intel oneMKL
     set(MKL_INTERFACE_FULL "intel_lp64")
@@ -29,4 +30,4 @@ add_executable(gprat_cpp src/execute.cpp)
 target_compile_features(gprat_cpp PUBLIC cxx_std_17)
 
 # Link the libraries
-target_link_libraries(gprat_cpp PUBLIC GPRat::core)
+target_link_libraries(gprat_cpp PUBLIC GPRat::core HPX::wrap_main)

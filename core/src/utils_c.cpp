@@ -128,7 +128,8 @@ void suspend_hpx_runtime() { hpx::suspend(); }
 
 void stop_hpx_runtime()
 {
-    hpx::post([]() { hpx::finalize(); });
+    //hpx::post([]() { hpx::finalize(); });
+    hpx::finalize();
     hpx::stop();
 }
 

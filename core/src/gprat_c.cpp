@@ -3,6 +3,27 @@
 #include "cpu/gp_functions.hpp"
 #include "utils_c.hpp"
 #include <cstdio>
+#include <cuda_runtime.h>
+#include <cublas_v2.h>
+
+#include <hpx/algorithm.hpp>
+#include <hpx/assert.hpp>
+#include <hpx/chrono.hpp>
+#include <hpx/execution.hpp>
+#include <hpx/future.hpp>
+#include <hpx/init.hpp>
+#include <hpx/modules/async_cuda.hpp>
+#include <hpx/modules/testing.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <utility>
+#include <vector>
+//
+//std::mt19937 gen;
 
 #if GPRAT_WITH_CUDA
 #include "gpu/gp_functions.cuh"
@@ -102,261 +123,284 @@ std::string GP::repr() const
 std::vector<double> GP::get_training_input() const { return training_input_; }
 
 std::vector<double> GP::get_training_output() const { return training_output_; }
-
-std::vector<double> GP::predict(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
+struct sMatrixSize
 {
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-#else
-                   return cpu::predict(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-#endif
-               })
-        .get();
-}
-
-std::vector<std::vector<double>>
-GP::predict_with_uncertainty(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
+    unsigned int uiWA, uiHA, uiWB, uiHB, uiWC, uiHC;
+};
+//std::vector<std::vector<double>> 
+void GP::cholesky()
 {
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict_with_uncertainty(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict_with_uncertainty(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-#else
-                   return cpu::predict_with_uncertainty(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-#endif
-               })
-        .get();
-}
-
-std::vector<std::vector<double>>
-GP::predict_with_full_cov(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
-{
-    return hpx::async(
-               [this, &test_input, m_tiles, m_tile_size]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::predict_with_full_cov(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::predict_with_full_cov(
-                           training_input_,
-                           training_output_,
-                           test_input,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           m_tiles,
-                           m_tile_size,
-                           n_reg);
-                   }
-#else
-                   return cpu::predict_with_full_cov(
-                       training_input_,
-                       training_output_,
-                       test_input,
-                       kernel_params,
-                       n_tiles_,
-                       n_tile_size_,
-                       m_tiles,
-                       m_tile_size,
-                       n_reg);
-#endif
-               })
-        .get();
-}
-
-std::vector<double> GP::optimize(const gprat_hyper::AdamParams &adam_params)
-{
-    return hpx::async(
-               [this, &adam_params]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                                 << "Instead, this operation executes the CPU implementation." << std::endl;
-                   }
-#endif
-                   return cpu::optimize(
-                       training_input_,
-                       training_output_,
-                       n_tiles_,
-                       n_tile_size_,
-                       n_reg,
-                       adam_params,
-                       kernel_params,
-                       trainable_params_);
-               })
-        .get();
-}
-
-double GP::optimize_step(gprat_hyper::AdamParams &adam_params, int iter)
-{
-    return hpx::async(
-               [this, &adam_params, iter]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                                 << "Instead, this operation executes the CPU implementation." << std::endl;
-                   }
-#endif
-                   return cpu::optimize_step(
-                       training_input_,
-                       training_output_,
-                       n_tiles_,
-                       n_tile_size_,
-                       n_reg,
-                       adam_params,
-                       kernel_params,
-                       trainable_params_,
-                       iter);
-               })
-        .get();
-}
-
-double GP::calculate_loss()
-{
-    return hpx::async(
+    return hpx::async(hpx::launch::sync,
                [this]()
                {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::compute_loss(
-                           training_input_,
-                           training_output_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::compute_loss(
-                           training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
-#else
-                   return cpu::compute_loss(
-                       training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-#endif
-               })
-        .get();
-}
+                    hpx::async(hpx::launch::sync,
+                        [this]()
+                        {
+/////////////////////////////////////////////////////////////////////////////
+    const int m = 2, n = 2, k = 2;
+    const double alpha = 1.0;
+    const double beta  = 0.0;
 
-std::vector<std::vector<double>> GP::cholesky()
-{
-    return hpx::async(
-               [this]()
-               {
-#if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::cholesky(
-                           training_input_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
-#else
-                   return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-#endif
-               })
+    // Host matrices (column-major)
+    double h_A[m * k] = {
+        1.0, 3.0,
+        2.0, 4.0
+    };
+
+    double h_B[k * n] = {
+        5.0, 7.0,
+        6.0, 8.0
+    };
+
+    double h_C[m * n] = {0.0, 0.0, 0.0, 0.0};
+
+    // Device pointers
+    double *d_A, *d_B, *d_C;
+    cudaMalloc((void**)&d_A, m * k * sizeof(double));
+    cudaMalloc((void**)&d_B, k * n * sizeof(double));
+    cudaMalloc((void**)&d_C, m * n * sizeof(double));
+
+    cudaMemcpy(d_A, h_A, m * k * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, k * n * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C, h_C, m * n * sizeof(double), cudaMemcpyHostToDevice);
+
+    // Create cuBLAS handle
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+
+    // DGEMM: C = alpha * A * B + beta * C
+    cublasDgemm(
+        handle,
+        CUBLAS_OP_N, CUBLAS_OP_N,
+        m, n, k,
+        &alpha,
+        d_A, m,
+        d_B, k,
+        &beta,
+        d_C, m
+    );
+
+    // Copy result back
+    cudaMemcpy(h_C, d_C, m * n * sizeof(double), cudaMemcpyDeviceToHost);
+
+    // Print result
+    printf("C = \n");
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%f ", h_C[i + j * m]);
+        }
+        printf("\n");
+    }
+
+    // Cleanup
+    cublasDestroy(handle);
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+// /////////////////////////////////////////////////////////////////////////////
+    // const int n = 2;   // C is n x n
+    // const int k = 2;   // A is n x k
+    // const double alpha = 1.0;
+    // const double beta  = 0.0;
+    //
+    // // Host matrix A (column-major, n x k)
+    // double h_A[n * k] = {
+    //     1.0, 3.0,
+    //     2.0, 4.0
+    // };
+    //
+    // // Host matrix C (column-major, n x n)
+    // double h_C[n * n] = {
+    //     0.0, 0.0,
+    //     0.0, 0.0
+    // };
+    //
+    // // Device pointers
+    // double *d_A, *d_C;
+    // cudaMalloc((void**)&d_A, n * k * sizeof(double));
+    // cudaMalloc((void**)&d_C, n * n * sizeof(double));
+    //
+    // cudaMemcpy(d_A, h_A, n * k * sizeof(double), cudaMemcpyHostToDevice);
+    // cudaMemcpy(d_C, h_C, n * n * sizeof(double), cudaMemcpyHostToDevice);
+    //
+    // // Create cuBLAS handle
+    // cublasHandle_t handle;
+    // cublasCreate(&handle);
+    //
+    // // SYRK: C = alpha * A * A^T + beta * C
+    // // Only the lower triangle of C is updated
+    // cublasDsyrk(
+    //     handle,
+    //     CUBLAS_FILL_MODE_LOWER,  // update lower triangle of C
+    //     CUBLAS_OP_N,             // A is not transposed
+    //     n,                       // size of C (n x n)
+    //     k,                       // rank-k update
+    //     &alpha,
+    //     d_A, n,                  // A and lda
+    //     &beta,
+    //     d_C, n                   // C and ldc
+    // );
+    //
+    // // Copy result back
+    // cudaMemcpy(h_C, d_C, n * n * sizeof(double), cudaMemcpyDeviceToHost);
+    //
+    // // Print result (full matrix, even though only lower triangle is valid)
+    // printf("C (lower triangle valid):\n");
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%f ", h_C[i + j * n]);
+    //     }
+    //     printf("\n");
+    // }
+    //
+    // // Cleanup
+    // cublasDestroy(handle);
+    // cudaFree(d_A);
+    // cudaFree(d_C);
+/////////////////////////////////////////////////////////////////////////////
+//     using hpx::execution::par;
+//     // install cuda future polling handler
+//     hpx::cuda::experimental::enable_user_polling poll("default");
+//     //
+//     std::size_t device = 0; 
+//     std::size_t sizeMult = 4;
+//     std::size_t iterations = 1;    //
+//     unsigned int seed = std::random_device{}();
+//     //
+//     sizeMult = (std::min) (sizeMult, std::size_t(100));
+//     sizeMult = (std::max) (sizeMult, std::size_t(1));
+//     //
+//     // use a larger block size for Fermi and above, query default cuda target properties
+//     hpx::cuda::experimental::target target(device);
+//
+//     std::cout << "GPU Device " << target.native_handle().get_device() << ": \""
+//               << target.native_handle().processor_name() << "\" "
+//               << "with compute capability "
+//               << target.native_handle().processor_family() << "\n";
+//
+//     int block_size = (target.native_handle().processor_family() < 2) ? 16 : 32;
+// hpx::cuda::experimental::cublas_executor cublas(device,
+//         CUBLAS_POINTER_MODE_HOST, hpx::cuda::experimental::event_mode{});
+//     sMatrixSize matrix_size;
+//     matrix_size.uiWA = 2 * block_size * sizeMult;
+//     matrix_size.uiHA = 4 * block_size * sizeMult;
+//     matrix_size.uiWB = 2 * block_size * sizeMult;
+//     matrix_size.uiHB = 4 * block_size * sizeMult;
+//     matrix_size.uiWC = 2 * block_size * sizeMult;
+//     matrix_size.uiHC = 4 * block_size * sizeMult;
+//
+//     printf("MatrixA(%u,%u), MatrixB(%u,%u), MatrixC(%u,%u)\n\n",
+//         matrix_size.uiWA, matrix_size.uiHA, matrix_size.uiWB, matrix_size.uiHB,
+//         matrix_size.uiWC, matrix_size.uiHC);
+//     // Allocate host memory for matrices A and B
+//     unsigned int size_A = matrix_size.uiWA * matrix_size.uiHA;
+//     unsigned int size_B = matrix_size.uiWB * matrix_size.uiHB;
+//     unsigned int size_C = matrix_size.uiWC * matrix_size.uiHC;
+//
+//     std::vector<double> h_A(size_A);
+//     std::vector<double> h_B(size_B);
+//     std::vector<double> h_C(size_C);
+//     std::vector<double> h_CUBLAS(size_C);
+//
+//     // Fill A and B with random numbers
+//     auto randfunc = [](double& x) { x = gen() / (double) RAND_MAX; };
+//     hpx::for_each(par, h_A.begin(), h_A.end(), randfunc);
+//     hpx::for_each(par, h_B.begin(), h_B.end(), randfunc);
+//
+//     // create a cublas executor we'll use to futurize cuda events
+//     using namespace hpx::cuda::experimental;
+//     using cublas_future = typename cuda_executor::future_type;
+//
+//     double *d_A, *d_B, *d_C;
+//     hpx::cuda::experimental::check_cuda_error(
+//         cudaMalloc((void**) &d_A, size_A * sizeof(double)));
+//
+//     hpx::cuda::experimental::check_cuda_error(
+//         cudaMalloc((void**) &d_B, size_B * sizeof(double)));
+//
+//     hpx::cuda::experimental::check_cuda_error(
+//         cudaMalloc((void**) &d_C, size_C * sizeof(double)));
+//
+//     // adding async copy operations into the stream before cublas calls puts
+//     // the copies in the queue before the matrix operations.
+//     hpx::post(cublas, cudaMemcpyAsync, d_A, h_A.data(), size_A * sizeof(double),
+//         cudaMemcpyHostToDevice);
+//
+//     auto copy_future = hpx::async(cublas, cudaMemcpyAsync, d_B, h_B.data(),
+//         size_B * sizeof(double), cudaMemcpyHostToDevice);
+//
+//     // we can call get_future multiple times on the cublas helper.
+//     // Each one returns a new future that will be set ready when the stream event
+//     // for this point is triggered
+//     copy_future.then([](cublas_future&&) {
+//         std::cout << "The async host->device copy operation completed"
+//                   << std::endl;
+//     });
+//
+//     std::cout << "Computing result using CUBLAS...\n";
+//     double const alpha = 1.0;
+//     double const beta = 0.0;
+//
+//     // Perform warmup operation with cublas
+//     // note cublas is column major ordering : transpose the order
+//     hpx::chrono::high_resolution_timer t1;
+//     //
+//     std::cout << "calling CUBLAS...\n";
+//     auto fut = hpx::async(cublas, cublasDgemm, CUBLAS_OP_N, CUBLAS_OP_N,
+//         matrix_size.uiWB, matrix_size.uiHA, matrix_size.uiWA, &alpha, d_B,
+//         matrix_size.uiWB, d_A, matrix_size.uiWA, &beta, d_C, matrix_size.uiWA);
+//
+//     // wait until the operation completes
+//     fut.get();
+//
+//     double us1 = t1.elapsed_microseconds();
+//     std::cout << "warmup: elapsed_microseconds " << us1 << std::endl;
+//
+//     // once the future has been retrieved, the next call to
+//     // get_future will create a new event attached to a new future
+//     // so we can reuse the same cublas executor stream if we want
+//
+//     hpx::chrono::high_resolution_timer t2;
+//     for (std::size_t j = 0; j < iterations; j++)
+//     {
+//         hpx::post(cublas, cublasDgemm, CUBLAS_OP_N, CUBLAS_OP_N,
+//             matrix_size.uiWB, matrix_size.uiHA, matrix_size.uiWA, &alpha, d_B,
+//             matrix_size.uiWB, d_A, matrix_size.uiWA, &beta, d_C,
+//             matrix_size.uiWA);
+//     }
+//     // get a future for when the stream reaches this point (matrix operations complete)
+//     auto matrix_finished = cublas.get_future();
+//
+//     // when the matrix operations complete, copy the result to the host
+//     auto finished = hpx::async(cublas, cudaMemcpyAsync, h_CUBLAS.data(),
+//         d_C, size_C * sizeof(double), cudaMemcpyDeviceToHost);
+//
+//     finished.get();
+//     ::hpx::cuda::experimental::check_cuda_error(cudaFree(d_A));
+//     ::hpx::cuda::experimental::check_cuda_error(cudaFree(d_B));
+//     ::hpx::cuda::experimental::check_cuda_error(cudaFree(d_C));
+//
+// #if GPRAT_WITH_CUDA
+//                    if (target_->is_gpu())
+//                    {
+//                        return gpu::cholesky(
+//                            training_input_,
+//                            kernel_params,
+//                            n_tiles_,
+//                            n_tile_size_,
+//                            n_reg,
+//                            *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
+//                    }
+//                    else
+//                    {
+//                        return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+//                    }
+// #else
+//                    return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+// #endif
+                })
+        .get();
+  })
         .get();
 }
 

@@ -67,6 +67,21 @@ if command -v spack &> /dev/null; then
 	    spack env activate gprat_gpu_clang
 	    GPRAT_WITH_CUDA=ON
 	fi
+    elif [[ "$HOSTNAME" == "nasrin0" ]]; then
+	module load llvm/20.1.8
+	module load cuda/12.9
+	ADD=64
+	#spack load openblas@0.3.24
+	#spack load /yevzh4k
+	#spack load /jza66le
+	ENV_NAME=gprat_nasrin
+		# Check if the gprat_gpu_clang environment exists
+	if spack env list | grep -q "$ENV_NAME"; then
+	    echo "Found $ENV_NAME environment, activating it."
+	    export CXX=clang++
+	    export CC=clang
+	    spack env activate $ENV_NAME
+	fi
     else
     	echo "Hostname is $HOSTNAME — no action taken."
     fi
@@ -83,14 +98,22 @@ export APEX_DISABLE=1
 # Compile code
 ################################################################################
 rm -rf build && mkdir build && cd build
-
+export CUBLASLT_DISABLE=1
 # Configure the project
 cmake .. -DCMAKE_BUILD_TYPE=Release \
          -DGPRat_DIR=./lib$ADD/cmake/GPRat \
          -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA} \
          -DHPX_DIR=$HPX_CMAKE \
-	 -DUSE_MKL=$USE_MKL
-
+	 -DUSE_MKL=$USE_MKL \
+	-DCMAKE_C_COMPILER=$(which clang) \
+        -DCMAKE_CXX_COMPILER=$(which clang++) \
+        -DCMAKE_CUDA_COMPILER=$(which clang++) \
+	    -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+      -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" 
+      #\
+        
+      #-DCMAKE_CUDA_FLAGS=--cuda-path=${CUDA_HOME} \
+        #-DCMAKE_CUDA_ARCHITECTURES=80
 # Build the project
 make -j
 
@@ -98,4 +121,5 @@ make -j
 # Run code
 ################################################################################
 
-./gprat_cpp $use_gpu
+compute-sanitizer ./gprat_cpp --hpx:threads=1
+#$use_gpu
