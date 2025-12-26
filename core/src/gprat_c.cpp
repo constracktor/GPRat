@@ -115,8 +115,14 @@ std::vector<std::vector<double>> GP::cholesky_synchronous()
                 return cpu::cholesky_synchronous(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
-std::vector<std::vector<double>> GP::cholesky_loop()
+std::vector<std::vector<double>> GP::cholesky_loop_ref()
 {
-                return cpu::cholesky_loop(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+                return cpu::cholesky_loop_ref(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
+
+std::vector<std::vector<double>> GP::cholesky_loop_val()
+{
+                return cpu::cholesky_loop_val(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+}
+
 }  // namespace gprat

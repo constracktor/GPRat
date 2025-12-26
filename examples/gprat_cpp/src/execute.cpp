@@ -4,101 +4,7 @@
 
 #include <iostream>
 #include <vector>
-
-
-int main(int argc, char *argv[])
-{
-    bool use_gpu =
-        utils::compiled_with_cuda() && gprat::gpu_count() > 0 && argc > 1 && std::strcmp(argv[1], "--use_gpu") == 0;
-    /////////////////////
-    /////// configuration
-    std::size_t START = 1024;
-    std::size_t END = 1024;
-    std::size_t STEP = 2;
-    std::size_t LOOP = 10;
-
-    int n_test = 1024;
-    const std::size_t N_CORES = 4;
-    const std::size_t n_tiles = 16;
-    const std::size_t n_reg = 8;
-
-    std::string train_path = "../../../data/data_1024/training_input.txt";
-
-    for (std::size_t core = 2; core <= N_CORES; core = core * 2)
-    {
-        for (std::size_t start = START; start <= END; start = start * STEP)
-        {
-            int n_train = static_cast<int>(start);
-            for (std::size_t l = 0; l < LOOP; l++)
-            {
-                // Compute tile sizes and number of predict tiles
-                int tile_size = utils::compute_train_tile_size(n_train, n_tiles);
-                auto result = utils::compute_test_tiles(n_test, n_tiles, tile_size);
-                /////////////////////
-                ////// data loading
-                gprat::GP_data training_input(train_path, n_train, n_reg);
-
-                auto start_total = std::chrono::high_resolution_clock::now();
-
-                std::chrono::duration<double> init_time;
-                std::chrono::duration<double> cholesky_time;
-                std::string target;
-
-                if (!use_gpu)
-                {
-                    target = "cpu";
-
-                    /////////////////////
-                    ///// GP
-                    auto start_init = std::chrono::high_resolution_clock::now();
-                    gprat::GP gp_cpu(training_input.data,
-                                     n_tiles,
-                                     tile_size,
-                                     n_reg,
-                                     { 1.0, 1.0, 0.1 });
-                    auto end_init = std::chrono::high_resolution_clock::now();
-                    init_time = end_init - start_init;
-
-                    auto start_cholesky = std::chrono::high_resolution_clock::now();
-                    //std::vector<std::vector<double>> choleksy_cpu = gp_cpu.cholesky();
-                    std::vector<std::vector<double>> choleksy_cpu = gp_cpu.cholesky_synchronous();
-                    auto end_cholesky = std::chrono::high_resolution_clock::now();
-                    cholesky_time = end_cholesky - start_cholesky;
-                    std::cout << "CPU: Cholesky time: " << cholesky_time.count() << std::endl;
-                }
-                else
-                {
-                    target = "gpu";
-
-                    auto start_init = std::chrono::high_resolution_clock::now();
-                    gprat::GP gp_gpu(
-                        training_input.data,
-                        n_tiles,
-                        tile_size,
-                        n_reg,
-                        { 1.0, 1.0, 0.1 },
-                        0,
-                        32);
-                    auto end_init = std::chrono::high_resolution_clock::now();
-                    init_time = end_init - start_init;
-
-                    auto start_cholesky = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_gpu = gp_gpu.cholesky();
-                    auto end_cholesky = std::chrono::high_resolution_clock::now();
-                    cholesky_time = end_cholesky - start_cholesky;
-                    std::cout << "GPU: Cholesky time: " << cholesky_time.count() << std::endl;
-                
-                    // compre agains CPU
-                    target = "cpu";
-                    gprat::GP gp_cpu(training_input.data,
-                                     n_tiles,
-                                     tile_size,
-                                     n_reg,
-                                     { 1.0, 1.0, 0.1 });
-                    std::vector<std::vector<double>> cholesky_cpu = gp_cpu.cholesky();
-
-                    // ---- call the check ----
-auto are_identical = [&](const auto& A, const auto& B,
+bool are_identical(const std::vector<std::vector<double>> &A, const std::vector<std::vector<double>> &B,
                          double tol = 1e-14)
 {
     if (A.size() != B.size()) {
@@ -130,7 +36,130 @@ auto are_identical = [&](const auto& A, const auto& B,
     }
 
     return true;
-};
+}
+
+int main(int argc, char *argv[])
+{
+    bool use_gpu =
+        utils::compiled_with_cuda() && gprat::gpu_count() > 0 && argc > 1 && std::strcmp(argv[1], "--use_gpu") == 0;
+    /////////////////////
+    /////// configuration
+    std::size_t START = 1024;
+    std::size_t END = 65536;
+    std::size_t STEP = 2;
+    std::size_t LOOP = 1;
+
+    int n_test = 1024;
+    const std::size_t N_CORES = 128;
+    const std::size_t n_tiles = 64;
+    const std::size_t n_reg = 8;
+
+    std::string train_path = "../../../data/data_19/training_input_19.txt";
+
+    for (std::size_t core = 128; core <= N_CORES; core = core * 2)
+    {
+        for (std::size_t start = START; start <= END; start = start * STEP)
+        {
+            int n_train = static_cast<int>(start);
+            std::cout << "\n\nProblem size: " << start << std::endl;
+            for (std::size_t l = 0; l < LOOP; l++)
+            {
+                // Compute tile sizes and number of predict tiles
+                int tile_size = utils::compute_train_tile_size(n_train, n_tiles);
+                /////////////////////
+                ////// data loading
+                gprat::GP_data training_input(train_path, n_train, n_reg);
+
+                std::chrono::duration<double> init_time;
+                std::chrono::duration<double> cholesky_async_time;
+                std::chrono::duration<double> cholesky_sync_time;
+                std::chrono::duration<double> cholesky_ref_time;
+                std::chrono::duration<double> cholesky_val_time;
+                std::string target;
+
+                auto start = std::chrono::high_resolution_clock::now();
+                auto end = std::chrono::high_resolution_clock::now();
+
+                if (!use_gpu)
+                {
+                    target = "cpu";
+
+                    /////////////////////
+                    ///// GP
+                    start = std::chrono::high_resolution_clock::now();
+                    gprat::GP gp_cpu(training_input.data,
+                                     n_tiles,
+                                     tile_size,
+                                     n_reg,
+                                     { 1.0, 1.0, 0.1 });
+                    end = std::chrono::high_resolution_clock::now();
+                    init_time = end - start;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_async = gp_cpu.cholesky();
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_async_time = end - start;
+                    std::cout << "cpu async cholesky time: " << cholesky_async_time.count() << std::endl;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_sync = gp_cpu.cholesky_synchronous();
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_sync_time = end - start;
+                    std::cout << "cpu sync cholesky time: " << cholesky_sync_time.count() << std::endl;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_ref = gp_cpu.cholesky_loop_ref();
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_ref_time = end - start;
+                    std::cout << "cpu ref cholesky time: " << cholesky_ref_time.count() << std::endl;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_val = gp_cpu.cholesky_loop_val();
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_val_time = end - start;
+                    std::cout << "cpu val cholesky time: " << cholesky_val_time.count() << std::endl;
+
+// bool ok_sync = are_identical(cholesky_cpu_async, cholesky_cpu_sync);
+// bool ok_ref = are_identical(cholesky_cpu_async, cholesky_cpu_ref);
+// bool ok_val = are_identical(cholesky_cpu_async, cholesky_cpu_val);
+// if (ok_sync && ok_ref && ok_val)
+//     std::cout << "Cholesky results are IDENTICAL (within tolerance)\n";
+// else
+//       std::cout << "Cholesky results differ!\n";
+                }              
+                else
+                {
+                    target = "gpu";
+
+                    auto start_init = std::chrono::high_resolution_clock::now();
+                    gprat::GP gp_gpu(
+                        training_input.data,
+                        n_tiles,
+                        tile_size,
+                        n_reg,
+                        { 1.0, 1.0, 0.1 },
+                        0,
+                        32);
+                    auto end_init = std::chrono::high_resolution_clock::now();
+                    init_time = end_init - start_init;
+
+                    auto start_cholesky = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_gpu = gp_gpu.cholesky();
+                    auto end_cholesky = std::chrono::high_resolution_clock::now();
+                    cholesky_async_time = end_cholesky - start_cholesky;
+                    std::cout << "GPU: Cholesky time: " << cholesky_async_time.count() << std::endl;
+
+                    // compre agains CPU
+                    target = "cpu";
+                    gprat::GP gp_cpu(training_input.data,
+                                     n_tiles,
+                                     tile_size,
+                                     n_reg,
+                                     { 1.0, 1.0, 0.1 });
+                    std::vector<std::vector<double>> cholesky_cpu = gp_cpu.cholesky();
+
+                    // ---- call the check ----
+
 
 
 

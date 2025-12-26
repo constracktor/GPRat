@@ -121,4 +121,5 @@ make -j
 # Run code
 ################################################################################
 
-compute-sanitizer ./gprat_cpp $use_gpu
+#compute-sanitizer 
+./gprat_cpp $use_gpu

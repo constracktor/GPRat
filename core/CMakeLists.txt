@@ -15,7 +15,6 @@ set(SOURCE_FILES
     src/cpu/functions.cpp
     src/cpu/gp_kernel.cpp
     src/cpu/cholesky_factor.cpp
-    src/cpu/adapter_cblas_fp32.cpp
     src/cpu/adapter_cblas_fp64.cpp)
 
 if(GPRAT_WITH_CUDA)
