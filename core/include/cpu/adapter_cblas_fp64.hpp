@@ -95,7 +95,7 @@ vector potrf(vector A, const int N);
  * @param M second dimension
  * @return solution matrix X
  */
-vector trsm(const vector &L,
+vector r_trsm(const vector &L,
                    vector A,
                    const int N,
                    const int M,
@@ -109,7 +109,7 @@ vector trsm(const vector &L,
  * @param N matrix dimension
  * @return updated matrix f_A
  */
-vector syrk(vector A, const vector &B, const int N);
+vector r_syrk(vector A, const vector &B, const int N);
 
 /**
  * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -124,7 +124,7 @@ vector syrk(vector A, const vector &B, const int N);
  * @return updated matrix X
  */
 vector
-gemm(const vector &A,
+r_gemm(const vector &A,
      const vector &B,
      vector C,
      const int N,
@@ -143,7 +143,7 @@ gemm(const vector &A,
  * @param M second dimension
  * @return solution matrix X
  */
-vector c_trsm(vector L,
+vector v_trsm(vector L,
                    vector A,
                    const int N,
                    const int M,
@@ -157,7 +157,7 @@ vector c_trsm(vector L,
  * @param N matrix dimension
  * @return updated matrix f_A
  */
-vector c_syrk(vector A, vector B, const int N);
+vector v_syrk(vector A, vector B, const int N);
 
 /**
  * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -172,7 +172,7 @@ vector c_syrk(vector A, vector B, const int N);
  * @return updated matrix X
  */
 vector
-c_gemm(vector A,
+v_gemm(vector A,
      vector B,
      vector C,
      const int N,

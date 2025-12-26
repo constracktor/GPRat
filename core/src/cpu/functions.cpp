@@ -12,7 +12,7 @@ namespace cpu
 {
 
 std::vector<std::vector<double>>
-cholesky(const std::vector<double> &training_input,
+cholesky_asynchronous(std::string variant, const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
@@ -45,7 +45,7 @@ cholesky(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch asynchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(to_variant(variant), K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize
@@ -61,7 +61,7 @@ cholesky(const std::vector<double> &training_input,
 }
 
 std::vector<std::vector<double>>
-cholesky_synchronous(const std::vector<double> &training_input,
+cholesky_synchronous(std::string variant, const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
@@ -95,7 +95,7 @@ cholesky_synchronous(const std::vector<double> &training_input,
     hpx::wait_all(K_tiles);
     ///////////////////////////////////////////////////////////////////////////
     // Launch synchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled_synchronous(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled(to_variant(variant), K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize
@@ -111,7 +111,7 @@ cholesky_synchronous(const std::vector<double> &training_input,
 }
 
 std::vector<std::vector<double>>
-cholesky_loop_ref(const std::vector<double> &training_input,
+cholesky_loop(std::string variant, const std::vector<double> &training_input,
          const SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
@@ -148,54 +148,10 @@ cholesky_loop_ref(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch synchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled_loop_ref(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
+    right_looking_cholesky_tiled_loop(to_variant(variant), K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
 
     ///////////////////////////////////////////////////////////////////////////
     // Sddynchronize
-    return K_tiles;
-}
-
-std::vector<std::vector<double>>
-cholesky_loop_val(const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors)
-{
-    // Tiled data structures
-    std::vector<std::vector<double>> K_tiles;  // Tiled covariance matrix
-
-    // Preallocate memory
-    K_tiles.resize(static_cast<std::size_t>(n_tiles * n_tiles));  // No reserve because of triangular structure
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Launch synchronous assembly
-    hpx::experimental::for_loop(
-        hpx::execution::par, std::size_t{0}, std::size_t(n_tiles),
-        [&](std::size_t i)
-    {
-        hpx::experimental::for_loop(
-            hpx::execution::par, std::size_t{0}, i + 1,
-            [&](std::size_t j)
-            {
-                K_tiles[i * std::size_t(n_tiles) + j] =
-                    gen_tile_covariance(
-                        i,
-                        j,
-                        static_cast<std::size_t>(n_tile_size),
-                        static_cast<std::size_t>(n_regressors),
-                        sek_params,
-                        training_input
-                    );
-            }
-        );
-    });
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Launch synchronous Cholesky decomposition: K = L * L^T
-    right_looking_cholesky_tiled_loop_val(K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
-
-    ///////////////////////////////////////////////////////////////////////////
     return K_tiles;
 }
 

@@ -157,19 +157,19 @@ class GP
     std::vector<std::vector<double>> cholesky();
 
     /**
+     * @brief Computes (asynchronous) & returns cholesky decomposition
+     */
+    std::vector<std::vector<double>> cholesky_async(std::string variant="async_ref");
+
+    /**
      * @brief Computes (synchronous) & returns cholesky decomposition
      */
-    std::vector<std::vector<double>> cholesky_synchronous();
+    std::vector<std::vector<double>> cholesky_sync(std::string variant="sync_ref");
 
     /**
-     * @brief Computes (asynchronous) & returns cholesky decomposition
+     * @brief Computes (synchronous) & returns cholesky decomposition
      */
-    std::vector<std::vector<double>> cholesky_loop_ref(); 
-
-    /**
-     * @brief Computes (asynchronous) & returns cholesky decomposition
-     */
-    std::vector<std::vector<double>> cholesky_loop_val();
+    std::vector<std::vector<double>> cholesky_loop(std::string variant="loop_ref"); 
 };
 }  // namespace gprat
 

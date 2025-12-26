@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     int n_test = 1024;
     const std::size_t N_CORES = 128;
-    const std::size_t n_tiles = 64;
+    const std::size_t n_tiles = 128;
     const std::size_t n_reg = 8;
 
     std::string train_path = "../../../data/data_19/training_input_19.txt";
@@ -96,25 +96,53 @@ int main(int argc, char *argv[])
                     init_time = end - start;
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_async = gp_cpu.cholesky();
+                    std::vector<std::vector<double>> cholesky_cpu_async = gp_cpu.cholesky_async("async_future");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_async_time = end - start;
-                    std::cout << "cpu async cholesky time: " << cholesky_async_time.count() << std::endl;
+                    std::cout << "cpu async future cholesky time: " << cholesky_async_time.count() << std::endl;
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_sync = gp_cpu.cholesky_synchronous();
+                    cholesky_cpu_async = gp_cpu.cholesky_async("async_ref");
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_async_time = end - start;
+                    std::cout << "cpu async ref cholesky time: " << cholesky_async_time.count() << std::endl;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    cholesky_cpu_async = gp_cpu.cholesky_async("async_val");
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_async_time = end - start;
+                    std::cout << "cpu async val cholesky time: " << cholesky_async_time.count() << std::endl;
+
+                    ////
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_sync = gp_cpu.cholesky_sync("sync_future");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_sync_time = end - start;
-                    std::cout << "cpu sync cholesky time: " << cholesky_sync_time.count() << std::endl;
+                    std::cout << "cpu sync future cholesky time: " << cholesky_sync_time.count() << std::endl;
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_ref = gp_cpu.cholesky_loop_ref();
+                    cholesky_cpu_sync = gp_cpu.cholesky_sync("sync_ref");
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_sync_time = end - start;
+                    std::cout << "cpu sync ref cholesky time: " << cholesky_sync_time.count() << std::endl;
+
+                    start = std::chrono::high_resolution_clock::now();
+                    cholesky_cpu_sync = gp_cpu.cholesky_sync("sync_val");
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_sync_time = end - start;
+                    std::cout << "cpu sync val cholesky time: " << cholesky_sync_time.count() << std::endl;
+
+                    ////
+
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_ref = gp_cpu.cholesky_loop("loop_ref");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_ref_time = end - start;
                     std::cout << "cpu ref cholesky time: " << cholesky_ref_time.count() << std::endl;
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_val = gp_cpu.cholesky_loop_val();
+                    std::vector<std::vector<double>> cholesky_cpu_val = gp_cpu.cholesky_loop("loop_val");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_val_time = end - start;
                     std::cout << "cpu val cholesky time: " << cholesky_val_time.count() << std::endl;

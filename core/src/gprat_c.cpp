@@ -103,26 +103,25 @@ std::vector<std::vector<double>> GP::cholesky()
                    }
                    else
                    {
-                       return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+                       return cpu::cholesky_asynchronous("async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
                    }
 #else
-                   return cpu::cholesky(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+                   return cpu::cholesky_asynchronous("async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 #endif
 }
 
-std::vector<std::vector<double>> GP::cholesky_synchronous()
+std::vector<std::vector<double>> GP::cholesky_async(std::string variant)
 {
-                return cpu::cholesky_synchronous(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+                return cpu::cholesky_asynchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+}
+std::vector<std::vector<double>> GP::cholesky_sync(std::string variant)
+{
+                return cpu::cholesky_synchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
-std::vector<std::vector<double>> GP::cholesky_loop_ref()
+std::vector<std::vector<double>> GP::cholesky_loop(std::string variant)
 {
-                return cpu::cholesky_loop_ref(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-}
-
-std::vector<std::vector<double>> GP::cholesky_loop_val()
-{
-                return cpu::cholesky_loop_val(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+                return cpu::cholesky_loop(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 }  // namespace gprat

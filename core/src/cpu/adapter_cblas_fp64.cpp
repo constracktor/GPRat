@@ -111,7 +111,7 @@ vector potrf(vector A, const int N)
     return A;
 }
 
-vector trsm(const vector &L,
+vector r_trsm(const vector &L,
                    vector A,
                    const int N,
                    const int M,
@@ -139,7 +139,7 @@ vector trsm(const vector &L,
     return A;
 }
 
-vector syrk(vector A, const vector &B, const int N)
+vector r_syrk(vector A, const vector &B, const int N)
 {
     // SYRK constants
     const double alpha = -1.0;
@@ -151,7 +151,7 @@ vector syrk(vector A, const vector &B, const int N)
 }
 
 vector
-gemm(const vector &A,
+r_gemm(const vector &A,
      const vector &B,
      vector C,
      const int N,
@@ -185,7 +185,7 @@ gemm(const vector &A,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // call by value -> local copy
-vector c_trsm(vector L,
+vector v_trsm(vector L,
                    vector A,
                    const int N,
                    const int M,
@@ -213,7 +213,7 @@ vector c_trsm(vector L,
     return A;
 }
 
-vector c_syrk(vector A, vector B, const int N)
+vector v_syrk(vector A, vector B, const int N)
 {
     // SYRK constants
     const double alpha = -1.0;
@@ -225,7 +225,7 @@ vector c_syrk(vector A, vector B, const int N)
 }
 
 vector
-c_gemm(vector A,
+v_gemm(vector A,
      vector B,
      vector C,
      const int N,
