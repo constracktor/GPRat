@@ -11,6 +11,7 @@ set(SOURCE_FILES
     src/gprat_c.cpp
     src/utils_c.cpp
     src/target.cpp
+    src/tile_data.cpp
     src/gp_hyperparameter.cpp
     src/cpu/functions.cpp
     src/cpu/gp_kernel.cpp

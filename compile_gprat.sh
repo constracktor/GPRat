@@ -30,9 +30,9 @@ if [[ "$2" == "cpu" ]]; then
     #PRESET=dev-linux
 elif [[ "$2" == "gpu" ]]; then
     # Release:
-    #PRESET=release-linux-gpu
+    PRESET=release-linux-gpu
     # Debug:
-    PRESET=dev-linux-gpu
+    #PRESET=dev-linux-gpu
 elif [[ "$2" != "cpu" ]]; then
     echo "Input parameter is missing. Using default: Run computations on CPU in Release mode"
     PRESET=release-linux

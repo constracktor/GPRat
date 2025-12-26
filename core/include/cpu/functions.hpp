@@ -2,6 +2,8 @@
 #define CPU_FUNCTIONS_H
 
 #include "gp_hyperparameter.hpp"
+#include "tile_data.hpp"
+
 #include <vector>
 #include <string>
 namespace cpu
@@ -66,5 +68,12 @@ cholesky_loop(std::string variant,
          int n_tiles,
          int n_tile_size,
          int n_regressors);
+
+std::vector<std::vector<double>>
+cholesky_mutable(const std::vector<double> &training_input,
+         const SEKParams &sek_params,
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors);
 }
 #endif  // end of CPU_FUNCTIONS_H

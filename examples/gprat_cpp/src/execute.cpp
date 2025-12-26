@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
                 std::chrono::duration<double> cholesky_sync_time;
                 std::chrono::duration<double> cholesky_ref_time;
                 std::chrono::duration<double> cholesky_val_time;
+                std::chrono::duration<double> cholesky_mut_time;
+
                 std::string target;
 
                 auto start = std::chrono::high_resolution_clock::now();
@@ -147,6 +149,11 @@ int main(int argc, char *argv[])
                     cholesky_val_time = end - start;
                     std::cout << "cpu val cholesky time: " << cholesky_val_time.count() << std::endl;
 
+                    start = std::chrono::high_resolution_clock::now();
+                    std::vector<std::vector<double>> cholesky_cpu_mut = gp_cpu.cholesky_mutable();
+                    end = std::chrono::high_resolution_clock::now();
+                    cholesky_mut_time = end - start;
+                    std::cout << "cpu mut cholesky time: " << cholesky_mut_time.count() << std::endl;
 // bool ok_sync = are_identical(cholesky_cpu_async, cholesky_cpu_sync);
 // bool ok_ref = are_identical(cholesky_cpu_async, cholesky_cpu_ref);
 // bool ok_val = are_identical(cholesky_cpu_async, cholesky_cpu_val);

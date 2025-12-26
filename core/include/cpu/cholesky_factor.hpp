@@ -2,10 +2,11 @@
 #define CPU_CHOLESKY_FACTOR_H
 
 #include "gp_hyperparameter.hpp"
+#include "tile_data.hpp"
 #include <hpx/future.hpp>
-#include <string>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
+using Mutable_tiled_matrix =  std::vector<hpx::shared_future<mutable_tile_data<double>>>;
 
 namespace cpu
 {
@@ -58,6 +59,8 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
  * @param n_tiles Number of tiles per dimension.
  */
 void right_looking_cholesky_tiled_loop(Variant variant, std::vector<std::vector<double>> &tiles, int N, std::size_t n_tiles);
+
+void right_looking_cholesky_tiled_mutable(Mutable_tiled_matrix &ft_tiles, int N, std::size_t n_tiles);
 
 }  // end of namespace cpu
 #endif  // end of CPU_CHOLESKY_FACTOR_H

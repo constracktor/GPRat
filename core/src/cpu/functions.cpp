@@ -151,8 +151,72 @@ cholesky_loop(std::string variant, const std::vector<double> &training_input,
     right_looking_cholesky_tiled_loop(to_variant(variant), K_tiles, n_tile_size, static_cast<std::size_t>(n_tiles));
 
     ///////////////////////////////////////////////////////////////////////////
-    // Sddynchronize
+    // Synchronize
     return K_tiles;
+}
+
+std::vector<std::vector<double>>
+cholesky_mutable(const std::vector<double> &training_input,
+         const SEKParams &sek_params,
+         std::size_t n_tiles,
+         std::size_t n_tile_size,
+         std::size_t n_regressors)
+{
+    // Tiled covariance matrix K_NxN
+    auto K_tiles = std::vector<hpx::shared_future<mutable_tile_data<double>>>{n_tiles * n_tiles};
+ // make_tiled_dataset<double>(
+ //        sched,
+ //       ,
+ //        [&](std::size_t tile_index)
+ //        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+
+    // for (std::size_t row = 0; row < n_tiles; row++)
+    // {
+    //     for (std::size_t col = 0; col <= row; col++)
+    //     {
+    //         K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
+    //             sched,
+    //             schedule::covariance_tile(sched, n_tiles, row, col),
+    //             "assemble_tiled_K",
+    //             K_tiles[row * n_tiles + col],
+    //             row,
+    //             col,
+    //             n_tile_size,
+    //             n_regressors,
+    //             sek_params,
+    //             training_input);
+    //     }
+    // }
+    for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
+    {
+        for (std::size_t j = 0; j <= i; j++)
+        {
+            K_tiles[i * static_cast<std::size_t>(n_tiles) + j] = hpx::async(
+                hpx::annotated_function(gen_mutable_tile_covariance, "assemble_tiled_K"),
+                i,
+                j,
+                static_cast<std::size_t>(n_tile_size),
+                n_regressors,
+                sek_params,
+                training_input);
+        }
+    }
+    // Launch asynchronous Cholesky decomposition: K = L * L^T
+    right_looking_cholesky_tiled_mutable(K_tiles, n_tile_size, n_tiles);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Synchronize
+    //std::vector<mutable_tile_data<double>> result(n_tiles * n_tiles);
+    std::vector<std::vector<double>> result(n_tiles * n_tiles);
+    for (std::size_t i = 0; i < n_tiles; i++)
+    {
+        for (std::size_t j = 0; j <= i; j++)
+        {
+            auto tile =  K_tiles[i * n_tiles + j].get();
+            result[i * n_tiles + j] = std::vector(tile.begin(), tile.end()) ;
+        }
+    }
+    return result;
 }
 
 }  // end of namespace cpu

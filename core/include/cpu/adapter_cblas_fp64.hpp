@@ -1,6 +1,6 @@
 #ifndef CPU_ADAPTER_CBLAS_FP64_H
 #define CPU_ADAPTER_CBLAS_FP64_H
-
+#include "tile_data.hpp"
 #include <hpx/future.hpp>
 #include <vector>
 
@@ -180,5 +180,62 @@ v_gemm(vector A,
      const int K,
      const BLAS_TRANSPOSE transpose_A,
      const BLAS_TRANSPOSE transpose_B);
+
+//////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief FP64 In-place Cholesky decomposition of A
+ * @param A matrix to be factorized
+ * @param N matrix dimension
+ * @return factorized, lower triangular matrix f_L
+ */
+mutable_tile_data<double> m_potrf(const mutable_tile_data<double> &A, int N);
+
+/**
+ * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
+ * @param L Cholesky factor matrix
+ * @param A right hand side matrix
+ * @param N first dimension
+ * @param M second dimension
+ * @return solution matrix f_X
+ */
+mutable_tile_data<double>
+m_trsm(const const_tile_data<double> &L,
+     const mutable_tile_data<double> &A,
+     int N,
+     int M,
+     BLAS_TRANSPOSE transpose_L,
+     BLAS_SIDE side_L);
+
+/**
+ * @brief FP64 Symmetric rank-k update: A = A - B * B^T
+ * @param A Base matrix
+ * @param B Symmetric update matrix
+ * @param N matrix dimension
+ * @return updated matrix f_A
+ */
+mutable_tile_data<double> m_syrk(const mutable_tile_data<double> &A, const const_tile_data<double> &B, int N);
+
+/**
+ * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
+ * @param C Base matrix
+ * @param B Right update matrix
+ * @param A Left update matrix
+ * @param N first matrix dimension
+ * @param M second matrix dimension
+ * @param K third matrix dimension
+ * @param transpose_A transpose left matrix
+ * @param transpose_B transpose right matrix
+ * @return updated matrix f_X
+ */
+mutable_tile_data<double>
+m_gemm(const const_tile_data<double> &A,
+     const const_tile_data<double> &B,
+     const mutable_tile_data<double> &C,
+     int N,
+     int M,
+     int K,
+     BLAS_TRANSPOSE transpose_A,
+     BLAS_TRANSPOSE transpose_B);
 
 #endif  // end of CPU_ADAPTER_CBLAS_FP64_H

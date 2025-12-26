@@ -59,4 +59,56 @@ std::vector<double> gen_tile_covariance(
     }
     return tile;
 }
+
+// double compute_covariance_function_span(std::size_t n_regressors,
+//                                    const SEKParams &sek_params,
+//                                    std::span<const double> i_input,
+//                                    std::span<const double> j_input)
+// {
+//     // k(z_i,z_j) = vertical_lengthscale * exp(-0.5 / lengthscale^2 * (z_i - z_j)^2)
+//     double distance = 0.0;
+//     for (std::size_t k = 0; k < n_regressors; k++)
+//     {
+//         const double z_ik_minus_z_jk = i_input[k] - j_input[k];
+//         distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
+//     }
+//
+//     return sek_params.vertical_lengthscale * exp(-0.5 / (sek_params.lengthscale * sek_params.lengthscale) * distance);
+// }
+
+mutable_tile_data<double> gen_mutable_tile_covariance(
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    const SEKParams &sek_params,
+        const std::vector<double> &input)
+    //std::span<const double> input)
+{
+    mutable_tile_data<double> tile(N * N);
+    for (std::size_t i = 0; i < N; i++)
+    {
+        const std::size_t i_global = N * row + i;
+        for (std::size_t j = 0; j < N; j++)
+        {
+            const std::size_t j_global = N * col + j;
+
+            // // compute covariance function
+            // auto covariance_function = compute_covariance_function_span(
+            //     n_regressors, sek_params, input.subspan(i_global, n_regressors), input.subspan(j_global, n_regressors));
+            // compute covariance function
+            auto covariance_function =
+                compute_covariance_function(i_global, j_global, n_regressors, sek_params, input, input);
+            if (i_global == j_global)
+            {
+                // noise variance on diagonal
+                covariance_function += sek_params.noise_variance;
+            }
+
+            tile.data()[i * N + j] = covariance_function;
+        }
+    }
+    return tile;
+}
+
 }  // end of namespace cpu

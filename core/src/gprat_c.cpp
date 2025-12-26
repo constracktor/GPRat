@@ -124,4 +124,9 @@ std::vector<std::vector<double>> GP::cholesky_loop(std::string variant)
                 return cpu::cholesky_loop(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
+std::vector<std::vector<double>> GP::cholesky_mutable()
+{
+                return cpu::cholesky_mutable(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+}
+
 }  // namespace gprat

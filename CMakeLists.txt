@@ -9,6 +9,9 @@ project(
 
 include(CMakeDependentOption)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # What to build?
 option(GPRAT_BUILD_CORE "Build the core library" ON)
 cmake_dependent_option(GPRAT_BUILD_BINDINGS "Build the Python bindings" ON
