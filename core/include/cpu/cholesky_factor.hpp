@@ -6,34 +6,48 @@
 #include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
-using Mutable_tiled_matrix =  std::vector<hpx::shared_future<mutable_tile_data<double>>>;
+using Mutable_tiled_matrix = std::vector<hpx::shared_future<mutable_tile_data<double>>>;
 
 namespace cpu
 {
-enum class Variant
-{
-    async_future,
-    async_ref,
-    async_val,
-    sync_future,
-    sync_ref,
-    sync_val,
-    loop_ref,
-    loop_val
-};
+enum class Variant { async_future, async_ref, async_val, sync_future, sync_ref, sync_val, loop_ref, loop_val };
 
 inline Variant to_variant(std::string s)
 {
-    if (s == "async_future") return Variant::async_future;
-    if (s == "async_ref")    return Variant::async_ref;
-    if (s == "async_val")    return Variant::async_val;
+    if (s == "async_future")
+    {
+        return Variant::async_future;
+    }
+    if (s == "async_ref")
+    {
+        return Variant::async_ref;
+    }
+    if (s == "async_val")
+    {
+        return Variant::async_val;
+    }
 
-    if (s == "sync_future")  return Variant::sync_future;
-    if (s == "sync_ref")     return Variant::sync_ref;
-    if (s == "sync_val")     return Variant::sync_val;
+    if (s == "sync_future")
+    {
+        return Variant::sync_future;
+    }
+    if (s == "sync_ref")
+    {
+        return Variant::sync_ref;
+    }
+    if (s == "sync_val")
+    {
+        return Variant::sync_val;
+    }
 
-    if (s == "loop_ref")     return Variant::loop_ref;
-    if (s == "loop_val")     return Variant::loop_val;
+    if (s == "loop_ref")
+    {
+        return Variant::loop_ref;
+    }
+    if (s == "loop_val")
+    {
+        return Variant::loop_val;
+    }
 
     throw std::invalid_argument("Unknown Variant: " + std::string(s));
 }
@@ -58,7 +72,8 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
  * @param N Tile size per dimension.
  * @param n_tiles Number of tiles per dimension.
  */
-void right_looking_cholesky_tiled_loop(Variant variant, std::vector<std::vector<double>> &tiles, int N, std::size_t n_tiles);
+void right_looking_cholesky_tiled_loop(
+    Variant variant, std::vector<std::vector<double>> &tiles, int N, std::size_t n_tiles);
 
 void right_looking_cholesky_tiled_mutable(Mutable_tiled_matrix &ft_tiles, int N, std::size_t n_tiles);
 

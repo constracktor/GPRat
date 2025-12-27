@@ -33,11 +33,8 @@ GP::GP(std::vector<double> input,
     kernel_params(kernel_hyperparams[0], kernel_hyperparams[1], kernel_hyperparams[2])
 { }
 
-GP::GP(std::vector<double> input,
-       int n_tiles,
-       int n_tile_size,
-       int n_regressors,
-       std::vector<double> kernel_hyperparams) :
+GP::GP(
+    std::vector<double> input, int n_tiles, int n_tile_size, int n_regressors, std::vector<double> kernel_hyperparams) :
     training_input_(input),
     n_tiles_(n_tiles),
     n_tile_size_(n_tile_size),
@@ -78,9 +75,10 @@ std::string GP::repr() const
 {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(12);
-    oss << "Kernel_Params: [lengthscale=" << kernel_params.lengthscale << ", vertical_lengthscale="
-        << kernel_params.vertical_lengthscale << ", noise_variance=" << kernel_params.noise_variance
-        << ", n_regressors=" << n_reg << "], Target: [" << target_->repr() << "], n_tiles=" << n_tiles_ << ", n_tile_size=" << n_tile_size_;
+    oss << "Kernel_Params: [lengthscale=" << kernel_params.lengthscale
+        << ", vertical_lengthscale=" << kernel_params.vertical_lengthscale
+        << ", noise_variance=" << kernel_params.noise_variance << ", n_regressors=" << n_reg << "], Target: ["
+        << target_->repr() << "], n_tiles=" << n_tiles_ << ", n_tile_size=" << n_tile_size_;
     return oss.str();
 }
 
@@ -91,42 +89,44 @@ std::vector<double> GP::get_training_output() const { return training_output_; }
 std::vector<std::vector<double>> GP::cholesky()
 {
 #if GPRAT_WITH_CUDA
-                   if (target_->is_gpu())
-                   {
-                       return gpu::cholesky(
-                           training_input_,
-                           kernel_params,
-                           n_tiles_,
-                           n_tile_size_,
-                           n_reg,
-                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
-                   }
-                   else
-                   {
-                       return cpu::cholesky_asynchronous("async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
-                   }
+    if (target_->is_gpu())
+    {
+        return gpu::cholesky(
+            training_input_,
+            kernel_params,
+            n_tiles_,
+            n_tile_size_,
+            n_reg,
+            *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target_));
+    }
+    else
+    {
+        return cpu::cholesky_asynchronous(
+            "async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    }
 #else
-                   return cpu::cholesky_asynchronous("async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    return cpu::cholesky_asynchronous("async_futures", training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 #endif
 }
 
 std::vector<std::vector<double>> GP::cholesky_async(std::string variant)
 {
-                return cpu::cholesky_asynchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    return cpu::cholesky_asynchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
+
 std::vector<std::vector<double>> GP::cholesky_sync(std::string variant)
 {
-                return cpu::cholesky_synchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    return cpu::cholesky_synchronous(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 std::vector<std::vector<double>> GP::cholesky_loop(std::string variant)
 {
-                return cpu::cholesky_loop(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    return cpu::cholesky_loop(variant, training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 std::vector<std::vector<double>> GP::cholesky_mutable()
 {
-                return cpu::cholesky_mutable(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
+    return cpu::cholesky_mutable(training_input_, kernel_params, n_tiles_, n_tile_size_, n_reg);
 }
 
 }  // namespace gprat

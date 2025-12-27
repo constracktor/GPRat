@@ -1,34 +1,33 @@
 #include "gprat_c.hpp"
 #include "utils_c.hpp"
 #include <hpx/hpx_main.hpp>
-
 #include <iostream>
 #include <vector>
-bool are_identical(const std::vector<std::vector<double>> &A, const std::vector<std::vector<double>> &B,
-                         double tol = 1e-14)
+
+bool are_identical(const std::vector<std::vector<double>> &A,
+                   const std::vector<std::vector<double>> &B,
+                   double tol = 1e-14)
 {
-    if (A.size() != B.size()) {
-        std::cout << "Size mismatch: rows "
-                  << A.size() << " vs " << B.size() << std::endl;
+    if (A.size() != B.size())
+    {
+        std::cout << "Size mismatch: rows " << A.size() << " vs " << B.size() << std::endl;
         return false;
     }
 
     for (std::size_t i = 0; i < A.size(); ++i)
     {
-        if (A[i].size() != B[i].size()) {
-            std::cout << "Size mismatch at row " << i
-                      << ": cols " << A[i].size()
-                      << " vs " << B[i].size() << std::endl;
+        if (A[i].size() != B[i].size())
+        {
+            std::cout << "Size mismatch at row " << i << ": cols " << A[i].size() << " vs " << B[i].size() << std::endl;
             return false;
         }
 
         for (std::size_t j = 0; j < A[i].size(); ++j)
         {
             double diff = std::abs(A[i][j] - B[i][j]);
-            if (diff > tol) {
-                std::cout << "Mismatch at (" << i << "," << j << ")  "
-                          << "cpu=" << B[i][j]
-                          << " gpu=" << A[i][j]
+            if (diff > tol)
+            {
+                std::cout << "Mismatch at (" << i << "," << j << ")  " << "cpu=" << B[i][j] << " gpu=" << A[i][j]
                           << " diff=" << diff << std::endl;
                 return false;
             }
@@ -45,7 +44,7 @@ int main(int argc, char *argv[])
     /////////////////////
     /////// configuration
     std::size_t START = 1024;
-    std::size_t END = 65536;
+    std::size_t END = 65'536;
     std::size_t STEP = 2;
     std::size_t LOOP = 1;
 
@@ -89,11 +88,7 @@ int main(int argc, char *argv[])
                     /////////////////////
                     ///// GP
                     start = std::chrono::high_resolution_clock::now();
-                    gprat::GP gp_cpu(training_input.data,
-                                     n_tiles,
-                                     tile_size,
-                                     n_reg,
-                                     { 1.0, 1.0, 0.1 });
+                    gprat::GP gp_cpu(training_input.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 });
                     end = std::chrono::high_resolution_clock::now();
                     init_time = end - start;
 
@@ -154,27 +149,20 @@ int main(int argc, char *argv[])
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_mut_time = end - start;
                     std::cout << "cpu mut cholesky time: " << cholesky_mut_time.count() << std::endl;
-// bool ok_sync = are_identical(cholesky_cpu_async, cholesky_cpu_sync);
-// bool ok_ref = are_identical(cholesky_cpu_async, cholesky_cpu_ref);
-// bool ok_val = are_identical(cholesky_cpu_async, cholesky_cpu_val);
-// if (ok_sync && ok_ref && ok_val)
-//     std::cout << "Cholesky results are IDENTICAL (within tolerance)\n";
-// else
-//       std::cout << "Cholesky results differ!\n";
-                }              
+                    // bool ok_sync = are_identical(cholesky_cpu_async, cholesky_cpu_sync);
+                    // bool ok_ref = are_identical(cholesky_cpu_async, cholesky_cpu_ref);
+                    // bool ok_val = are_identical(cholesky_cpu_async, cholesky_cpu_val);
+                    // if (ok_sync && ok_ref && ok_val)
+                    //     std::cout << "Cholesky results are IDENTICAL (within tolerance)\n";
+                    // else
+                    //       std::cout << "Cholesky results differ!\n";
+                }
                 else
                 {
                     target = "gpu";
 
                     auto start_init = std::chrono::high_resolution_clock::now();
-                    gprat::GP gp_gpu(
-                        training_input.data,
-                        n_tiles,
-                        tile_size,
-                        n_reg,
-                        { 1.0, 1.0, 0.1 },
-                        0,
-                        32);
+                    gprat::GP gp_gpu(training_input.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, 0, 32);
                     auto end_init = std::chrono::high_resolution_clock::now();
                     init_time = end_init - start_init;
 
@@ -186,24 +174,21 @@ int main(int argc, char *argv[])
 
                     // compre agains CPU
                     target = "cpu";
-                    gprat::GP gp_cpu(training_input.data,
-                                     n_tiles,
-                                     tile_size,
-                                     n_reg,
-                                     { 1.0, 1.0, 0.1 });
+                    gprat::GP gp_cpu(training_input.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 });
                     std::vector<std::vector<double>> cholesky_cpu = gp_cpu.cholesky();
 
                     // ---- call the check ----
 
+                    bool ok = are_identical(cholesky_gpu, cholesky_cpu);
 
-
-
-bool ok = are_identical(cholesky_gpu, cholesky_cpu);
-
-if (ok)
-    std::cout << "Cholesky results are IDENTICAL (within tolerance)\n";
-else
-    std::cout << "Cholesky results differ!\n";
+                    if (ok)
+                    {
+                        std::cout << "Cholesky results are IDENTICAL (within tolerance)\n";
+                    }
+                    else
+                    {
+                        std::cout << "Cholesky results differ!\n";
+                    }
                 }
             }
         }

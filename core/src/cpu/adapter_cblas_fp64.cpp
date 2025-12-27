@@ -22,11 +22,11 @@ vector_future f_potrf(vector_future f_A, const int N)
 }
 
 vector_future f_trsm(vector_future f_L,
-                   vector_future f_A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L)
+                     vector_future f_A,
+                     const int N,
+                     const int M,
+                     const BLAS_TRANSPOSE transpose_L,
+                     const BLAS_SIDE side_L)
 
 {
     auto L = f_L.get();
@@ -66,13 +66,13 @@ vector_future f_syrk(vector_future f_A, vector_future f_B, const int N)
 
 vector_future
 f_gemm(vector_future f_A,
-     vector_future f_B,
-     vector_future f_C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+       vector_future f_B,
+       vector_future f_C,
+       const int N,
+       const int M,
+       const int K,
+       const BLAS_TRANSPOSE transpose_A,
+       const BLAS_TRANSPOSE transpose_B)
 {
     auto C = f_C.get();
     auto B = f_B.get();
@@ -111,12 +111,8 @@ vector potrf(vector A, const int N)
     return A;
 }
 
-vector r_trsm(const vector &L,
-                   vector A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L)
+vector
+r_trsm(const vector &L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L)
 
 {
     // TRSM constants
@@ -150,15 +146,14 @@ vector r_syrk(vector A, const vector &B, const int N)
     return A;
 }
 
-vector
-r_gemm(const vector &A,
-     const vector &B,
-     vector C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+vector r_gemm(const vector &A,
+              const vector &B,
+              vector C,
+              const int N,
+              const int M,
+              const int K,
+              const BLAS_TRANSPOSE transpose_A,
+              const BLAS_TRANSPOSE transpose_B)
 {
     // GEMM constants
     const double alpha = -1.0;
@@ -185,12 +180,7 @@ r_gemm(const vector &A,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // call by value -> local copy
-vector v_trsm(vector L,
-                   vector A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L)
+vector v_trsm(vector L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L)
 
 {
     // TRSM constants
@@ -224,15 +214,14 @@ vector v_syrk(vector A, vector B, const int N)
     return A;
 }
 
-vector
-v_gemm(vector A,
-     vector B,
-     vector C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+vector v_gemm(vector A,
+              vector B,
+              vector C,
+              const int N,
+              const int M,
+              const int K,
+              const BLAS_TRANSPOSE transpose_A,
+              const BLAS_TRANSPOSE transpose_B)
 {
     // GEMM constants
     const double alpha = -1.0;
@@ -270,11 +259,11 @@ mutable_tile_data<double> m_potrf(const mutable_tile_data<double> &A, const int 
 
 mutable_tile_data<double>
 m_trsm(const const_tile_data<double> &L,
-     const mutable_tile_data<double> &A,
-     const int N,
-     const int M,
-     const BLAS_TRANSPOSE transpose_L,
-     const BLAS_SIDE side_L)
+       const mutable_tile_data<double> &A,
+       const int N,
+       const int M,
+       const BLAS_TRANSPOSE transpose_L,
+       const BLAS_SIDE side_L)
 {
     // TRSM constants
     const double alpha = 1.0;
@@ -309,13 +298,13 @@ mutable_tile_data<double> m_syrk(const mutable_tile_data<double> &A, const const
 
 mutable_tile_data<double>
 m_gemm(const const_tile_data<double> &A,
-     const const_tile_data<double> &B,
-     const mutable_tile_data<double> &C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+       const const_tile_data<double> &B,
+       const mutable_tile_data<double> &C,
+       const int N,
+       const int M,
+       const int K,
+       const BLAS_TRANSPOSE transpose_A,
+       const BLAS_TRANSPOSE transpose_B)
 {
     // GEMM constants
     const double alpha = -1.0;
@@ -339,4 +328,3 @@ m_gemm(const const_tile_data<double> &A,
     // return updated matrix C
     return C;
 }
-

@@ -3,9 +3,9 @@
 
 #include "gp_hyperparameter.hpp"
 #include "tile_data.hpp"
-
-#include <vector>
 #include <string>
+#include <vector>
+
 namespace cpu
 {
 
@@ -21,13 +21,13 @@ namespace cpu
  *
  * @return The tiled Cholesky factor
  */
-std::vector<std::vector<double>>
-cholesky_asynchronous(std::string variant,
-        const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors);
+std::vector<std::vector<double>> cholesky_asynchronous(
+    std::string variant,
+    const std::vector<double> &training_input,
+    const SEKParams &sek_params,
+    int n_tiles,
+    int n_tile_size,
+    int n_regressors);
 
 /**
  * @brief Perform future-based synchronous Cholesky decompositon (+ Assebmly)
@@ -41,13 +41,13 @@ cholesky_asynchronous(std::string variant,
  *
  * @return The tiled Cholesky factor
  */
-std::vector<std::vector<double>>
-cholesky_synchronous(std::string variant,
-        const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors);
+std::vector<std::vector<double>> cholesky_synchronous(
+    std::string variant,
+    const std::vector<double> &training_input,
+    const SEKParams &sek_params,
+    int n_tiles,
+    int n_tile_size,
+    int n_regressors);
 
 /**
  * @brief Perform loop-based synchronous Cholesky decompositon (+ Assebmly) without futures
@@ -63,17 +63,17 @@ cholesky_synchronous(std::string variant,
  */
 std::vector<std::vector<double>>
 cholesky_loop(std::string variant,
-        const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors);
+              const std::vector<double> &training_input,
+              const SEKParams &sek_params,
+              int n_tiles,
+              int n_tile_size,
+              int n_regressors);
 
 std::vector<std::vector<double>>
 cholesky_mutable(const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         std::size_t n_tiles,
-         std::size_t n_tile_size,
-         std::size_t n_regressors);
-}
+                 const SEKParams &sek_params,
+                 std::size_t n_tiles,
+                 std::size_t n_tile_size,
+                 std::size_t n_regressors);
+}  // namespace cpu
 #endif  // end of CPU_FUNCTIONS_H

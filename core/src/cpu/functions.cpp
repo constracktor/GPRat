@@ -1,9 +1,9 @@
 #include "cpu/functions.hpp"
 
-#include "cpu/gp_kernel.hpp"
 #include "cpu/cholesky_factor.hpp"
-#include <hpx/future.hpp>
+#include "cpu/gp_kernel.hpp"
 #include <hpx/algorithm.hpp>
+#include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -11,12 +11,13 @@ using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 namespace cpu
 {
 
-std::vector<std::vector<double>>
-cholesky_asynchronous(std::string variant, const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors)
+std::vector<std::vector<double>> cholesky_asynchronous(
+    std::string variant,
+    const std::vector<double> &training_input,
+    const SEKParams &sek_params,
+    int n_tiles,
+    int n_tile_size,
+    int n_regressors)
 {
     std::vector<std::vector<double>> result;
     // Tiled future data structures
@@ -60,12 +61,13 @@ cholesky_asynchronous(std::string variant, const std::vector<double> &training_i
     return result;
 }
 
-std::vector<std::vector<double>>
-cholesky_synchronous(std::string variant, const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors)
+std::vector<std::vector<double>> cholesky_synchronous(
+    std::string variant,
+    const std::vector<double> &training_input,
+    const SEKParams &sek_params,
+    int n_tiles,
+    int n_tile_size,
+    int n_regressors)
 {
     std::vector<std::vector<double>> result;
     // Tiled future data structures
@@ -111,11 +113,12 @@ cholesky_synchronous(std::string variant, const std::vector<double> &training_in
 }
 
 std::vector<std::vector<double>>
-cholesky_loop(std::string variant, const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         int n_tiles,
-         int n_tile_size,
-         int n_regressors)
+cholesky_loop(std::string variant,
+              const std::vector<double> &training_input,
+              const SEKParams &sek_params,
+              int n_tiles,
+              int n_tile_size,
+              int n_regressors)
 {
     // Tiled data structures
     std::vector<std::vector<double>> K_tiles;  // Tiled covariance matrix
@@ -126,25 +129,26 @@ cholesky_loop(std::string variant, const std::vector<double> &training_input,
     ///////////////////////////////////////////////////////////////////////////
     // Launch synchronous assembly
     hpx::experimental::for_loop(
-        hpx::execution::par, std::size_t{0}, std::size_t(n_tiles),
+        hpx::execution::par,
+        std::size_t{ 0 },
+        std::size_t(n_tiles),
         [&](std::size_t i)
-    {
-        hpx::experimental::for_loop(
-            hpx::execution::par, std::size_t{0}, i + 1,
-            [&](std::size_t j)
-            {
-                K_tiles[i * std::size_t(n_tiles) + j] =
-                    gen_tile_covariance(
+        {
+            hpx::experimental::for_loop(
+                hpx::execution::par,
+                std::size_t{ 0 },
+                i + 1,
+                [&](std::size_t j)
+                {
+                    K_tiles[i * std::size_t(n_tiles) + j] = gen_tile_covariance(
                         i,
                         j,
                         static_cast<std::size_t>(n_tile_size),
                         static_cast<std::size_t>(n_regressors),
                         sek_params,
-                        training_input
-                    );
-            }
-        );
-    });
+                        training_input);
+                });
+        });
 
     ///////////////////////////////////////////////////////////////////////////
     // Launch synchronous Cholesky decomposition: K = L * L^T
@@ -157,18 +161,18 @@ cholesky_loop(std::string variant, const std::vector<double> &training_input,
 
 std::vector<std::vector<double>>
 cholesky_mutable(const std::vector<double> &training_input,
-         const SEKParams &sek_params,
-         std::size_t n_tiles,
-         std::size_t n_tile_size,
-         std::size_t n_regressors)
+                 const SEKParams &sek_params,
+                 std::size_t n_tiles,
+                 std::size_t n_tile_size,
+                 std::size_t n_regressors)
 {
     // Tiled covariance matrix K_NxN
-    auto K_tiles = std::vector<hpx::shared_future<mutable_tile_data<double>>>{n_tiles * n_tiles};
- // make_tiled_dataset<double>(
- //        sched,
- //       ,
- //        [&](std::size_t tile_index)
- //        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+    auto K_tiles = std::vector<hpx::shared_future<mutable_tile_data<double>>>{ n_tiles * n_tiles };
+    // make_tiled_dataset<double>(
+    //        sched,
+    //       ,
+    //        [&](std::size_t tile_index)
+    //        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     // for (std::size_t row = 0; row < n_tiles; row++)
     // {
@@ -206,14 +210,14 @@ cholesky_mutable(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize
-    //std::vector<mutable_tile_data<double>> result(n_tiles * n_tiles);
+    // std::vector<mutable_tile_data<double>> result(n_tiles * n_tiles);
     std::vector<std::vector<double>> result(n_tiles * n_tiles);
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
-            auto tile =  K_tiles[i * n_tiles + j].get();
-            result[i * n_tiles + j] = std::vector(tile.begin(), tile.end()) ;
+            auto tile = K_tiles[i * n_tiles + j].get();
+            result[i * n_tiles + j] = std::vector(tile.begin(), tile.end());
         }
     }
     return result;

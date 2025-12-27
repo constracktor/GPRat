@@ -40,11 +40,11 @@ vector_future f_potrf(vector_future f_A, const int N);
  * @return solution matrix f_X
  */
 vector_future f_trsm(vector_future f_L,
-                   vector_future f_A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L);
+                     vector_future f_A,
+                     const int N,
+                     const int M,
+                     const BLAS_TRANSPOSE transpose_L,
+                     const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -69,13 +69,13 @@ vector_future f_syrk(vector_future f_A, vector_future f_B, const int N);
  */
 vector_future
 f_gemm(vector_future f_A,
-     vector_future f_B,
-     vector_future f_C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B);
+       vector_future f_B,
+       vector_future f_C,
+       const int N,
+       const int M,
+       const int K,
+       const BLAS_TRANSPOSE transpose_A,
+       const BLAS_TRANSPOSE transpose_B);
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -95,12 +95,8 @@ vector potrf(vector A, const int N);
  * @param M second dimension
  * @return solution matrix X
  */
-vector r_trsm(const vector &L,
-                   vector A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L);
+vector
+r_trsm(const vector &L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -123,15 +119,14 @@ vector r_syrk(vector A, const vector &B, const int N);
  * @param transpose_B transpose right matrix
  * @return updated matrix X
  */
-vector
-r_gemm(const vector &A,
-     const vector &B,
-     vector C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B);
+vector r_gemm(const vector &A,
+              const vector &B,
+              vector C,
+              const int N,
+              const int M,
+              const int K,
+              const BLAS_TRANSPOSE transpose_A,
+              const BLAS_TRANSPOSE transpose_B);
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -143,12 +138,7 @@ r_gemm(const vector &A,
  * @param M second dimension
  * @return solution matrix X
  */
-vector v_trsm(vector L,
-                   vector A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L);
+vector v_trsm(vector L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -171,15 +161,14 @@ vector v_syrk(vector A, vector B, const int N);
  * @param transpose_B transpose right matrix
  * @return updated matrix X
  */
-vector
-v_gemm(vector A,
-     vector B,
-     vector C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B);
+vector v_gemm(vector A,
+              vector B,
+              vector C,
+              const int N,
+              const int M,
+              const int K,
+              const BLAS_TRANSPOSE transpose_A,
+              const BLAS_TRANSPOSE transpose_B);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -201,11 +190,11 @@ mutable_tile_data<double> m_potrf(const mutable_tile_data<double> &A, int N);
  */
 mutable_tile_data<double>
 m_trsm(const const_tile_data<double> &L,
-     const mutable_tile_data<double> &A,
-     int N,
-     int M,
-     BLAS_TRANSPOSE transpose_L,
-     BLAS_SIDE side_L);
+       const mutable_tile_data<double> &A,
+       int N,
+       int M,
+       BLAS_TRANSPOSE transpose_L,
+       BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -230,12 +219,12 @@ mutable_tile_data<double> m_syrk(const mutable_tile_data<double> &A, const const
  */
 mutable_tile_data<double>
 m_gemm(const const_tile_data<double> &A,
-     const const_tile_data<double> &B,
-     const mutable_tile_data<double> &C,
-     int N,
-     int M,
-     int K,
-     BLAS_TRANSPOSE transpose_A,
-     BLAS_TRANSPOSE transpose_B);
+       const const_tile_data<double> &B,
+       const mutable_tile_data<double> &C,
+       int N,
+       int M,
+       int K,
+       BLAS_TRANSPOSE transpose_A,
+       BLAS_TRANSPOSE transpose_B);
 
 #endif  // end of CPU_ADAPTER_CBLAS_FP64_H
