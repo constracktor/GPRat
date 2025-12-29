@@ -190,12 +190,7 @@ mutable_tile m_potrf(const mutable_tile &A, int N);
  * @return solution matrix f_X
  */
 mutable_tile
-m_trsm(const const_tile &L,
-       const mutable_tile &A,
-       int N,
-       int M,
-       BLAS_TRANSPOSE transpose_L,
-       BLAS_SIDE side_L);
+m_trsm(const const_tile &L, const mutable_tile &A, int N, int M, BLAS_TRANSPOSE transpose_L, BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -218,15 +213,14 @@ mutable_tile m_syrk(const mutable_tile &A, const const_tile &B, int N);
  * @param transpose_B transpose right matrix
  * @return updated matrix f_X
  */
-mutable_tile
-m_gemm(const const_tile &A,
-       const const_tile &B,
-       const mutable_tile &C,
-       int N,
-       int M,
-       int K,
-       BLAS_TRANSPOSE transpose_A,
-       BLAS_TRANSPOSE transpose_B);
+mutable_tile m_gemm(const const_tile &A,
+                    const const_tile &B,
+                    const mutable_tile &C,
+                    int N,
+                    int M,
+                    int K,
+                    BLAS_TRANSPOSE transpose_A,
+                    BLAS_TRANSPOSE transpose_B);
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -244,7 +238,8 @@ void potrf(vector &A, const int N);
  * @param N first dimension
  * @param M second dimension
  */
-void trsm(const vector &L, vector &A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L);
+void trsm(
+    const vector &L, vector &A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
@@ -266,11 +261,11 @@ void syrk(vector &A, const vector &B, const int N);
  * @param transpose_B transpose right matrix
  */
 void gemm(const vector &A,
-              const vector &B,
-              vector &C,
-              const int N,
-              const int M,
-              const int K,
-              const BLAS_TRANSPOSE transpose_A,
-              const BLAS_TRANSPOSE transpose_B);
+          const vector &B,
+          vector &C,
+          const int N,
+          const int M,
+          const int K,
+          const BLAS_TRANSPOSE transpose_A,
+          const BLAS_TRANSPOSE transpose_B);
 #endif  // end of CPU_ADAPTER_CBLAS_FP64_H

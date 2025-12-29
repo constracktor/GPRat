@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
     int n_test = 1024;
     const std::size_t N_CORES = 128;
-    const std::size_t n_tiles = 128;
+    const std::size_t n_tiles = 32;
     const std::size_t n_reg = 8;
 
     std::string train_path = "../../../data/data_19/training_input_19.txt";
@@ -133,13 +133,13 @@ int main(int argc, char *argv[])
                     ////
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_ref = gp_cpu.cholesky_loop("loop_ref");
+                    std::vector<std::vector<double>> cholesky_cpu_ref = gp_cpu.cholesky_loop("loop_one");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_ref_time = end - start;
                     std::cout << "cpu ref cholesky time: " << cholesky_ref_time.count() << std::endl;
 
                     start = std::chrono::high_resolution_clock::now();
-                    std::vector<std::vector<double>> cholesky_cpu_val = gp_cpu.cholesky_loop("loop_val");
+                    std::vector<std::vector<double>> cholesky_cpu_val = gp_cpu.cholesky_loop("loop_two");
                     end = std::chrono::high_resolution_clock::now();
                     cholesky_val_time = end - start;
                     std::cout << "cpu val cholesky time: " << cholesky_val_time.count() << std::endl;

@@ -63,8 +63,10 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF
-                ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                ft_tiles[k * n_tiles + k] =
+                    hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"),
+                                  ft_tiles[k * n_tiles + k],
+                                  N);
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // TRSM
@@ -107,8 +109,10 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF
-                ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                ft_tiles[k * n_tiles + k] =
+                    hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"),
+                                  ft_tiles[k * n_tiles + k],
+                                  N);
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // TRSM
@@ -168,11 +172,9 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
                         Blas_trans,
                         Blas_right);
                 }
-
                 // Synchronize
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
-                    // TRSM:  Solve X * L^T = A
                     ft_tiles[m * n_tiles + k].get();
                 }
 
@@ -214,10 +216,13 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF
-                ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                ft_tiles[k * n_tiles + k] =
+                    hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"),
+                                  ft_tiles[k * n_tiles + k],
+                                  N);
                 // Synchronize
                 ft_tiles[k * n_tiles + k].get();
+
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // TRSM
@@ -233,9 +238,9 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
                 // Synchronize
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
-                    // TRSM:  Solve X * L^T = A
                     ft_tiles[m * n_tiles + k].get();
                 }
+
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // SYRK
@@ -277,7 +282,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
                 ft_tiles[k * n_tiles + k] = hpx::dataflow(
                     hpx::annotated_function(hpx::unwrapping(&v_potrf), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
                 // Synchronize
-                hpx::wait_all(ft_tiles[k * n_tiles + k]);
+                ft_tiles[k * n_tiles + k].get();
 
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
@@ -294,8 +299,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
                 // Synchronize
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
-                    // TRSM:  Solve X * L^T = A
-                    hpx::wait_all(ft_tiles[m * n_tiles + k]);
+                    ft_tiles[m * n_tiles + k].get();
                 }
 
                 for (std::size_t m = k + 1; m < n_tiles; m++)
@@ -326,7 +330,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
                 {
                     for (std::size_t n = k + 1; n <= m; n++)
                     {
-                        hpx::wait_all(ft_tiles[m * n_tiles + n]);
+                        ft_tiles[m * n_tiles + n].get();
                     }
                 }
             }
@@ -340,11 +344,11 @@ void right_looking_cholesky_tiled_loop(
 {
     switch (variant)
     {
-        case Variant::loop_ref:
+        case Variant::loop_one:
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF: Compute Cholesky factor L
-                tiles[k * n_tiles + k] = v_potrf(std::move(tiles[k * n_tiles + k]), N);
+                potrf(tiles[k * n_tiles + k], N);
 
                 hpx::experimental::for_loop(
                     hpx::execution::par,
@@ -353,8 +357,56 @@ void right_looking_cholesky_tiled_loop(
                     [&](std::size_t m)
                     {
                         // TRSM:  Solve X * L^T = A
-                        tiles[m * n_tiles + k] = r_trsm(
-                            tiles[k * n_tiles + k], std::move(tiles[m * n_tiles + k]), N, N, Blas_trans, Blas_right);
+                        trsm(tiles[k * n_tiles + k], tiles[m * n_tiles + k], N, N, Blas_trans, Blas_right);
+                    });
+
+                hpx::experimental::for_loop(
+                    hpx::execution::par,
+                    k + 1,
+                    n_tiles,
+                    [&](std::size_t m)
+                    {
+                        hpx::experimental::for_loop(
+                            hpx::execution::seq,
+                            k + 1,
+                            m + 1,
+                            [&](std::size_t n)
+                            {
+                                if (n == m)
+                                {
+                                    // SYRK: A = A - B * B^T
+                                    syrk(tiles[m * n_tiles + m], tiles[m * n_tiles + k], N);
+                                }
+                                else
+                                {
+                                    // GEMM: C = C - A * B^T
+                                    gemm(tiles[m * n_tiles + k],
+                                         tiles[n * n_tiles + k],
+                                         tiles[m * n_tiles + n],
+                                         N,
+                                         N,
+                                         N,
+                                         Blas_no_trans,
+                                         Blas_trans);
+                                }
+                            });
+                    });
+            }
+            break;
+        case Variant::loop_two:
+            for (std::size_t k = 0; k < n_tiles; k++)
+            {
+                // POTRF: Compute Cholesky factor L
+                potrf(tiles[k * n_tiles + k], N);
+
+                hpx::experimental::for_loop(
+                    hpx::execution::par,
+                    k + 1,
+                    n_tiles,
+                    [&](std::size_t m)
+                    {
+                        // TRSM:  Solve X * L^T = A
+                        trsm(tiles[k * n_tiles + k], tiles[m * n_tiles + k], N, N, Blas_trans, Blas_right);
                     });
 
                 hpx::experimental::for_loop(
@@ -372,79 +424,24 @@ void right_looking_cholesky_tiled_loop(
                                 if (n == m)
                                 {
                                     // SYRK: A = A - B * B^T
-                                    tiles[m * n_tiles + m] =
-                                        r_syrk(std::move(tiles[m * n_tiles + m]), tiles[m * n_tiles + k], N);
+                                    syrk(tiles[m * n_tiles + m], tiles[m * n_tiles + k], N);
                                 }
                                 else
                                 {
                                     // GEMM: C = C - A * B^T
-                                    tiles[m * n_tiles + n] = r_gemm(
-                                        tiles[m * n_tiles + k],
-                                        tiles[n * n_tiles + k],
-                                        std::move(tiles[m * n_tiles + n]),
-                                        N,
-                                        N,
-                                        N,
-                                        Blas_no_trans,
-                                        Blas_trans);
+                                    gemm(tiles[m * n_tiles + k],
+                                         tiles[n * n_tiles + k],
+                                         tiles[m * n_tiles + n],
+                                         N,
+                                         N,
+                                         N,
+                                         Blas_no_trans,
+                                         Blas_trans);
                                 }
                             });
                     });
             }
             break;
-        case Variant::loop_val:
-            for (std::size_t k = 0; k < n_tiles; k++)
-            {
-                // POTRF: Compute Cholesky factor L
-                tiles[k * n_tiles + k] = v_potrf(std::move(tiles[k * n_tiles + k]), N);
-
-                hpx::experimental::for_loop(
-                    hpx::execution::par,
-                    k + 1,
-                    n_tiles,
-                    [&](std::size_t m)
-                    {
-                        // TRSM:  Solve X * L^T = A
-                        tiles[m * n_tiles + k] = v_trsm(
-                            tiles[k * n_tiles + k], std::move(tiles[m * n_tiles + k]), N, N, Blas_trans, Blas_right);
-                    });
-
-                hpx::experimental::for_loop(
-                    hpx::execution::par,
-                    k + 1,
-                    n_tiles,
-                    [&](std::size_t m)
-                    {
-                        hpx::experimental::for_loop(
-                            hpx::execution::par,
-                            k + 1,
-                            m + 1,
-                            [&](std::size_t n)
-                            {
-                                if (n == m)
-                                {
-                                    // SYRK: A = A - B * B^T
-                                    tiles[m * n_tiles + m] =
-                                        v_syrk(std::move(tiles[m * n_tiles + m]), tiles[m * n_tiles + k], N);
-                                }
-                                else
-                                {
-                                    // GEMM: C = C - A * B^T
-                                    tiles[m * n_tiles + n] = v_gemm(
-                                        tiles[m * n_tiles + k],
-                                        tiles[n * n_tiles + k],
-                                        std::move(tiles[m * n_tiles + n]),
-                                        N,
-                                        N,
-                                        N,
-                                        Blas_no_trans,
-                                        Blas_trans);
-                                }
-                            });
-                    });
-            }
-            break;
-
         default: std::cout << "Variant not supported.\n"; break;
     }
 }

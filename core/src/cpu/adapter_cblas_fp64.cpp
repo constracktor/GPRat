@@ -332,20 +332,15 @@ m_gemm(const const_tile_data<double> &A,
 
 //////////////////////////////////////////////////////////
 
-void potrf(std::vector<double>& A,
-               const int N)
+void potrf(vector &A, const int N)
 {
     // POTRF: in-place Cholesky decomposition of A
     // use dpotrf2 recursive version for better stability
     LAPACKE_dpotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
 }
 
-void trsm(std::vector<double>& L,
-              std::vector<double>& A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L)
+void trsm(
+    const vector &L, vector &A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L)
 
 {
     // TRSM constants
@@ -366,9 +361,7 @@ void trsm(std::vector<double>& L,
         M);
 }
 
-void syrk(std::vector<double>& A,
-              std::vector<double>& B,
-              const int N)
+void syrk(vector &A, const vector &B, const int N)
 {
     // SYRK constants
     const double alpha = -1.0;
@@ -377,14 +370,14 @@ void syrk(std::vector<double>& A,
     cblas_dsyrk(CblasRowMajor, CblasLower, CblasNoTrans, N, N, alpha, B.data(), N, beta, A.data(), N);
 }
 
-void gemm(std::vector<double>& A,
-              std::vector<double>& B,
-              std::vector<double>& C,
-              const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+void gemm(const vector &A,
+          const vector &B,
+          vector &C,
+          const int N,
+          const int M,
+          const int K,
+          const BLAS_TRANSPOSE transpose_A,
+          const BLAS_TRANSPOSE transpose_B)
 {
     // GEMM constants
     const double alpha = -1.0;

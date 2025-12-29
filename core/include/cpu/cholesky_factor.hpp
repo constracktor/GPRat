@@ -10,7 +10,7 @@ using Mutable_tiled_matrix = std::vector<hpx::shared_future<mutable_tile_data<do
 
 namespace cpu
 {
-enum class Variant { async_future, async_ref, async_val, sync_future, sync_ref, sync_val, loop_ref, loop_val };
+enum class Variant { async_future, async_ref, async_val, sync_future, sync_ref, sync_val, loop_one, loop_two };
 
 inline Variant to_variant(std::string s)
 {
@@ -40,13 +40,13 @@ inline Variant to_variant(std::string s)
         return Variant::sync_val;
     }
 
-    if (s == "loop_ref")
+    if (s == "loop_one")
     {
-        return Variant::loop_ref;
+        return Variant::loop_one;
     }
-    if (s == "loop_val")
+    if (s == "loop_two")
     {
-        return Variant::loop_val;
+        return Variant::loop_two;
     }
 
     throw std::invalid_argument("Unknown Variant: " + std::string(s));
