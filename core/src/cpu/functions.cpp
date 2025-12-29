@@ -168,29 +168,6 @@ cholesky_mutable(const std::vector<double> &training_input,
 {
     // Tiled covariance matrix K_NxN
     auto K_tiles = std::vector<hpx::shared_future<mutable_tile_data<double>>>{ n_tiles * n_tiles };
-    // make_tiled_dataset<double>(
-    //        sched,
-    //       ,
-    //        [&](std::size_t tile_index)
-    //        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
-
-    // for (std::size_t row = 0; row < n_tiles; row++)
-    // {
-    //     for (std::size_t col = 0; col <= row; col++)
-    //     {
-    //         K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
-    //             sched,
-    //             schedule::covariance_tile(sched, n_tiles, row, col),
-    //             "assemble_tiled_K",
-    //             K_tiles[row * n_tiles + col],
-    //             row,
-    //             col,
-    //             n_tile_size,
-    //             n_regressors,
-    //             sek_params,
-    //             training_input);
-    //     }
-    // }
     for (std::size_t i = 0; i < static_cast<std::size_t>(n_tiles); i++)
     {
         for (std::size_t j = 0; j <= i; j++)
@@ -210,7 +187,6 @@ cholesky_mutable(const std::vector<double> &training_input,
 
     ///////////////////////////////////////////////////////////////////////////
     // Synchronize
-    // std::vector<mutable_tile_data<double>> result(n_tiles * n_tiles);
     std::vector<std::vector<double>> result(n_tiles * n_tiles);
     for (std::size_t i = 0; i < n_tiles; i++)
     {

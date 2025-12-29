@@ -102,14 +102,6 @@ f_gemm(vector_future f_A,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // call by reference -> no local copy
-vector potrf(vector A, const int N)
-{
-    // POTRF: in-place Cholesky decomposition of A
-    // use dpotrf2 recursive version for better stability
-    LAPACKE_dpotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
-    // return factorized matrix L
-    return A;
-}
 
 vector
 r_trsm(const vector &L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L)
@@ -180,6 +172,15 @@ vector r_gemm(const vector &A,
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // call by value -> local copy
+vector v_potrf(vector A, const int N)
+{
+    // POTRF: in-place Cholesky decomposition of A
+    // use dpotrf2 recursive version for better stability
+    LAPACKE_dpotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
+    // return factorized matrix L
+    return A;
+}
+
 vector v_trsm(vector L, vector A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L)
 
 {
@@ -327,4 +328,81 @@ m_gemm(const const_tile_data<double> &A,
         M);
     // return updated matrix C
     return C;
+}
+
+//////////////////////////////////////////////////////////
+
+void potrf(std::vector<double>& A,
+               const int N)
+{
+    // POTRF: in-place Cholesky decomposition of A
+    // use dpotrf2 recursive version for better stability
+    LAPACKE_dpotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
+}
+
+void trsm(std::vector<double>& L,
+              std::vector<double>& A,
+                   const int N,
+                   const int M,
+                   const BLAS_TRANSPOSE transpose_L,
+                   const BLAS_SIDE side_L)
+
+{
+    // TRSM constants
+    const double alpha = 1.0;
+    // TRSM: in-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
+    cblas_dtrsm(
+        CblasRowMajor,
+        static_cast<CBLAS_SIDE>(side_L),
+        CblasLower,
+        static_cast<CBLAS_TRANSPOSE>(transpose_L),
+        CblasNonUnit,
+        N,
+        M,
+        alpha,
+        L.data(),
+        N,
+        A.data(),
+        M);
+}
+
+void syrk(std::vector<double>& A,
+              std::vector<double>& B,
+              const int N)
+{
+    // SYRK constants
+    const double alpha = -1.0;
+    const double beta = 1.0;
+    // SYRK:A = A - B * B^T
+    cblas_dsyrk(CblasRowMajor, CblasLower, CblasNoTrans, N, N, alpha, B.data(), N, beta, A.data(), N);
+}
+
+void gemm(std::vector<double>& A,
+              std::vector<double>& B,
+              std::vector<double>& C,
+              const int N,
+     const int M,
+     const int K,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_TRANSPOSE transpose_B)
+{
+    // GEMM constants
+    const double alpha = -1.0;
+    const double beta = 1.0;
+    // GEMM: C = C - A(^T) * B(^T)
+    cblas_dgemm(
+        CblasRowMajor,
+        static_cast<CBLAS_TRANSPOSE>(transpose_A),
+        static_cast<CBLAS_TRANSPOSE>(transpose_B),
+        K,
+        M,
+        N,
+        alpha,
+        A.data(),
+        K,
+        B.data(),
+        M,
+        beta,
+        C.data(),
+        M);
 }

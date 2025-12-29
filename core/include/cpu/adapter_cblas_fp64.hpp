@@ -6,6 +6,8 @@
 
 using vector_future = hpx::shared_future<std::vector<double>>;
 using vector = std::vector<double>;
+using mutable_tile = mutable_tile_data<double>;
+using const_tile = const_tile_data<double>;
 
 // Constants that are compatible with CBLAS
 
@@ -80,14 +82,6 @@ f_gemm(vector_future f_A,
 ///////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * @brief FP64 In-place Cholesky decomposition of A
- * @param A matrix to be factorized
- * @param N matrix dimension
- * @return factorized, lower triangular matrix L
- */
-vector potrf(vector A, const int N);
-
-/**
  * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
  * @param L Cholesky factor matrix
  * @param A right hand side matrix
@@ -129,6 +123,13 @@ vector r_gemm(const vector &A,
               const BLAS_TRANSPOSE transpose_B);
 
 ///////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief FP64 In-place Cholesky decomposition of A
+ * @param A matrix to be factorized
+ * @param N matrix dimension
+ * @return factorized, lower triangular matrix L
+ */
+vector v_potrf(vector A, const int N);
 
 /**
  * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -178,7 +179,7 @@ vector v_gemm(vector A,
  * @param N matrix dimension
  * @return factorized, lower triangular matrix f_L
  */
-mutable_tile_data<double> m_potrf(const mutable_tile_data<double> &A, int N);
+mutable_tile m_potrf(const mutable_tile &A, int N);
 
 /**
  * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -188,9 +189,9 @@ mutable_tile_data<double> m_potrf(const mutable_tile_data<double> &A, int N);
  * @param M second dimension
  * @return solution matrix f_X
  */
-mutable_tile_data<double>
-m_trsm(const const_tile_data<double> &L,
-       const mutable_tile_data<double> &A,
+mutable_tile
+m_trsm(const const_tile &L,
+       const mutable_tile &A,
        int N,
        int M,
        BLAS_TRANSPOSE transpose_L,
@@ -203,7 +204,7 @@ m_trsm(const const_tile_data<double> &L,
  * @param N matrix dimension
  * @return updated matrix f_A
  */
-mutable_tile_data<double> m_syrk(const mutable_tile_data<double> &A, const const_tile_data<double> &B, int N);
+mutable_tile m_syrk(const mutable_tile &A, const const_tile &B, int N);
 
 /**
  * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -217,14 +218,59 @@ mutable_tile_data<double> m_syrk(const mutable_tile_data<double> &A, const const
  * @param transpose_B transpose right matrix
  * @return updated matrix f_X
  */
-mutable_tile_data<double>
-m_gemm(const const_tile_data<double> &A,
-       const const_tile_data<double> &B,
-       const mutable_tile_data<double> &C,
+mutable_tile
+m_gemm(const const_tile &A,
+       const const_tile &B,
+       const mutable_tile &C,
        int N,
        int M,
        int K,
        BLAS_TRANSPOSE transpose_A,
        BLAS_TRANSPOSE transpose_B);
 
+///////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief FP64 In-place Cholesky decomposition of A
+ * @param A matrix to be factorized
+ * @param N matrix dimension
+ */
+void potrf(vector &A, const int N);
+
+/**
+ * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
+ * @param L Cholesky factor matrix
+ * @param A right hand side matrix
+ * @param N first dimension
+ * @param M second dimension
+ */
+void trsm(const vector &L, vector &A, const int N, const int M, const BLAS_TRANSPOSE transpose_L, const BLAS_SIDE side_L);
+
+/**
+ * @brief FP64 Symmetric rank-k update: A = A - B * B^T
+ * @param f_A Base matrix
+ * @param f_B Symmetric update matrix
+ * @param N matrix dimension
+ */
+void syrk(vector &A, const vector &B, const int N);
+
+/**
+ * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
+ * @param C Base matrix
+ * @param B Right update matrix
+ * @param A Left update matrix
+ * @param N first matrix dimension
+ * @param M second matrix dimension
+ * @param K third matrix dimension
+ * @param transpose_A transpose left matrix
+ * @param transpose_B transpose right matrix
+ */
+void gemm(const vector &A,
+              const vector &B,
+              vector &C,
+              const int N,
+              const int M,
+              const int K,
+              const BLAS_TRANSPOSE transpose_A,
+              const BLAS_TRANSPOSE transpose_B);
 #endif  // end of CPU_ADAPTER_CBLAS_FP64_H

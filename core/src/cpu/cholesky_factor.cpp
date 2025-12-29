@@ -64,7 +64,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             {
                 // POTRF
                 ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // TRSM
@@ -108,7 +108,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             {
                 // POTRF
                 ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
                 for (std::size_t m = k + 1; m < n_tiles; m++)
                 {
                     // TRSM
@@ -215,7 +215,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             {
                 // POTRF
                 ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                    hpx::annotated_function(hpx::unwrapping(&(v_potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
                 // Synchronize
                 ft_tiles[k * n_tiles + k].get();
                 for (std::size_t m = k + 1; m < n_tiles; m++)
@@ -275,7 +275,7 @@ void right_looking_cholesky_tiled(Variant variant, Tiled_matrix &ft_tiles, int N
             {
                 // POTRF
                 ft_tiles[k * n_tiles + k] = hpx::dataflow(
-                    hpx::annotated_function(hpx::unwrapping(&(potrf)), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
+                    hpx::annotated_function(hpx::unwrapping(&v_potrf), "cholesky_tiled"), ft_tiles[k * n_tiles + k], N);
                 // Synchronize
                 hpx::wait_all(ft_tiles[k * n_tiles + k]);
 
@@ -344,7 +344,7 @@ void right_looking_cholesky_tiled_loop(
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF: Compute Cholesky factor L
-                tiles[k * n_tiles + k] = potrf(std::move(tiles[k * n_tiles + k]), N);
+                tiles[k * n_tiles + k] = v_potrf(std::move(tiles[k * n_tiles + k]), N);
 
                 hpx::experimental::for_loop(
                     hpx::execution::par,
@@ -396,7 +396,7 @@ void right_looking_cholesky_tiled_loop(
             for (std::size_t k = 0; k < n_tiles; k++)
             {
                 // POTRF: Compute Cholesky factor L
-                tiles[k * n_tiles + k] = potrf(std::move(tiles[k * n_tiles + k]), N);
+                tiles[k * n_tiles + k] = v_potrf(std::move(tiles[k * n_tiles + k]), N);
 
                 hpx::experimental::for_loop(
                     hpx::execution::par,
