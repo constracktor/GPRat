@@ -30,9 +30,9 @@ if [[ "$2" == "cpu" ]]; then
     #PRESET=dev-linux
 elif [[ "$2" == "gpu" ]]; then
     # Release:
-    PRESET=release-linux-gpu
+    #PRESET=release-linux-gpu
     # Debug:
-    #PRESET=dev-linux-gpu
+    PRESET=dev-linux-gpu
 elif [[ "$2" != "cpu" ]]; then
     echo "Input parameter is missing. Using default: Run computations on CPU in Release mode"
     PRESET=release-linux
@@ -86,6 +86,20 @@ if command -v spack &> /dev/null; then
 	    spack env activate gprat_gpu_clang
 	    GPRAT_WITH_CUDA=ON
 	fi
+    elif [[ "$HOSTNAME" == "nasrin0" ]]; then
+	module load llvm/20.1.8
+	module load cuda
+	#spack load openblas@0.3.24
+	#spack load /yevzh4k
+	#spack load /jza66le
+	ENV_NAME=gprat_nasrin
+		# Check if the gprat_gpu_clang environment exists
+	if spack env list | grep -q "$ENV_NAME"; then
+	    echo "Found $ENV_NAME environment, activating it."
+	    export CXX=clang++
+	    export CC=clang
+	    spack env activate $ENV_NAME
+	fi
     else
     	echo "Hostname is $HOSTNAME — no action taken."
     fi
@@ -103,7 +117,7 @@ if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
 	-DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
 	-DGPRAT_ENABLE_MKL=$USE_MKL
 elif [[ $PRESET == "release-linux-gpu" || $PRESET == "dev-linux-gpu" ]]; then
-    CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
+    #CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
 
     cmake --preset $PRESET \
 	-DGPRAT_BUILD_BINDINGS=$BINDINGS \
@@ -115,7 +129,8 @@ elif [[ $PRESET == "release-linux-gpu" || $PRESET == "dev-linux-gpu" ]]; then
         -DCMAKE_CXX_COMPILER=$(which clang++) \
         -DCMAKE_CUDA_COMPILER=$(which clang++) \
         -DCMAKE_CUDA_FLAGS=--cuda-path=${CUDA_HOME} \
-        -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}
+        -DCMAKE_CUDA_ARCHITECTURES=80
+	    #${CUDA_ARCH}
 fi
 
 ################################################################################
