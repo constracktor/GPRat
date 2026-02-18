@@ -45,7 +45,7 @@ find_package(Boost REQUIRED)
 
 add_executable(GPRat_test_output_correctness src/output_correctness.cpp)
 target_link_libraries(GPRat_test_output_correctness
-                      PRIVATE GPRat::core Catch2::Catch2WithMain)
+                      PRIVATE GPRat::core Catch2::Catch2WithMain Boost::boost)
 target_compile_features(GPRat_test_output_correctness PRIVATE cxx_std_17)
 
 add_test(

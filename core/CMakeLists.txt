@@ -84,16 +84,13 @@ if(GPRAT_ENABLE_MKL)
   # Link Intel oneMKL
   target_link_libraries(gprat_core PUBLIC MKL::mkl_intel_lp64 MKL::mkl_core
                                           MKL::MKL MKL::mkl_sequential)
+  target_compile_definitions(gprat_core PUBLIC GPRAT_ENABLE_MKL)
 else()
   # Link OpenBLAS
   target_link_libraries(gprat_core PUBLIC ${OpenBLAS_LIB})
 endif()
 
-if(GPRAT_ENABLE_MKL)
-  target_compile_definitions(gprat_core PUBLIC GPRAT_ENABLE_MKL)
-endif()
-
-target_compile_features(gprat_core PUBLIC cxx_std_17)
+target_compile_features(gprat_core PUBLIC cxx_std_20)
 
 set_property(TARGET gprat_core PROPERTY POSITION_INDEPENDENT_CODE ON)
 

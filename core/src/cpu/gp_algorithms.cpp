@@ -1,6 +1,7 @@
 #include "cpu/gp_algorithms.hpp"
 
 #include <cmath>
+#include <iterator>
 
 namespace cpu
 {

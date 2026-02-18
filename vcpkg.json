@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "gprat",
+  "version-semver": "0.1.0",
+  "dependencies": [
+    {
+      "name": "boost-json"
+    },
+    {
+      "name": "intel-mkl"
+    },
+    {
+      "name": "fmt"
+    },
+    {
+      "name": "hpx"
+    }
+  ],
+  "default-features": [],
+  "builtin-baseline": "e08b7bd89ae162f8579df2f8d39a1ae94107c8fd"
+}
