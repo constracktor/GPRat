@@ -5,6 +5,7 @@
 #include <vector>
 
 using vector_future = hpx::shared_future<std::vector<double>>;
+using vector = std::vector<double>;
 
 // Constants that are compatible with CBLAS
 
@@ -26,9 +27,9 @@ typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
  * @brief FP64 In-place Cholesky decomposition of A
  * @param f_A matrix to be factorized
  * @param N matrix dimension
- * @return factorized, lower triangular matrix f_L
+ * @return factorized, lower triangular matrix L
  */
-vector_future potrf(vector_future f_A, const int N);
+vector potrf(vector_future f_A, const int N);
 
 /**
  * @brief FP64 In-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -36,23 +37,23 @@ vector_future potrf(vector_future f_A, const int N);
  * @param f_A right hand side matrix
  * @param N first dimension
  * @param M second dimension
- * @return solution matrix f_X
+ * @return solution matrix X
  */
-vector_future trsm(vector_future f_L,
-                   vector_future f_A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L);
+vector trsm(vector_future f_L,
+            vector_future f_A,
+            const int N,
+            const int M,
+            const BLAS_TRANSPOSE transpose_L,
+            const BLAS_SIDE side_L);
 
 /**
  * @brief FP64 Symmetric rank-k update: A = A - B * B^T
  * @param f_A Base matrix
  * @param f_B Symmetric update matrix
  * @param N matrix dimension
- * @return updated matrix f_A
+ * @return updated matrix A
  */
-vector_future syrk(vector_future f_A, vector_future f_B, const int N);
+vector syrk(vector_future f_A, vector_future f_B, const int N);
 
 /**
  * @brief FP64 General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -64,17 +65,16 @@ vector_future syrk(vector_future f_A, vector_future f_B, const int N);
  * @param K third matrix dimension
  * @param transpose_A transpose left matrix
  * @param transpose_B transpose right matrix
- * @return updated matrix f_X
+ * @return updated matrix X
  */
-vector_future
-gemm(vector_future f_A,
-     vector_future f_B,
-     vector_future f_C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B);
+vector gemm(vector_future f_A,
+            vector_future f_B,
+            vector_future f_C,
+            const int N,
+            const int M,
+            const int K,
+            const BLAS_TRANSPOSE transpose_A,
+            const BLAS_TRANSPOSE transpose_B);
 
 // BLAS level 2 operations
 
@@ -84,9 +84,9 @@ gemm(vector_future f_A,
  * @param f_a right hand side vector
  * @param N matrix dimension
  * @param transpose_L transpose Cholesky factor
- * @return solution vector f_x
+ * @return solution vector x
  */
-vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L);
+vector trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L);
 
 /**
  * @brief FP64 General matrix-vector multiplication: b = b - A(^T) * a
@@ -96,15 +96,15 @@ vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS
  * @param N matrix dimension
  * @param alpha add or substract update to base vector
  * @param transpose_A transpose update matrix
- * @return updated vector f_b
+ * @return updated vector b
  */
-vector_future gemv(vector_future f_A,
-                   vector_future f_a,
-                   vector_future f_b,
-                   const int N,
-                   const int M,
-                   const BLAS_ALPHA alpha,
-                   const BLAS_TRANSPOSE transpose_A);
+vector gemv(vector_future f_A,
+            vector_future f_a,
+            vector_future f_b,
+            const int N,
+            const int M,
+            const BLAS_ALPHA alpha,
+            const BLAS_TRANSPOSE transpose_A);
 
 /**
  * @brief FP64 Vector update with diagonal SYRK: r = r + diag(A^T * A)
@@ -112,9 +112,9 @@ vector_future gemv(vector_future f_A,
  * @param f_r base vector
  * @param N first matrix dimension
  * @param M second matrix dimension
- * @return updated vector f_r
+ * @return updated vector r
  */
-vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M);
+vector dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M);
 
 /**
  * @brief FP64 Vector update with diagonal GEMM: r = r + diag(A * B)
@@ -123,9 +123,9 @@ vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, c
  * @param f_r base vector
  * @param N first matrix dimension
  * @param M second matrix dimension
- * @return updated vector f_r
+ * @return updated vector r
  */
-vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
+vector dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
 
 // BLAS level 1 operations
 
@@ -136,7 +136,7 @@ vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future 
  * @param N vector length
  * @return y - x
  */
-vector_future axpy(vector_future f_y, vector_future f_x, const int N);
+vector axpy(vector_future f_y, vector_future f_x, const int N);
 
 /**
  * @brief FP64 Dot product: a * b
