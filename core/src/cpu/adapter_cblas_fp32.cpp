@@ -11,26 +11,26 @@
 
 // BLAS level 3 operations
 
-vector_future potrf(vector_future f_A, const int N)
+vector potrf(vector_future f_A, const int N)
 {
-    auto A = f_A.get();
+    vector A = f_A.get();
     // POTRF: in-place Cholesky decomposition of A
     // use spotrf2 recursive version for better stability
     LAPACKE_spotrf2(LAPACK_ROW_MAJOR, 'L', N, A.data(), N);
     // return factorized matrix L
-    return hpx::make_ready_future(A);
+    return A;
 }
 
-vector_future trsm(vector_future f_L,
-                   vector_future f_A,
-                   const int N,
-                   const int M,
-                   const BLAS_TRANSPOSE transpose_L,
-                   const BLAS_SIDE side_L)
+vector trsm(vector_future f_L,
+            vector_future f_A,
+            const int N,
+            const int M,
+            const BLAS_TRANSPOSE transpose_L,
+            const BLAS_SIDE side_L)
 
 {
-    auto L = f_L.get();
-    auto A = f_A.get();
+    const vector &L = f_L.get();
+    vector A = f_A.get();
     // TRSM constants
     const float alpha = 1.0;
     // TRSM: in-place solve L(^T) * X = A or X * L(^T) = A where L lower triangular
@@ -48,35 +48,34 @@ vector_future trsm(vector_future f_L,
         A.data(),
         M);
     // return vector
-    return hpx::make_ready_future(A);
+    return A;
 }
 
-vector_future syrk(vector_future f_A, vector_future f_B, const int N)
+vector syrk(vector_future f_A, vector_future f_B, const int N)
 {
-    auto B = f_B.get();
-    auto A = f_A.get();
+    const vector &B = f_B.get();
+    vector A = f_A.get();
     // SYRK constants
     const float alpha = -1.0;
     const float beta = 1.0;
     // SYRK:A = A - B * B^T
     cblas_ssyrk(CblasRowMajor, CblasLower, CblasNoTrans, N, N, alpha, B.data(), N, beta, A.data(), N);
     // return updated matrix A
-    return hpx::make_ready_future(A);
+    return A;
 }
 
-vector_future
-gemm(vector_future f_A,
-     vector_future f_B,
-     vector_future f_C,
-     const int N,
-     const int M,
-     const int K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+vector gemm(vector_future f_A,
+            vector_future f_B,
+            vector_future f_C,
+            const int N,
+            const int M,
+            const int K,
+            const BLAS_TRANSPOSE transpose_A,
+            const BLAS_TRANSPOSE transpose_B)
 {
-    auto C = f_C.get();
-    auto B = f_B.get();
-    auto A = f_A.get();
+    vector C = f_C.get();
+    const vector &B = f_B.get();
+    const vector &A = f_A.get();
     // GEMM constants
     const float alpha = -1.0;
     const float beta = 1.0;
@@ -97,15 +96,15 @@ gemm(vector_future f_A,
         C.data(),
         M);
     // return updated matrix C
-    return hpx::make_ready_future(C);
+    return C;
 }
 
 // BLAS level 2 operations
 
-vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L)
+vector trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
-    auto L = f_L.get();
-    auto a = f_a.get();
+    const vector &L = f_L.get();
+    vector a = f_a.get();
     // TRSV: In-place solve L(^T) * x = a where L lower triangular
     cblas_strsv(CblasRowMajor,
                 CblasLower,
@@ -117,20 +116,20 @@ vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS
                 a.data(),
                 1);
     // return solution vector x
-    return hpx::make_ready_future(a);
+    return a;
 }
 
-vector_future gemv(vector_future f_A,
-                   vector_future f_a,
-                   vector_future f_b,
-                   const int N,
-                   const int M,
-                   const BLAS_ALPHA alpha,
-                   const BLAS_TRANSPOSE transpose_A)
+vector gemv(vector_future f_A,
+            vector_future f_a,
+            vector_future f_b,
+            const int N,
+            const int M,
+            const BLAS_ALPHA alpha,
+            const BLAS_TRANSPOSE transpose_A)
 {
-    auto A = f_A.get();
-    auto a = f_a.get();
-    auto b = f_b.get();
+    const vector &A = f_A.get();
+    const vector &a = f_a.get();
+    vector b = f_b.get();
     // GEMV constants
     // const float alpha = -1.0;
     const float beta = 1.0;
@@ -149,46 +148,46 @@ vector_future gemv(vector_future f_A,
         b.data(),
         1);
     // return updated vector b
-    return hpx::make_ready_future(b);
+    return b;
 }
 
-vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M)
+vector dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, const int M)
 {
-    auto A = f_A.get();
-    auto r = f_r.get();
+    const vector &A = f_A.get();
+    vector r = f_r.get();
     // r = r + diag(A^T * A)
     for (std::size_t j = 0; j < static_cast<std::size_t>(M); ++j)
     {
         // Extract the j-th column and compute the dot product with itself
         r[j] += cblas_sdot(N, &A[j], M, &A[j], M);
     }
-    return hpx::make_ready_future(r);
+    return r;
 }
 
-vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M)
+vector dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M)
 {
-    auto A = f_A.get();
-    auto B = f_B.get();
-    auto r = f_r.get();
+    const vector &A = f_A.get();
+    const vector &B = f_B.get();
+    vector r = f_r.get();
     // r = r + diag(A * B)
     for (std::size_t i = 0; i < static_cast<std::size_t>(N); ++i)
     {
         r[i] += cblas_sdot(M, &A[i * static_cast<std::size_t>(M)], 1, &B[i], N);
     }
-    return hpx::make_ready_future(r);
+    return r;
 }
 
 // BLAS level 1 operations
 
-vector_future axpy(vector_future f_y, vector_future f_x, const int N)
+vector axpy(vector_future f_y, vector_future f_x, const int N)
 {
-    auto y = f_y.get();
-    auto x = f_x.get();
+    vector y = f_y.get();
+    const vector &x = f_x.get();
     cblas_saxpy(N, -1.0, x.data(), 1, y.data(), 1);
-    return hpx::make_ready_future(y);
+    return y;
 }
 
-float dot(std::vector<float> a, std::vector<float> b, const int N)
+float dot(vector a, vector b, const int N)
 {
     // DOT: a * b
     return cblas_sdot(N, a.data(), 1, b.data(), 1);
