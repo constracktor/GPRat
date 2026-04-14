@@ -1,7 +1,10 @@
 #ifndef APEX_STEPS_H
 #define APEX_STEPS_H
 
+#if GPRAT_APEX_STEPS
 #include <apex_api.hpp>
+#endif
+
 #include <hpx/future.hpp>
 
 /// @brief Alias for obtaining the current high-resolution time point.
