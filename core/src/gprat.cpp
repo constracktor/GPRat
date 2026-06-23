@@ -1,6 +1,7 @@
 #include "gprat/gprat.hpp"
 
 #include "gprat/cpu/gp_functions.hpp"
+#include "gprat/tiled_dataset.hpp"
 #include "gprat/utils.hpp"
 
 #if GPRAT_WITH_CUDA

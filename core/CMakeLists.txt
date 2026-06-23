@@ -87,6 +87,17 @@ if(GPRAT_WITH_SYCL)
 endif()
 
 # Add CUDA-specific source files if enabled
+# GPRat distributed TODO: this could be gated behind a distributed-only option!
+list(
+  APPEND
+  SOURCE_FILES
+  src/cpu/adapter_cblas_fp64_actions.cpp
+  src/cpu/gp_algorithms_actions.cpp
+  src/cpu/gp_uncertainty_actions.cpp
+  src/cpu/gp_optimizer_actions.cpp
+  src/tile_cache.cpp
+  src/tiled_dataset.cpp)
+
 if(GPRAT_WITH_CUDA)
   list(
     APPEND

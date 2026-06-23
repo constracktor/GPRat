@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "gprat/gprat.hpp"
+
 #include <boost/json.hpp>
 #include <vector>
 
@@ -51,4 +53,34 @@ inline gprat_results tag_invoke(boost::json::value_to_tag<gprat_results>, const 
     extract(obj, results.full_no_optimize, "full_no_optimize");
     extract(obj, results.pred_no_optimize, "pred_no_optimize");
     return results;
+}
+
+template <typename T>
+std::vector<T> to_vector(const gprat::const_tile_data<T> &data)
+{
+    return { data.begin(), data.end() };
+}
+
+template <typename T>
+std::vector<std::vector<T>> to_vector(const std::vector<gprat::const_tile_data<T>> &data)
+{
+    std::vector<std::vector<T>> out;
+    out.reserve(data.size());
+    for (const auto &row : data)
+    {
+        out.emplace_back(to_vector<T>(row));
+    }
+    return out;
+}
+
+template <typename T>
+std::vector<std::vector<T>> to_vector(const std::vector<gprat::mutable_tile_data<T>> &data)
+{
+    std::vector<std::vector<T>> out;
+    out.reserve(data.size());
+    for (const auto &row : data)
+    {
+        out.emplace_back(to_vector<T>(row));
+    }
+    return out;
 }

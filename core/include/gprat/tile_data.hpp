@@ -102,7 +102,14 @@ class const_tile_data
                   hold_reference(base.cpu_data_))  // keep referenced tile_data alive
     { }
 
-    [[nodiscard]] const T *data() const noexcept { return cpu_data_.data(); }
+    [[nodiscard]] const T *data() const
+    {
+        if (!cpu_data_.data())
+        {
+            throw std::runtime_error("no data");
+        }
+        return cpu_data_.data();
+    }
 
     [[nodiscard]] std::size_t size() const noexcept { return cpu_data_.size(); }
 
@@ -150,7 +157,14 @@ class mutable_tile_data : public const_tile_data<T>
   public:
     using const_tile_data<T>::const_tile_data;
 
-    [[nodiscard]] T *data() const noexcept { return const_cast<T *>(this->cpu_data_.data()); }
+    [[nodiscard]] T *data() const
+    {
+        if (!this->cpu_data_.data())
+        {
+            throw std::runtime_error("no data");
+        }
+        return const_cast<T *>(this->cpu_data_.data());
+    }
 
     [[nodiscard]] T *begin() const noexcept { return const_cast<T *>(this->cpu_data_.data()); }
 

@@ -1,5 +1,7 @@
 #include "gprat/performance_counters.hpp"
 
+#include "gprat/tile_cache.hpp"
+
 #include <atomic>
 #include <emmintrin.h>
 #include <hpx/util/get_and_reset_value.hpp>
@@ -15,12 +17,30 @@ GPRAT_NS_BEGIN
 
 GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_data_allocations)
 GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_data_deallocations)
+GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_server_allocations)
+GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_server_deallocations)
+GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_transmission_time)
+GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR(tile_transmission_count)
 
 #undef GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR
 
 void track_tile_data_allocation(std::size_t /*size*/) { tile_data_allocations += 1; }
 
 void track_tile_data_deallocation(std::size_t /*size*/) { tile_data_deallocations += 1; }
+
+void track_tile_server_allocation(std::size_t /*size*/) { tile_server_allocations += 1; }
+
+void track_tile_server_deallocation(std::size_t /*size*/) { tile_server_deallocations += 1; }
+
+void record_transmission_time(std::int64_t elapsed_ns)
+{
+    HPX_ASSERT(elapsed_ns >= 0);
+    tile_transmission_count += 1;
+    if (elapsed_ns > 0)
+    {
+        tile_transmission_time += static_cast<std::uint64_t>(elapsed_ns);
+    }
+}
 
 #ifdef HPX_HAVE_MODULE_PERFORMANCE_COUNTERS
 // These are non-public functions of their respective CUs.
@@ -43,6 +63,26 @@ void register_performance_counters()
 
     GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_data/num_allocations", tile_data_allocations);
     GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_data/num_deallocations", tile_data_deallocations);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_server/num_allocations", tile_server_allocations);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_server/num_deallocations", tile_server_deallocations);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_cache/transmission_time", tile_transmission_time);
+    GPRAT_MAKE_SIMPLE_COUNTER_ACCESSOR("/gprat/tile_cache/transmission_count", tile_transmission_count);
+
+#undef GPRAT_MAKE_STATISTICS_ACCESSOR
+
+    // XXX: you can do this with templates, but it's quite a bit more complicated
+#define GPRAT_MAKE_STATISTICS_ACCESSOR(name, stats_expr)                                                               \
+    hpx::performance_counters::install_counter_type(                                                                   \
+        name,                                                                                                          \
+        [](bool reset) { return (stats_expr) (reset); },                                                               \
+        #stats_expr,                                                                                                   \
+        "",                                                                                                            \
+        hpx::performance_counters::counter_type::monotonically_increasing)
+
+    GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/hits", detail::get_global_statistics().hits);
+    GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/misses", detail::get_global_statistics().misses);
+    GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/evictions", detail::get_global_statistics().evictions);
+    GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/insertions", detail::get_global_statistics().insertions);
 
 #undef GPRAT_MAKE_STATISTICS_ACCESSOR
 

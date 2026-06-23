@@ -52,13 +52,13 @@ void right_looking_cholesky_tiled(Scheduler &sched, Tiles &tiles, std::size_t N,
     {
         // POTRF: Compute Cholesky factor L
         tiles[k * n_tiles + k] = detail::named_dataflow<potrf>(
-            sched, schedule::cholesky_potrf(sched, n_tiles, k), "cholesky_tiled", tiles[k * n_tiles + k], N);
+            sched, cholesky_potrf_on(sched, n_tiles, k), "cholesky_tiled", tiles[k * n_tiles + k], N);
         for (std::size_t m = k + 1; m < n_tiles; m++)
         {
             // TRSM:  Solve X * L^T = A
             tiles[m * n_tiles + k] = detail::named_dataflow<trsm>(
                 sched,
-                schedule::cholesky_trsm(sched, n_tiles, k, m),
+                cholesky_trsm_on(sched, n_tiles, k, m),
                 "cholesky_tiled",
                 tiles[k * n_tiles + k],
                 tiles[m * n_tiles + k],
@@ -72,7 +72,7 @@ void right_looking_cholesky_tiled(Scheduler &sched, Tiles &tiles, std::size_t N,
             // SYRK:  A = A - B * B^T
             tiles[m * n_tiles + m] = detail::named_dataflow<syrk>(
                 sched,
-                schedule::cholesky_syrk(sched, n_tiles, m),
+                cholesky_syrk_on(sched, n_tiles, m),
                 "cholesky_tiled",
                 tiles[m * n_tiles + m],
                 tiles[m * n_tiles + k],
@@ -82,7 +82,7 @@ void right_looking_cholesky_tiled(Scheduler &sched, Tiles &tiles, std::size_t N,
                 // GEMM: C = C - A * B^T
                 tiles[m * n_tiles + n] = detail::named_dataflow<gemm>(
                     sched,
-                    schedule::cholesky_gemm(sched, n_tiles, k, m, n),
+                    cholesky_gemm_on(sched, n_tiles, k, m, n),
                     "cholesky_tiled",
                     tiles[m * n_tiles + k],
                     tiles[n * n_tiles + k],
@@ -115,7 +115,7 @@ void forward_solve_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_rhs, std::
         // TRSM: Solve L * x = a
         ft_rhs[k] = detail::named_dataflow<trsv>(
             sched,
-            schedule::solve_trsv(sched, n_tiles, k),
+            solve_trsv_on(sched, n_tiles, k),
             "triangular_solve_tiled",
             ft_tiles[k * n_tiles + k],
             ft_rhs[k],
@@ -126,7 +126,7 @@ void forward_solve_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_rhs, std::
             // GEMV: b = b - A * a
             ft_rhs[m] = detail::named_dataflow<gemv>(
                 sched,
-                schedule::solve_gemv(sched, n_tiles, k, m),
+                solve_gemv_on(sched, n_tiles, k, m),
                 "triangular_solve_tiled",
                 ft_tiles[m * n_tiles + k],
                 ft_rhs[k],
@@ -156,7 +156,7 @@ void backward_solve_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_rhs, std:
         // TRSM: Solve L^T * x = a
         ft_rhs[k] = detail::named_dataflow<trsv>(
             sched,
-            schedule::solve_trsm(sched, n_tiles, k),
+            solve_trsm_on(sched, n_tiles, k),
             "triangular_solve_tiled",
             ft_tiles[k * n_tiles + k],
             ft_rhs[k],
@@ -168,7 +168,7 @@ void backward_solve_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_rhs, std:
             // GEMV:b = b - A^T * a
             ft_rhs[m] = detail::named_dataflow<gemv>(
                 sched,
-                schedule::solve_gemv(sched, n_tiles, k, m),
+                solve_gemv_on(sched, n_tiles, k, m),
                 "triangular_solve_tiled",
                 ft_tiles[k * n_tiles + m],
                 ft_rhs[k],
@@ -208,7 +208,7 @@ void forward_solve_tiled_matrix(
             // TRSM: solve L * X = A
             ft_rhs[k * m_tiles + c] = detail::named_dataflow<trsm>(
                 sched,
-                schedule::solve_matrix_trsm(sched, m_tiles, c, k),
+                solve_matrix_trsm_on(sched, m_tiles, c, k),
                 "triangular_solve_tiled_matrix",
                 ft_tiles[k * n_tiles + k],
                 ft_rhs[k * m_tiles + c],
@@ -221,7 +221,7 @@ void forward_solve_tiled_matrix(
                 // GEMM: C = C - A * B
                 ft_rhs[m * m_tiles + c] = detail::named_dataflow<gemm>(
                     sched,
-                    schedule::solve_matrix_gemm(sched, m_tiles, c, k, m),
+                    solve_matrix_gemm_on(sched, m_tiles, c, k, m),
                     "triangular_solve_tiled_matrix",
                     ft_tiles[m * n_tiles + k],
                     ft_rhs[k * m_tiles + c],
@@ -264,7 +264,7 @@ void backward_solve_tiled_matrix(
             // TRSM: solve L^T * X = A
             ft_rhs[k * m_tiles + c] = detail::named_dataflow<trsm>(
                 sched,
-                schedule::solve_matrix_trsm(sched, m_tiles, c, k),
+                solve_matrix_trsm_on(sched, m_tiles, c, k),
                 "triangular_solve_tiled_matrix",
                 ft_tiles[k * n_tiles + k],
                 ft_rhs[k * m_tiles + c],
@@ -278,7 +278,7 @@ void backward_solve_tiled_matrix(
                 // GEMM: C = C - A^T * B
                 ft_rhs[m * m_tiles + c] = detail::named_dataflow<gemm>(
                     sched,
-                    schedule::solve_matrix_gemm(sched, m_tiles, c, k, m),
+                    solve_matrix_gemm_on(sched, m_tiles, c, k, m),
                     "triangular_solve_tiled_matrix",
                     ft_tiles[k * n_tiles + m],
                     ft_rhs[k * m_tiles + c],
@@ -320,7 +320,7 @@ void matrix_vector_tiled(Scheduler &sched,
         {
             ft_rhs[k] = detail::named_dataflow<gemv>(
                 sched,
-                schedule::multiply_gemv(sched, n_tiles, k, m),
+                multiply_gemv_on(sched, n_tiles, k, m),
                 "prediction_tiled",
                 ft_tiles[k * n_tiles + m],
                 ft_vector[m],
@@ -361,7 +361,7 @@ void symmetric_matrix_matrix_diagonal_tiled(
             // V^T * V  <=> cross(K) * K^-1 * cross(K)^T
             ft_vector[i] = detail::named_dataflow<dot_diag_syrk>(
                 sched,
-                schedule::k_rank_dot_diag_syrk(sched, m_tiles, i),
+                k_rank_dot_diag_syrk_on(sched, m_tiles, i),
                 "posterior_tiled",
                 ft_tiles[n * m_tiles + i],
                 ft_vector[i],
@@ -401,7 +401,7 @@ void symmetric_matrix_matrix_tiled(
                 // GEMM:  C = C - A^T * B
                 ft_result[c * m_tiles + k] = detail::named_dataflow<gemm>(
                     sched,
-                    schedule::k_rank_gemm(sched, m_tiles, c, k, m),
+                    k_rank_gemm_on(sched, m_tiles, c, k, m),
                     "triangular_solve_tiled_matrix",
                     ft_tiles[m * m_tiles + c],
                     ft_tiles[m * m_tiles + k],
@@ -430,7 +430,7 @@ void vector_difference_tiled(
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_subtrahend[i] = detail::named_dataflow<axpy>(
-            sched, schedule::vector_axpy(sched, m_tiles, i), "uncertainty_tiled", ft_minuend[i], ft_subtrahend[i], M);
+            sched, vector_axpy_on(sched, m_tiles, i), "uncertainty_tiled", ft_minuend[i], ft_subtrahend[i], M);
     }
 }
 
@@ -447,7 +447,7 @@ void matrix_diagonal_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_vector, 
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_vector[i] = detail::named_dataflow<get_matrix_diagonal>(
-            sched, schedule::get_diagonal(sched, m_tiles, i), "uncertainty_tiled", ft_tiles[i * m_tiles + i], M);
+            sched, get_diagonal_on(sched, m_tiles, i), "uncertainty_tiled", ft_tiles[i * m_tiles + i], M);
     }
 }
 
@@ -473,7 +473,7 @@ compute_loss_tiled(Scheduler &sched, Tiles &ft_tiles, Tiles &ft_alpha, Tiles &ft
     {
         loss_tiled.push_back(detail::named_dataflow<compute_loss>(
             sched,
-            schedule::compute_loss(sched, n_tiles, k),
+            compute_loss_on(sched, n_tiles, k),
             "loss_tiled",
             ft_tiles[k * n_tiles + k],
             ft_alpha[k],
@@ -535,9 +535,9 @@ void update_hyperparameter_tiled_lengthscale(
     for (std::size_t d = 0; d < n_tiles; d++)
     {
         diag_tiles[d] = detail::named_make_tile<gen_tile_zeros>(
-            sched, schedule::diag_tile(sched, n_tiles, d), "assemble", diag_tiles[d], N);
+            sched, diag_tile_on(sched, n_tiles, d), "assemble", diag_tiles[d], N);
         inter_alpha[d] = detail::named_make_tile<gen_tile_zeros>(
-            sched, schedule::inter_alpha_tile(sched, n_tiles, d), "assemble", inter_alpha[d], N);
+            sched, inter_alpha_tile_on(sched, n_tiles, d), "assemble", inter_alpha[d], N);
     }
 
     ////////////////////////////////////
@@ -550,7 +550,7 @@ void update_hyperparameter_tiled_lengthscale(
         {
             diag_tiles[i] = detail::named_dataflow<dot_diag_gemm>(
                 sched,
-                schedule::diag_tile(sched, n_tiles, i),
+                diag_tile_on(sched, n_tiles, i),
                 "trace",
                 ft_invK[i * n_tiles + j],
                 ft_gradK_param[j * n_tiles + i],
@@ -563,7 +563,7 @@ void update_hyperparameter_tiled_lengthscale(
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
         trace = detail::named_dataflow<compute_trace>(
-            sched, schedule::diag_tile(sched, n_tiles, j), "trace", diag_tiles[j], trace);
+            sched, diag_tile_on(sched, n_tiles, j), "trace", diag_tiles[j], trace);
     }
     // Not sure if can be done this way
     // Step 2: Compute alpha^T * grad(K)_param * alpha (with alpha = inv(K) * y)
@@ -574,7 +574,7 @@ void update_hyperparameter_tiled_lengthscale(
         {
             inter_alpha[k] = detail::named_dataflow<gemv>(
                 sched,
-                schedule::inter_alpha_tile(sched, n_tiles, k),
+                inter_alpha_tile_on(sched, n_tiles, k),
                 "gemv",
                 ft_gradK_param[k * n_tiles + m],
                 ft_alpha[m],
@@ -589,7 +589,7 @@ void update_hyperparameter_tiled_lengthscale(
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
         dot = detail::named_dataflow<compute_dot>(
-            sched, schedule::inter_alpha_tile(sched, n_tiles, j), "grad_right_tiled", inter_alpha[j], ft_alpha[j], dot);
+            sched, inter_alpha_tile_on(sched, n_tiles, j), "grad_right_tiled", inter_alpha[j], ft_alpha[j], dot);
     }
 
     impl::update_parameters(
@@ -634,14 +634,14 @@ void update_hyperparameter_tiled_noise_variance(
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
         trace = detail::named_dataflow<compute_trace_diag>(
-            sched, schedule::K_inv_tile(sched, n_tiles, j, j), "grad_left_tiled", ft_invK[j * n_tiles + j], trace, N);
+            sched, K_inv_tile_on(sched, n_tiles, j, j), "grad_left_tiled", ft_invK[j * n_tiles + j], trace, N);
     }
     ////////////////////////////////////
     // Step 2: Compute the alpha^T * alpha * noise_variance
     for (std::size_t j = 0; j < n_tiles; ++j)
     {
         dot = detail::named_dataflow<compute_dot>(
-            sched, schedule::alpha_tile(sched, n_tiles, j), "grad_right_tiled", ft_alpha[j], ft_alpha[j], dot);
+            sched, alpha_tile_on(sched, n_tiles, j), "grad_right_tiled", ft_alpha[j], ft_alpha[j], dot);
     }
 
     factor = compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));

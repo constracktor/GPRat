@@ -44,7 +44,7 @@ cholesky(Scheduler &sched,
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     for (std::size_t row = 0; row < n_tiles; row++)
     {
@@ -52,7 +52,7 @@ cholesky(Scheduler &sched,
         {
             K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
                 sched,
-                schedule::covariance_tile(sched, n_tiles, row, col),
+                covariance_tile_on(sched, n_tiles, row, col),
                 "assemble_tiled_K",
                 K_tiles[row * n_tiles + col],
                 row,
@@ -132,7 +132,7 @@ predict(Scheduler &sched,
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     for (std::size_t row = 0; row < n_tiles; row++)
     {
@@ -140,7 +140,7 @@ predict(Scheduler &sched,
         {
             K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
                 sched,
-                schedule::covariance_tile(sched, n_tiles, row, col),
+                covariance_tile_on(sched, n_tiles, row, col),
                 "assemble_tiled_K",
                 K_tiles[row * n_tiles + col],
                 row,
@@ -163,19 +163,19 @@ predict(Scheduler &sched,
         sched,
         m_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
     // Tiled solution
     auto prediction_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::prediction_tile(sched, m_tiles, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return prediction_tile_on(sched, m_tiles, tile_index); });
     // Tiled intermediate solution
     auto alpha_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return alpha_tile_on(sched, n_tiles, tile_index); });
 
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles[i] = detail::named_make_tile<gen_tile_output>(
             sched,
-            schedule::alpha_tile(sched, n_tiles, i),
+            alpha_tile_on(sched, n_tiles, i),
             "assemble_tiled_alpha",
             alpha_tiles[i],
             i,
@@ -189,7 +189,7 @@ predict(Scheduler &sched,
         {
             cross_covariance_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_cross_covariance>(
                 sched,
-                schedule::cross_covariance_tile(sched, n_tiles, i, j),
+                cross_covariance_tile_on(sched, n_tiles, i, j),
                 "assemble_pred",
                 cross_covariance_tiles[i * n_tiles + j],
                 i,
@@ -206,7 +206,7 @@ predict(Scheduler &sched,
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         prediction_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-            sched, schedule::prediction_tile(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
+            sched, prediction_tile_on(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
     }
 
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
@@ -289,7 +289,7 @@ std::vector<std::vector<double>> predict_with_uncertainty(
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     for (std::size_t row = 0; row < n_tiles; row++)
     {
@@ -297,7 +297,7 @@ std::vector<std::vector<double>> predict_with_uncertainty(
         {
             K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
                 sched,
-                schedule::covariance_tile(sched, n_tiles, row, col),
+                covariance_tile_on(sched, n_tiles, row, col),
                 "assemble_tiled_K",
                 K_tiles[row * n_tiles + col],
                 row,
@@ -317,12 +317,12 @@ std::vector<std::vector<double>> predict_with_uncertainty(
 
     // Tiled intermediate solution
     auto alpha_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return alpha_tile_on(sched, n_tiles, tile_index); });
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles[i] = detail::named_make_tile<gen_tile_output>(
             sched,
-            schedule::alpha_tile(sched, n_tiles, i),
+            alpha_tile_on(sched, n_tiles, i),
             "assemble_tiled_alpha",
             alpha_tiles[i],
             i,
@@ -335,14 +335,14 @@ std::vector<std::vector<double>> predict_with_uncertainty(
         sched,
         m_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         for (std::size_t j = 0; j < n_tiles; j++)
         {
             cross_covariance_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_cross_covariance>(
                 sched,
-                schedule::cross_covariance_tile(sched, n_tiles, i, j),
+                cross_covariance_tile_on(sched, n_tiles, i, j),
                 "assemble_pred",
                 cross_covariance_tiles[i * n_tiles + j],
                 i,
@@ -358,11 +358,11 @@ std::vector<std::vector<double>> predict_with_uncertainty(
 
     // Tiled solution
     auto prediction_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::prediction_tile(sched, m_tiles, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return prediction_tile_on(sched, m_tiles, tile_index); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         prediction_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-            sched, schedule::prediction_tile(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
+            sched, prediction_tile_on(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
     }
 
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
@@ -381,14 +381,14 @@ std::vector<std::vector<double>> predict_with_uncertainty(
         sched,
         n_tiles * m_tiles,
         [&](std::size_t tile_index)
-        { return schedule::t_cross_covariance_tile(sched, m_tiles, tile_index / m_tiles, tile_index % m_tiles); });
+        { return t_cross_covariance_tile_on(sched, m_tiles, tile_index / m_tiles, tile_index % m_tiles); });
     for (std::size_t j = 0; j < n_tiles; j++)
     {
         for (std::size_t i = 0; i < m_tiles; i++)
         {
             t_cross_covariance_tiles[j * m_tiles + i] = detail::named_make_tile<gen_tile_transpose>(
                 sched,
-                schedule::t_cross_covariance_tile(sched, m_tiles, j, i),
+                t_cross_covariance_tile_on(sched, m_tiles, j, i),
                 "assemble_pred",
                 t_cross_covariance_tiles[j * m_tiles + i],
                 m_tile_size,
@@ -399,12 +399,12 @@ std::vector<std::vector<double>> predict_with_uncertainty(
 
     // Tiled prior covariance matrix diagonal diag(K_MxM)
     auto prior_K_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::prior_K_tile(sched, n_tiles, 0, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return prior_K_tile_on(sched, n_tiles, 0, tile_index); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         prior_K_tiles[i] = detail::named_make_tile<gen_tile_prior_covariance>(
             sched,
-            schedule::prior_K_tile(sched, m_tiles, 0, i),
+            prior_K_tile_on(sched, m_tiles, 0, i),
             "assemble_tiled",
             prior_K_tiles[i],
             i,
@@ -417,15 +417,11 @@ std::vector<std::vector<double>> predict_with_uncertainty(
 
     // Tiled uncertainty solution
     auto uncertainty_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::uncertainty_tile(sched, m_tiles, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return uncertainty_tile_on(sched, m_tiles, tile_index); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         uncertainty_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-            sched,
-            schedule::uncertainty_tile(sched, m_tiles, i),
-            "assemble_prior_inter",
-            uncertainty_tiles[i],
-            m_tile_size);
+            sched, uncertainty_tile_on(sched, m_tiles, i), "assemble_prior_inter", uncertainty_tiles[i], m_tile_size);
     }
 
     // Launch asynchronous triangular solve L * V = cross(K)^T
@@ -522,14 +518,14 @@ std::vector<std::vector<double>> predict_with_full_cov(
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
     for (std::size_t row = 0; row < n_tiles; row++)
     {
         for (std::size_t col = 0; col <= row; col++)
         {
             K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
                 sched,
-                schedule::covariance_tile(sched, n_tiles, row, col),
+                covariance_tile_on(sched, n_tiles, row, col),
                 "assemble_tiled_K",
                 K_tiles[row * n_tiles + col],
                 row,
@@ -549,12 +545,12 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
     // Tiled intermediate solution
     auto alpha_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return alpha_tile_on(sched, n_tiles, tile_index); });
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles[i] = detail::named_make_tile<gen_tile_output>(
             sched,
-            schedule::alpha_tile(sched, n_tiles, i),
+            alpha_tile_on(sched, n_tiles, i),
             "assemble_tiled_alpha",
             alpha_tiles[i],
             i,
@@ -567,14 +563,14 @@ std::vector<std::vector<double>> predict_with_full_cov(
         sched,
         m_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         for (std::size_t j = 0; j < n_tiles; j++)
         {
             cross_covariance_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_cross_covariance>(
                 sched,
-                schedule::cross_covariance_tile(sched, n_tiles, i, j),
+                cross_covariance_tile_on(sched, n_tiles, i, j),
                 "assemble_pred",
                 cross_covariance_tiles[i * n_tiles + j],
                 i,
@@ -590,11 +586,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
     // Tiled solution
     auto prediction_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::prediction_tile(sched, n_tiles, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return prediction_tile_on(sched, n_tiles, tile_index); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         prediction_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-            sched, schedule::prediction_tile(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
+            sched, prediction_tile_on(sched, m_tiles, i), "assemble_tiled", prediction_tiles[i], m_tile_size);
     }
 
     // Launch asynchronous triangular solve  L * (L^T * alpha) = y
@@ -613,14 +609,14 @@ std::vector<std::vector<double>> predict_with_full_cov(
         sched,
         n_tiles * m_tiles,
         [&](std::size_t tile_index)
-        { return schedule::t_cross_covariance_tile(sched, m_tiles, tile_index / m_tiles, tile_index % m_tiles); });
+        { return t_cross_covariance_tile_on(sched, m_tiles, tile_index / m_tiles, tile_index % m_tiles); });
     for (std::size_t j = 0; j < n_tiles; j++)
     {
         for (std::size_t i = 0; i < m_tiles; i++)
         {
             t_cross_covariance_tiles[j * m_tiles + i] = detail::named_make_tile<gen_tile_transpose>(
                 sched,
-                schedule::t_cross_covariance_tile(sched, m_tiles, j, i),
+                t_cross_covariance_tile_on(sched, m_tiles, j, i),
                 "assemble_pred",
                 t_cross_covariance_tiles[j * m_tiles + i],
                 m_tile_size,
@@ -634,14 +630,14 @@ std::vector<std::vector<double>> predict_with_full_cov(
         sched,
         m_tiles * m_tiles,
         [&](std::size_t tile_index)
-        { return schedule::prior_K_tile(sched, n_tiles, tile_index / m_tiles, tile_index % m_tiles); });
+        { return prior_K_tile_on(sched, n_tiles, tile_index / m_tiles, tile_index % m_tiles); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         for (std::size_t j = 0; j <= i; j++)
         {
             prior_K_tiles[i * m_tiles + j] = detail::named_make_tile<gen_tile_full_prior_covariance>(
                 sched,
-                schedule::prior_K_tile(sched, m_tiles, i, j),
+                prior_K_tile_on(sched, m_tiles, i, j),
                 "assemble_prior_tiled",
                 prior_K_tiles[i * m_tiles + j],
                 i,
@@ -655,7 +651,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
             {
                 prior_K_tiles[j * m_tiles + i] = detail::named_make_tile<gen_tile_transpose>(
                     sched,
-                    schedule::prior_K_tile(sched, m_tiles, j, i),
+                    prior_K_tile_on(sched, m_tiles, j, i),
                     "assemble_prior_tiled",
                     prior_K_tiles[j * m_tiles + i],
                     m_tile_size,
@@ -667,15 +663,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
     // Tiled uncertainty solution
     auto uncertainty_tiles = make_tiled_dataset<double>(
-        sched, m_tiles, [&](std::size_t tile_index) { return schedule::uncertainty_tile(sched, m_tiles, tile_index); });
+        sched, m_tiles, [&](std::size_t tile_index) { return uncertainty_tile_on(sched, m_tiles, tile_index); });
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         uncertainty_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-            sched,
-            schedule::uncertainty_tile(sched, m_tiles, i),
-            "assemble_prior_inter",
-            uncertainty_tiles[i],
-            m_tile_size);
+            sched, uncertainty_tile_on(sched, m_tiles, i), "assemble_prior_inter", uncertainty_tiles[i], m_tile_size);
     }
 
     // Launch asynchronous triangular solve L * V = cross(K)^T
@@ -762,14 +754,14 @@ double calculate_loss(Scheduler &sched,
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
     for (std::size_t row = 0; row < n_tiles; row++)
     {
         for (std::size_t col = 0; col <= row; col++)
         {
             K_tiles[row * n_tiles + col] = detail::named_make_tile<gen_tile_covariance>(
                 sched,
-                schedule::covariance_tile(sched, n_tiles, row, col),
+                covariance_tile_on(sched, n_tiles, row, col),
                 "assemble_tiled_K",
                 K_tiles[row * n_tiles + col],
                 row,
@@ -783,12 +775,12 @@ double calculate_loss(Scheduler &sched,
 
     // Tiled intermediate solution
     auto alpha_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return alpha_tile_on(sched, n_tiles, tile_index); });
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         alpha_tiles[i] = detail::named_make_tile<gen_tile_output>(
             sched,
-            schedule::alpha_tile(sched, n_tiles, i),
+            alpha_tile_on(sched, n_tiles, i),
             "assemble_tiled_alpha",
             alpha_tiles[i],
             i,
@@ -798,12 +790,12 @@ double calculate_loss(Scheduler &sched,
 
     // Tiled output
     auto y_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::prediction_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return prediction_tile_on(sched, n_tiles, tile_index); });
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         y_tiles[i] = detail::named_make_tile<gen_tile_output>(
             sched,
-            schedule::prediction_tile(sched, n_tiles, i),
+            prediction_tile_on(sched, n_tiles, i),
             "assemble_tiled_alpha",
             y_tiles[i],
             i,
@@ -890,18 +882,12 @@ optimize(Scheduler &sched,
 
     // Tiled output
     auto y_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::prediction_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return prediction_tile_on(sched, n_tiles, tile_index); });
     // Launch asynchronous assembly of output y
     for (std::size_t i = 0; i < n_tiles; i++)
     {
         y_tiles[i] = detail::named_make_tile<gen_tile_output>(
-            sched,
-            schedule::prediction_tile(sched, n_tiles, i),
-            "assemble_y",
-            y_tiles[i],
-            i,
-            n_tile_size,
-            training_output);
+            sched, prediction_tile_on(sched, n_tiles, i), "assemble_y", y_tiles[i], i, n_tile_size, training_output);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -912,18 +898,18 @@ optimize(Scheduler &sched,
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::covariance_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return covariance_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     // Tiled inverse covariance matrix K^-1_NxN
     auto K_inv_tiles = make_tiled_dataset<double>(
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::K_inv_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return K_inv_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     // Tiled intermediate solution
     auto alpha_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return alpha_tile_on(sched, n_tiles, tile_index); });
 
     // Tiled future data structures for gradients
 
@@ -932,20 +918,20 @@ optimize(Scheduler &sched,
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::K_grad_v_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return K_grad_v_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     // Tiled covariance with gradient l
     auto grad_l_tiles = make_tiled_dataset<double>(
         sched,
         n_tiles * n_tiles,
         [&](std::size_t tile_index)
-        { return schedule::K_grad_l_tile(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
+        { return K_grad_l_tile_on(sched, n_tiles, tile_index / n_tiles, tile_index % n_tiles); });
 
     auto inter_alpha = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::inter_alpha_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return inter_alpha_tile_on(sched, n_tiles, tile_index); });
 
     auto diag_tiles = make_tiled_dataset<double>(
-        sched, n_tiles, [&](std::size_t tile_index) { return schedule::diag_tile(sched, n_tiles, tile_index); });
+        sched, n_tiles, [&](std::size_t tile_index) { return diag_tile_on(sched, n_tiles, tile_index); });
 
     //////////////////////////////////////////////////////////////////////////////
     // Perform optimization
@@ -965,7 +951,7 @@ optimize(Scheduler &sched,
 
                 K_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_covariance_with_distance>(
                     sched,
-                    schedule::covariance_tile(sched, n_tiles, i, j),
+                    covariance_tile_on(sched, n_tiles, i, j),
                     "assemble_K",
                     K_tiles[i * n_tiles + j],
                     i,
@@ -977,7 +963,7 @@ optimize(Scheduler &sched,
                 {
                     grad_l_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_grad_l>(
                         sched,
-                        schedule::K_grad_l_tile(sched, n_tiles, i, j),
+                        K_grad_l_tile_on(sched, n_tiles, i, j),
                         "assemble_gradl",
                         grad_l_tiles[i * n_tiles + j],
                         n_tile_size,
@@ -987,7 +973,7 @@ optimize(Scheduler &sched,
                     {
                         grad_l_tiles[j * n_tiles + i] = detail::named_make_tile<gen_tile_transpose>(
                             sched,
-                            schedule::K_grad_l_tile(sched, n_tiles, j, i),
+                            K_grad_l_tile_on(sched, n_tiles, j, i),
                             "assemble_gradl_t",
                             grad_l_tiles[j * n_tiles + i],
                             n_tile_size,
@@ -1000,7 +986,7 @@ optimize(Scheduler &sched,
                 {
                     grad_v_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_grad_v>(
                         sched,
-                        schedule::K_grad_v_tile(sched, n_tiles, i, j),
+                        K_grad_v_tile_on(sched, n_tiles, i, j),
                         "assemble_gradv",
                         grad_v_tiles[i * n_tiles + j],
                         n_tile_size,
@@ -1010,7 +996,7 @@ optimize(Scheduler &sched,
                     {
                         grad_v_tiles[j * n_tiles + i] = detail::named_make_tile<gen_tile_transpose>(
                             sched,
-                            schedule::K_grad_v_tile(sched, n_tiles, j, i),
+                            K_grad_v_tile_on(sched, n_tiles, j, i),
                             "assemble_gradv_t",
                             grad_v_tiles[j * n_tiles + i],
                             n_tile_size,
@@ -1025,7 +1011,7 @@ optimize(Scheduler &sched,
         for (std::size_t i = 0; i < n_tiles; i++)
         {
             alpha_tiles[i] = detail::named_make_tile<gen_tile_zeros>(
-                sched, schedule::alpha_tile(sched, n_tiles, i), "assemble_tiled_alpha", alpha_tiles[i], n_tile_size);
+                sched, alpha_tile_on(sched, n_tiles, i), "assemble_tiled_alpha", alpha_tiles[i], n_tile_size);
         }
 
         for (std::size_t i = 0; i < n_tiles; i++)
@@ -1036,7 +1022,7 @@ optimize(Scheduler &sched,
                 {
                     K_inv_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_identity>(
                         sched,
-                        schedule::K_inv_tile(sched, n_tiles, i, j),
+                        K_inv_tile_on(sched, n_tiles, i, j),
                         "assemble_identity_matrix",
                         K_inv_tiles[i * n_tiles + j],
                         n_tile_size);
@@ -1045,7 +1031,7 @@ optimize(Scheduler &sched,
                 {
                     K_inv_tiles[i * n_tiles + j] = detail::named_make_tile<gen_tile_zeros>(
                         sched,
-                        schedule::K_inv_tile(sched, n_tiles, i, j),
+                        K_inv_tile_on(sched, n_tiles, i, j),
                         "assemble_identity_matrix",
                         K_inv_tiles[i * n_tiles + j],
                         n_tile_size * n_tile_size);

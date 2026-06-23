@@ -251,6 +251,7 @@ int main(int argc, char *argv[])
         ("train_x_path", po::value<std::string>()->default_value("../../../data/data_1024/training_input.txt"), "training data (x)")
         ("train_y_path", po::value<std::string>()->default_value("../../../data/data_1024/training_output.txt"), "training data (y)")
         ("test_path", po::value<std::string>()->default_value("../../../data/data_1024/test_input.txt"), "test data")
+        ("timings_csv", po::value<std::string>()->default_value("output.csv"), "output timing data")
         ("tiles", po::value<std::size_t>()->default_value(16), "tiles per dimension")
         ("regressors", po::value<std::size_t>()->default_value(8), "num regressors")
         ("start-cores", po::value<std::size_t>()->default_value(2), "num CPUs to start with")
@@ -267,7 +268,9 @@ int main(int argc, char *argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.contains("help"))
+    // XXX: cannot use contains() because it's not exported by HPX program_options
+    // ReSharper disable once CppUseAssociativeContains
+    if (vm.find("help") != vm.end())
     {
         std::cout << desc << "\n";
         return 1;
@@ -417,7 +420,7 @@ int main(int argc, char *argv[])
                 auto total_time = end_total - start_total;
 
                 // Save parameters and times to a .txt file with a header
-                std::ofstream outfile("output.csv", std::ios::app);  // Append mode
+                std::ofstream outfile(vm["timings_csv"].as<std::string>(), std::ios::app);  // Append mode
                 if (outfile.tellp() == 0)
                 {
                     // If file is empty, write the header

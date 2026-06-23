@@ -77,6 +77,11 @@ std::uint64_t get_and_reset_function_calls(bool reset)
 void track_tile_data_allocation(std::size_t size);
 void track_tile_data_deallocation(std::size_t size);
 
+void track_tile_server_allocation(std::size_t size);
+void track_tile_server_deallocation(std::size_t size);
+
+void record_transmission_time(std::int64_t elapsed_ns);
+
 void register_performance_counters();
 
 void force_evict_memory(const void *start, std::size_t size);
