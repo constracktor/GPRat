@@ -92,7 +92,7 @@ GP::GP(std::vector<double> input,
         "Cannot create GP object using CUDA or SYCL for computation. "
         "CUDA and SYCL are not available because GPRat has been compiled without CUDA and SYCL support. "
         "Remove arguments gpu_id ("
-        + std::to_string(gpu_id) + ") and n_units (" + std::to_string(n_units)
+        + std::to_string(gpu_id) + ") and n_streams (" + std::to_string(n_streams)
         + ") to perform computations on the CPU.");
 #endif
 }

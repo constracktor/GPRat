@@ -147,7 +147,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer cholesky_timer;
             if (enabled & (1 << 0))
             {
-                results.choleksy =
+                results.cholesky =
                     to_vector(cpu::cholesky(scheduler, training_input.data, sek_params, n_tiles, tile_size, n_reg));
             }
             const auto cholesky_time = cholesky_timer.elapsed();
@@ -248,7 +248,7 @@ void run(hpx::program_options::variables_map &vm)
         throw std::runtime_error(std::format("{} != {}: {} {}", #a, #b, a, b.describe()));
                 const auto &expected_results = *test_results;
                 std::cerr << "Validating results..." << std::endl;
-                REQUIRE(results.choleksy.size() == expected_results.choleksy.size());
+                REQUIRE(results.cholesky.size() == expected_results.cholesky.size());
                 REQUIRE(results.losses.size() == expected_results.losses.size());
                 REQUIRE(results.sum.size() == expected_results.sum.size());
                 REQUIRE(results.sum[0].size() == expected_results.sum[0].size());
@@ -262,11 +262,11 @@ void run(hpx::program_options::variables_map &vm)
                 // https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
                 using Catch::Matchers::WithinRel;
                 double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
-                for (std::size_t i = 0, n = results.choleksy.size(); i != n; ++i)
+                for (std::size_t i = 0, n = results.cholesky.size(); i != n; ++i)
                 {
-                    for (std::size_t j = 0, m = results.choleksy[i].size(); j != m; ++j)
+                    for (std::size_t j = 0, m = results.cholesky[i].size(); j != m; ++j)
                     {
-                        REQUIRE_THAT(results.choleksy[i][j], WithinRel(expected_results.choleksy[i][j], eps));
+                        REQUIRE_THAT(results.cholesky[i][j], WithinRel(expected_results.cholesky[i][j], eps));
                     }
                 }
                 for (std::size_t i = 0, n = results.losses.size(); i != n; ++i)

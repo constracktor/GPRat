@@ -8,7 +8,7 @@
 // Struct containing all results we'd like to compare
 struct gprat_results
 {
-    std::vector<std::vector<double>> choleksy;
+    std::vector<std::vector<double>> cholesky;
     std::vector<double> losses;
     std::vector<std::vector<double>> sum;
     std::vector<std::vector<double>> full;
@@ -22,7 +22,7 @@ struct gprat_results
 inline void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, const gprat_results &results)
 {
     jv = {
-        { "choleksy", boost::json::value_from(results.choleksy) },
+        { "cholesky", boost::json::value_from(results.cholesky) },
         { "losses", boost::json::value_from(results.losses) },
         { "sum", boost::json::value_from(results.sum) },
         { "full", boost::json::value_from(results.full) },
@@ -44,7 +44,7 @@ inline gprat_results tag_invoke(boost::json::value_to_tag<gprat_results>, const 
 {
     gprat_results results;
     const auto &obj = jv.as_object();
-    extract(obj, results.choleksy, "choleksy");
+    extract(obj, results.cholesky, "cholesky");
     extract(obj, results.losses, "losses");
     extract(obj, results.sum, "sum");
     extract(obj, results.full, "full");
