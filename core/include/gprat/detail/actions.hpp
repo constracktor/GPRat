@@ -73,7 +73,7 @@ hpx::future<R> collapse(hpx::future<R> &&fut)
 
 template <auto F, typename... Args>
 decltype(auto)
-named_make_tile(const tiled_scheduler_distributed &sched, std::size_t on, const char *name, Args &&...args)
+named_make_tile(const tiled_scheduler_distributed & /*sched*/, std::size_t /*on*/, const char *name, Args &&...args)
 {
     hpx::threads::thread_schedule_hint hint;
     hint.sharing_mode(hpx::threads::thread_sharing_hint::do_not_combine_tasks

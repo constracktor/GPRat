@@ -3,7 +3,7 @@
 #include <hpx/include/performance_counters.hpp>
 
 GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::get_matrix_diagonal,
-                              GPRAT_NS::cpu::get_matrix_diagonal_distributed_action);
+                              GPRAT_NS::cpu::get_matrix_diagonal_distributed_action)
 
 GPRAT_NS_BEGIN
 

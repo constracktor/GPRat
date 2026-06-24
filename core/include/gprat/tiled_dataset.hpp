@@ -74,9 +74,9 @@ struct tile_manager_shared_data
             locality_id(hpx::naming::invalid_locality_id)
         { }
 
-        tile_entry(hpx::id_type tile, std::uint32_t locality_id) :
+        tile_entry(hpx::id_type tile, std::uint32_t in_locality_id) :
             id(std::move(tile)),
-            locality_id(locality_id)
+            locality_id(in_locality_id)
         { }
 
         hpx::id_type id;
@@ -422,6 +422,6 @@ GPRAT_NS_END
 
 // Register the double version by default
 // Users can register custom types in the same way
-GPRAT_REGISTER_TILED_DATASET_DECLARATION(double, double);
+GPRAT_REGISTER_TILED_DATASET_DECLARATION(double, double)
 
 #endif

@@ -82,6 +82,13 @@ void track_tile_server_deallocation(std::size_t size);
 
 void record_transmission_time(std::int64_t elapsed_ns);
 
+std::uint64_t get_tile_data_allocations(bool reset);
+std::uint64_t get_tile_data_deallocations(bool reset);
+std::uint64_t get_tile_server_allocations(bool reset);
+std::uint64_t get_tile_server_deallocations(bool reset);
+std::uint64_t get_tile_transmission_time(bool reset);
+std::uint64_t get_tile_transmission_count(bool reset);
+
 void register_performance_counters();
 
 void force_evict_memory(const void *start, std::size_t size);

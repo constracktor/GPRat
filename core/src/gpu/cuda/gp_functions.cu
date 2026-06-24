@@ -1,5 +1,6 @@
 #include "gprat/gpu/gp_functions.cuh"
 
+#include "apex_utils.hpp"
 #include "gprat/gpu/cuda_utils.cuh"
 #include "gprat/gpu/gp_algorithms.cuh"
 #include "gprat/gpu/tiled_algorithms.cuh"

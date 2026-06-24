@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
 
         for (std::size_t n_train = START; n_train <= END; n_train += STEP)
         {
-            const int tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
+            const std::size_t tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
             const auto result = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
-            const gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, static_cast<int>(OPT_ITER) };
+            const gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
 
             for (std::size_t l = 0; l < LOOP; l++)
             {

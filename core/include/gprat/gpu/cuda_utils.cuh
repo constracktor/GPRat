@@ -5,8 +5,6 @@
 
 #include "gprat/detail/config.hpp"
 #include "gprat/target.hpp"
-
-#include "target.hpp"
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <cusolverDn.h>

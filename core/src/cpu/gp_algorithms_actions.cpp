@@ -3,17 +3,17 @@
 #include <hpx/include/performance_counters.hpp>
 
 GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_covariance,
-                              GPRAT_NS::cpu::gen_tile_covariance_distributed_action);
+                              GPRAT_NS::cpu::gen_tile_covariance_distributed_action)
 GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_prior_covariance,
-                              GPRAT_NS::cpu::gen_tile_prior_covariance_distributed_action);
+                              GPRAT_NS::cpu::gen_tile_prior_covariance_distributed_action)
 GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_prior_covariance,
-                              GPRAT_NS::cpu::gen_tile_full_prior_covariance_distributed_action);
+                              GPRAT_NS::cpu::gen_tile_full_prior_covariance_distributed_action)
 GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_cross_covariance,
-                              GPRAT_NS::cpu::gen_tile_cross_covariance_distributed_action);
-GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_transpose, GPRAT_NS::cpu::gen_tile_transpose_distributed_action);
-GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_output, GPRAT_NS::cpu::gen_tile_output_distributed_action);
-GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_zeros, GPRAT_NS::cpu::gen_tile_zeros_distributed_action);
-GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_identity, GPRAT_NS::cpu::gen_tile_identity_distributed_action);
+                              GPRAT_NS::cpu::gen_tile_cross_covariance_distributed_action)
+GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_transpose, GPRAT_NS::cpu::gen_tile_transpose_distributed_action)
+GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_output, GPRAT_NS::cpu::gen_tile_output_distributed_action)
+GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_zeros, GPRAT_NS::cpu::gen_tile_zeros_distributed_action)
+GPRAT_DEFINE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_identity, GPRAT_NS::cpu::gen_tile_identity_distributed_action)
 
 GPRAT_NS_BEGIN
 
@@ -76,7 +76,7 @@ hpx::future<tile_handle<double>> gen_tile_transpose_distributed(
     return hpx::dataflow(
         hpx::launch::async,
         [=](hpx::future<mutable_tile_data<double>> &&tiled)
-        { return tile.set_async(cpu::gen_tile_transpose(N_row, N_col, tiled.get())); },
+        { return tile.set_async(cpu::gen_tile_transpose(N_row, N_col, tiled.get().as_span())); },
         src.get_async());
 }
 

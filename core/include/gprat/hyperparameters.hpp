@@ -71,7 +71,7 @@ template <class Archive>
 void load_construct_data(Archive &ar, AdamParams *v, const unsigned int)
 {
     double learning_rate, beta1, beta2, epsilon;
-    int opt_iter;
+    std::size_t opt_iter;
     ar >> learning_rate;
     ar >> beta1;
     ar >> beta2;

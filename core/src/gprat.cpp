@@ -75,10 +75,10 @@ GP::GP(std::vector<double> input,
     n_tile_size_(n_tile_size),
     trainable_params_(std::move(trainable_bool)),
 #if GPRAT_WITH_CUDA
-    target_(std::make_shared<CUDA_GPU>(CUDA_GPU(gpu_id, n_units))),
+    target_(std::make_shared<CUDA_GPU>(CUDA_GPU(gpu_id, n_streams))),
 
 #elif GPRAT_WITH_SYCL
-    target_(std::make_shared<SYCL_DEVICE>(SYCL_DEVICE(gpu_id, n_units))),
+    target_(std::make_shared<SYCL_DEVICE>(SYCL_DEVICE(gpu_id, n_streams))),
 
 #else
     target_(std::make_shared<CPU>()),
@@ -123,11 +123,11 @@ std::vector<double> GP::predict(const std::vector<double> &test_input, std::size
             training_output_,
             test_input,
             kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
@@ -158,11 +158,11 @@ GP::predict_with_uncertainty(const std::vector<double> &test_input, std::size_t 
             training_output_,
             test_input,
             kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
@@ -192,11 +192,11 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, std::size_t m_t
             training_output_,
             test_input,
             kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            m_tiles,
-            m_tile_size,
-            n_reg,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
@@ -269,9 +269,9 @@ double GP::calculate_loss()
             training_input_,
             training_output_,
             kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            n_reg,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
@@ -288,9 +288,9 @@ std::vector<mutable_tile_data<double>> GP::cholesky()
         return gpu::cholesky(
             training_input_,
             kernel_params,
-            n_tiles_,
-            n_tile_size_,
-            n_reg,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif

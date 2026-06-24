@@ -402,7 +402,7 @@ fi
 # CPU build
 if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
 
-  cmake --preset $PRESET \
+  cmake --preset $PRESET -Wno-dev \
     -DGPRAT_BUILD_BINDINGS=$BINDINGS \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
     -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
@@ -411,6 +411,7 @@ if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
+    -DGPRAT_WITH_DISTRIBUTED=ON \
     -DGPRAT_ENABLE_TESTS=ON \
     -DGPRAT_ENABLE_EXAMPLES=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -418,7 +419,7 @@ if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
 # CUDA build
 elif [[ $PRESET == "release-linux-cuda" || $PRESET == "dev-linux-cuda" ]]; then
 
-  cmake --preset $PRESET \
+  cmake --preset $PRESET -Wno-dev \
     -DGPRAT_BUILD_BINDINGS=$BINDINGS \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
     -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
@@ -426,11 +427,13 @@ elif [[ $PRESET == "release-linux-cuda" || $PRESET == "dev-linux-cuda" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
+    -DGPRAT_WITH_DISTRIBUTED=ON \
     -DCMAKE_C_COMPILER=$(which clang) \
     -DCMAKE_CXX_COMPILER=$(which clang++) \
     -DCMAKE_CUDA_COMPILER=$(which clang++) \
     -DCMAKE_CUDA_FLAGS=--cuda-path=${CUDA_HOME} \
     -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
+    -DCMAKE_EXE_LINKER_FLAGS="-L${CUDA_HOME}/targets/x86_64-linux/lib" \
     -DGPRAT_ENABLE_TESTS=ON \
     -DGPRAT_ENABLE_EXAMPLES=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -438,7 +441,7 @@ elif [[ $PRESET == "release-linux-cuda" || $PRESET == "dev-linux-cuda" ]]; then
 # SYCL build
 elif [[ $PRESET == "release-linux-sycl" || $PRESET == "dev-linux-sycl" ]]; then
 
-  cmake --preset $PRESET \
+  cmake --preset $PRESET -Wno-dev \
     -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
     -DGPRAT_BUILD_BINDINGS=$BINDINGS \
     -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
@@ -447,6 +450,7 @@ elif [[ $PRESET == "release-linux-sycl" || $PRESET == "dev-linux-sycl" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
+    -DGPRAT_WITH_DISTRIBUTED=ON \
     -DCMAKE_C_COMPILER=$(which icx) \
     -DCMAKE_CXX_COMPILER=$(which icpx) \
     -DGPRAT_WITH_SYCL=ON \

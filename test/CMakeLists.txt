@@ -42,6 +42,10 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
+# catch_discover_tests registers each Catch2 test case as a separate CTest entry.
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+include(Catch)
+
 find_package(Boost REQUIRED)
 
 # ---- Tests ----
@@ -51,17 +55,17 @@ add_executable(GPRat_test_output_correctness src/test_data.hpp
 target_link_libraries(GPRat_test_output_correctness
                       PRIVATE GPRat::core Catch2::Catch2WithMain Boost::boost)
 target_compile_features(GPRat_test_output_correctness PRIVATE cxx_std_17)
-
-add_test(
-  NAME GPRat_test_output_correctness
-  COMMAND GPRat_test_output_correctness
+# APEX's malloc wrapper initialises internal containers during process startup.
+# With _GLIBCXX_ASSERTIONS enabled those accesses trip bounds checks before
+# APEX is fully set up.  Undefine the assertion macro for this target only.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(GPRat_test_output_correctness PRIVATE -U_GLIBCXX_ASSERTIONS)
+endif()
+catch_discover_tests(GPRat_test_output_correctness
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")
 
 add_executable(GPRat_test_unit src/unit_tests.cpp)
 target_link_libraries(GPRat_test_unit PRIVATE GPRat::core Catch2::Catch2WithMain)
 target_compile_features(GPRat_test_unit PRIVATE cxx_std_17)
-
-add_test(
-  NAME GPRat_test_unit
-  COMMAND GPRat_test_unit
+catch_discover_tests(GPRat_test_unit
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}")

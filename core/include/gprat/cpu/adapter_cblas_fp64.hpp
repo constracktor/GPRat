@@ -3,19 +3,13 @@
 
 #pragma once
 
+#include "gprat/cpu/blas_enums.hpp"
 #include "gprat/detail/config.hpp"
 #include "gprat/tile_data.hpp"
 
 #include <span>
 
 GPRAT_NS_BEGIN
-
-// Constants that are compatible with CBLAS
-typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
-
-typedef enum BLAS_SIDE { Blas_left = 141, Blas_right = 142 } BLAS_SIDE;
-
-typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
 
 // typedef enum BLAS_UPLO { Blas_upper = 121,
 //                          Blas_lower = 122 } BLAS_UPLO;
