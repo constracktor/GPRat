@@ -35,7 +35,7 @@ struct tile_holder : hpx::components::component_base<tile_holder<T>>
 {
     tile_holder() { track_tile_server_allocation(0); }
 
-    explicit tile_holder(const mutable_tile_data<double> &data) :
+    explicit tile_holder(const mutable_tile_data<T> &data) :
         data_(data)
     {
         track_tile_server_allocation(data.size());
@@ -43,13 +43,13 @@ struct tile_holder : hpx::components::component_base<tile_holder<T>>
 
     ~tile_holder() { track_tile_server_deallocation(data_.size()); }
 
-    [[nodiscard]] mutable_tile_data<double> get_data() const
+    [[nodiscard]] mutable_tile_data<T> get_data() const
     {
         std::shared_lock lock(mutex_);
         return data_;
     }
 
-    void set_data(const mutable_tile_data<double> &data)
+    void set_data(const mutable_tile_data<T> &data)
     {
         std::unique_lock lock(mutex_);
         data_ = data;
@@ -62,7 +62,7 @@ struct tile_holder : hpx::components::component_base<tile_holder<T>>
 
   private:
     mutable hpx::shared_mutex mutex_;
-    mutable_tile_data<double> data_;
+    mutable_tile_data<T> data_;
 };
 
 template <typename T>

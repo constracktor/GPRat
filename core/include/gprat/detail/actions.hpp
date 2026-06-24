@@ -7,7 +7,6 @@
 
 #include <hpx/async_distributed/dataflow.hpp>
 #include <hpx/naming_base/id_type.hpp>
-#include <hpx/runtime_distributed/find_here.hpp>
 #include <hpx/runtime_distributed/find_localities.hpp>
 
 GPRAT_NS_BEGIN
@@ -73,7 +72,7 @@ hpx::future<R> collapse(hpx::future<R> &&fut)
 
 template <auto F, typename... Args>
 decltype(auto)
-named_make_tile(const tiled_scheduler_distributed & /*sched*/, std::size_t /*on*/, const char *name, Args &&...args)
+named_make_tile(const tiled_scheduler_distributed &sched, std::size_t on, const char *name, Args &&...args)
 {
     hpx::threads::thread_schedule_hint hint;
     hint.sharing_mode(hpx::threads::thread_sharing_hint::do_not_combine_tasks
@@ -82,7 +81,7 @@ named_make_tile(const tiled_scheduler_distributed & /*sched*/, std::size_t /*on*
     return collapse(hpx::dataflow(
         policy,
         hpx::annotated_function(hpx::unwrapping(typename plain_action_for<F>::action_type{}), name),
-        hpx::find_here(),  // sched.localities_[on],
+        sched.localities_[on],
         std::forward<Args>(args)...));
 }
 
@@ -109,7 +108,7 @@ decltype(auto) named_async(const tiled_scheduler_distributed &sched, std::size_t
                       | hpx::threads::thread_sharing_hint::do_not_share_function);
     decltype(auto) policy = hpx::execution::experimental::with_hint(hpx::launch::async, hint) | hpx::launch::deferred;
     return hpx::async(policy,
-                      hpx::annotated_function(policy, typename plain_action_for<F>::action_type{}, name),
+                      hpx::annotated_function(typename plain_action_for<F>::action_type{}, name),
                       sched.localities_[on],
                       std::forward<Args>(args)...);
 }
