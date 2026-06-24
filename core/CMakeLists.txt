@@ -175,7 +175,7 @@ if(GPRAT_WITH_SYCL)
   find_package(oneMath REQUIRED)
 
   # Select SYCL backend architecture
-  option(GPRAT_SYCL_CUDA_PATH "CUDA installation path for icpx NVIDIA SYCL target" "")
+  set(GPRAT_SYCL_CUDA_PATH "" CACHE PATH "CUDA installation path for icpx NVIDIA SYCL target.")
 
   set(GPRAT_SYCL_NVIDIA_ARCH "" CACHE STRING "NVIDIA GPU SM arch for SYCL (e.g. sm_80). Derived from GPRAT_SYCL_CUDA_PATH if empty.")
 

@@ -290,7 +290,7 @@ if command -v spack &>/dev/null; then
 
         if [[ "$2" == "sycl" ]]; then # GPRat on AMD GPUs with SYCL
 
-          if command -v icpx --version &>/dev/null; then
+          if command -v icpx &>/dev/null; then
             
             # Set default compiler to icpx
             export CXX=icpx
@@ -375,7 +375,7 @@ if command -v spack &>/dev/null; then
           source /opt/intel/oneapi/umf/latest/env/vars.sh
         fi
 
-        if command -v icpx --version &>/dev/null; then
+        if command -v icpx &>/dev/null; then
 
           # Set default compiler to icpx
           export CXX=icpx
