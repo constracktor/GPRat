@@ -216,11 +216,11 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, std::size_t m_t
 
 std::vector<double> GP::optimize(const AdamParams &adam_params)
 {
-#if GPRAT_WITH_CUDA
-    if (target_->is_gpu())
+#if GPRAT_WITH_CUDA || GPRAT_WITH_SYCL
+    if (target_->is_gpu() || target_->is_sycl())
     {
-        std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                  << "Instead, this operation executes the CPU implementation." << std::endl;
+        std::cerr << "GP::optimize is not implemented for GPU targets.\n"
+                  << "Falling back to the CPU implementation." << std::endl;
     }
 #endif
     tiled_scheduler_local scheduler;
@@ -238,11 +238,11 @@ std::vector<double> GP::optimize(const AdamParams &adam_params)
 
 double GP::optimize_step(AdamParams &adam_params, std::size_t iter)
 {
-#if GPRAT_WITH_CUDA
-    if (target_->is_gpu())
+#if GPRAT_WITH_CUDA || GPRAT_WITH_SYCL
+    if (target_->is_gpu() || target_->is_sycl())
     {
-        std::cerr << "GP::optimze_step has not been implemented for the GPU.\n"
-                  << "Instead, this operation executes the CPU implementation." << std::endl;
+        std::cerr << "GP::optimize_step is not implemented for GPU targets.\n"
+                  << "Falling back to the CPU implementation." << std::endl;
     }
 #endif
     tiled_scheduler_local scheduler;

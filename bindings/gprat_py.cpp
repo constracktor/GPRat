@@ -137,6 +137,7 @@ Parameters:
              py::arg("test_data"),
              py::arg("m_tiles"),
              py::arg("m_tile_size"))
+        .def("cholesky", &gprat::GP::cholesky, "Compute and return the Cholesky decomposition of the covariance matrix.")
         .def("optimize", &gprat::GP::optimize, py::arg("AdamParams"))
         .def("optimize_step", &gprat::GP::optimize_step, py::arg("AdamParams"), py::arg("iter"))
         .def("compute_loss", &gprat::GP::calculate_loss);

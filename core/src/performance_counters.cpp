@@ -1,6 +1,9 @@
 #include "gprat/performance_counters.hpp"
 
+#include "gprat/detail/config.hpp"
+#if GPRAT_WITH_DISTRIBUTED
 #include "gprat/tile_cache.hpp"
+#endif
 
 #include <atomic>
 #include <emmintrin.h>
@@ -79,10 +82,12 @@ void register_performance_counters()
         "",                                                                                                            \
         hpx::performance_counters::counter_type::monotonically_increasing)
 
+#if GPRAT_WITH_DISTRIBUTED
     GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/hits", detail::get_global_statistics().hits);
     GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/misses", detail::get_global_statistics().misses);
     GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/evictions", detail::get_global_statistics().evictions);
     GPRAT_MAKE_STATISTICS_ACCESSOR("/gprat/tile_cache/insertions", detail::get_global_statistics().insertions);
+#endif
 
 #undef GPRAT_MAKE_STATISTICS_ACCESSOR
 

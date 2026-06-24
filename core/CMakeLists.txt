@@ -86,17 +86,21 @@ if(GPRAT_WITH_SYCL)
     src/gpu/sycl/sycl_tiled_algorithms.cpp)
 endif()
 
-# Add CUDA-specific source files if enabled
-# GPRat distributed TODO: this could be gated behind a distributed-only option!
-list(
-  APPEND
-  SOURCE_FILES
-  src/cpu/adapter_cblas_fp64_actions.cpp
-  src/cpu/gp_algorithms_actions.cpp
-  src/cpu/gp_uncertainty_actions.cpp
-  src/cpu/gp_optimizer_actions.cpp
-  src/tile_cache.cpp
-  src/tiled_dataset.cpp)
+# Distributed HPX sources (HPX actions, tile cache, tiled dataset)
+option(GPRAT_WITH_DISTRIBUTED "Enable distributed GP support via HPX actions" OFF)
+add_compile_definitions(GPRAT_WITH_DISTRIBUTED=$<BOOL:${GPRAT_WITH_DISTRIBUTED}>)
+
+if(GPRAT_WITH_DISTRIBUTED)
+  list(
+    APPEND
+    SOURCE_FILES
+    src/cpu/adapter_cblas_fp64_actions.cpp
+    src/cpu/gp_algorithms_actions.cpp
+    src/cpu/gp_uncertainty_actions.cpp
+    src/cpu/gp_optimizer_actions.cpp
+    src/tile_cache.cpp
+    src/tiled_dataset.cpp)
+endif()
 
 if(GPRAT_WITH_CUDA)
   list(
