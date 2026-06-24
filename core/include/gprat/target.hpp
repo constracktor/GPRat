@@ -5,6 +5,7 @@
 
 #include "gprat/detail/config.hpp"
 
+#include <atomic>
 #include <string>
 
 #if GPRAT_WITH_CUDA
@@ -128,7 +129,7 @@ struct CUDA_GPU : public Target
      * @brief Index of next CUDA stream assigned on next_stream() or
      *        next_cublas_handle().
      */
-    int i_stream;
+    std::atomic<int> i_stream;
 
     /** @brief Default amount of CUDA shared memory used by CUDA kernels. */
     int shared_memory_size;
@@ -137,6 +138,26 @@ struct CUDA_GPU : public Target
      * @brief Returns GPU target that uses CUDA.
      */
     CUDA_GPU(int id, int n_streams);
+
+    CUDA_GPU(const CUDA_GPU &o) :
+        id(o.id),
+        n_streams(o.n_streams),
+        i_stream(o.i_stream.load()),
+        shared_memory_size(o.shared_memory_size),
+        streams(o.streams),
+        cublas_handles(o.cublas_handles)
+    { }
+
+    CUDA_GPU &operator=(const CUDA_GPU &o)
+    {
+        id = o.id;
+        n_streams = o.n_streams;
+        i_stream.store(o.i_stream.load());
+        shared_memory_size = o.shared_memory_size;
+        streams = o.streams;
+        cublas_handles = o.cublas_handles;
+        return *this;
+    }
 
     /**
      * @brief Returns false because target is not CPU.
@@ -247,7 +268,7 @@ struct SYCL_DEVICE : public Target
     /**
      * @brief Index of next SYCL queue assigned on next_queue().
      */
-    std::size_t i_queue;
+    std::atomic<std::size_t> i_queue;
 
     /** @brief Default amount of SYCL local memory used by kernels. */
     std::size_t local_memory_size;
@@ -256,6 +277,26 @@ struct SYCL_DEVICE : public Target
      * @brief Returns GPU target that uses SYCL.
      */
     SYCL_DEVICE(int gpu_id, int n_queues);
+
+    SYCL_DEVICE(const SYCL_DEVICE &o) :
+        id(o.id),
+        n_queues(o.n_queues),
+        i_queue(o.i_queue.load()),
+        local_memory_size(o.local_memory_size),
+        selected_device_(o.selected_device_),
+        queues(o.queues)
+    { }
+
+    SYCL_DEVICE &operator=(const SYCL_DEVICE &o)
+    {
+        id = o.id;
+        n_queues = o.n_queues;
+        i_queue.store(o.i_queue.load());
+        local_memory_size = o.local_memory_size;
+        selected_device_ = o.selected_device_;
+        queues = o.queues;
+        return *this;
+    }
 
     /**
      * @brief Returns false because target is not CPU.

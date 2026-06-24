@@ -278,8 +278,6 @@ void symmetric_matrix_matrix_diagonal_tiled(
     {
         for (std::size_t n = 0; n < n_tiles; ++n)
         {
-            hpx::shared_future<sycl::queue> f_dot_diag_syrk = hpx::make_ready_future(sycl_device.next_queue());
-
             // Compute inner product to obtain diagonal elements of
             // (K_MxN * (K^-1_NxN * K_NxM))
             result = dot_diag_syrk(sycl_device.next_queue(),
