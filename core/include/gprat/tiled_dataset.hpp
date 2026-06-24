@@ -195,10 +195,17 @@ struct tile_manager : hpx::components::component_base<tile_manager<T>>
             return hpx::make_ready_future();
         }
 
-        // We'd lose this tile after writing it, best to put it in the cache for now
-        cache_.insert(target_tile.id.get_gid(), generation, data);
-
-        return hpx::async(typename tile_holder<T>::set_data_action{}, target_tile.id, data);
+        // Insert into cache only after the remote write confirms success; inserting
+        // before the write would leave a stale cache entry if the remote call fails.
+        return hpx::async(typename tile_holder<T>::set_data_action{}, target_tile.id, data)
+            .then(
+                [this, self = this->get_id(), gid = target_tile.id.get_gid(), generation, data](
+                    hpx::future<void> &&f) mutable
+                {
+                    f.get();  // rethrow any remote exception
+                    cache_.insert(gid, generation, data);
+                    self = {};  // release our reference
+                });
     }
 
   private:
@@ -246,6 +253,14 @@ class tile_handle
     tile_handle() = default;
 
     tile_handle(std::vector<hpx::id_type> managers, std::size_t tile_index, std::size_t generation) :
+        managers_(std::make_shared<std::vector<hpx::id_type>>(std::move(managers))),
+        tile_index_(tile_index),
+        generation_(generation)
+    { }
+
+    tile_handle(std::shared_ptr<std::vector<hpx::id_type>> managers,
+                std::size_t tile_index,
+                std::size_t generation) :
         managers_(std::move(managers)),
         tile_index_(tile_index),
         generation_(generation)
@@ -254,16 +269,19 @@ class tile_handle
     // ReSharper disable once CppNonExplicitConversionOperator
     operator mutable_tile_data<T>() const { return get(); }  // NOLINT(*-explicit-constructor)
 
-    mutable_tile_data<T> get() const { return get_local_manager()->get_tile_data(tile_index_, generation_); }
+    mutable_tile_data<T> get() const { return local_manager()->get_tile_data(tile_index_, generation_); }
 
     hpx::future<mutable_tile_data<T>> get_async() const
     {
-        return get_local_manager()->get_tile_data_async(tile_index_, generation_);
+        return local_manager()->get_tile_data_async(tile_index_, generation_);
     }
 
-    hpx::future<tile_handle> set_async(const mutable_tile_data<T> &data) const
+    // Returns a new tile_handle with the incremented generation once the write completes.
+    // Callers MUST use the returned handle for subsequent reads; the original handle's
+    // generation_ is not updated.
+    [[nodiscard]] hpx::future<tile_handle> set_async(const mutable_tile_data<T> &data) const
     {
-        return get_local_manager()
+        return local_manager()
             ->set_tile_data_async(tile_index_, generation_ + 1, data)
             .then(
                 [self = *this](hpx::future<void> &&) mutable
@@ -279,28 +297,33 @@ class tile_handle
     template <typename Archive>
     void serialize(Archive &ar, unsigned)
     {
-        ar & managers_ & tile_index_ & generation_;
+        // Serialize the vector contents, not the shared_ptr itself.
+        // cached_manager_ is a runtime cache and is not serialized.
+        ar & *managers_ & tile_index_ & generation_;
     }
 
-    std::shared_ptr<server::tile_manager<T>> get_local_manager() const
+    std::shared_ptr<server::tile_manager<T>> local_manager() const
     {
+        if (cached_manager_)
+        {
+            return cached_manager_;
+        }
         const auto here = hpx::get_locality_id();
-        for (const auto &id : managers_)
+        for (const auto &id : *managers_)
         {
             if (here == hpx::naming::get_locality_id_from_id(id))
             {
-                return hpx::get_ptr<server::tile_manager<T>>(hpx::launch::sync, id);
+                cached_manager_ = hpx::get_ptr<server::tile_manager<T>>(hpx::launch::sync, id);
+                return cached_manager_;
             }
         }
-
         throw std::runtime_error("This locality is not known");
     }
 
-    // TODO: It would be best if the caller could give us the right manager already,
-    // but since the amount of localities is somewhat limited, this will do for now.
-    std::vector<hpx::id_type> managers_;
+    std::shared_ptr<std::vector<hpx::id_type>> managers_ = std::make_shared<std::vector<hpx::id_type>>();
     std::size_t tile_index_ = 0;
     std::size_t generation_ = 0;
+    mutable std::shared_ptr<server::tile_manager<T>> cached_manager_;
 };
 
 template <typename T>
@@ -368,7 +391,7 @@ create_tiled_dataset(std::span<const std::pair<hpx::id_type, std::size_t>> targe
     server::tile_manager_shared_data<T> manager_data;
     manager_data.tiles.reserve(num_tiles);
 
-    for (std::size_t i = 0; i < targets.size(); ++i)
+    for (std::size_t i = 0; i < targets.size() && manager_data.tiles.size() < num_tiles; ++i)
     {
         const auto locality = hpx::naming::get_locality_id_from_id(targets[i].first);
         for (hpx::id_type &id : holders[i].get())
@@ -381,6 +404,13 @@ create_tiled_dataset(std::span<const std::pair<hpx::id_type, std::size_t>> targe
         }
     }
 
+    if (manager_data.tiles.size() != num_tiles)
+    {
+        throw std::runtime_error(
+            "create_tiled_dataset: targets provided fewer slots (" + std::to_string(manager_data.tiles.size())
+            + ") than num_tiles (" + std::to_string(num_tiles) + ")");
+    }
+
     // Now we move on to the manager components
     std::vector<hpx::id_type> managers;
     managers.reserve(targets.size());
@@ -389,11 +419,12 @@ create_tiled_dataset(std::span<const std::pair<hpx::id_type, std::size_t>> targe
         managers.emplace_back(hpx::components::create<server::tile_manager<T>>(target.first, manager_data));
     }
 
-    // Finally, we create our fat tile_handles
+    // Finally, we create our fat tile_handles — all sharing one managers vector.
+    auto shared_managers = std::make_shared<std::vector<hpx::id_type>>(std::move(managers));
     tiled_dataset<T> tiles(num_tiles);
     for (std::size_t i = 0; i < num_tiles; ++i)
     {
-        tiles[i] = hpx::make_ready_future(tile_handle<T>{ managers, i, 0 });
+        tiles[i] = hpx::make_ready_future(tile_handle<T>{ shared_managers, i, 0 });
     }
     return tiles;
 }
