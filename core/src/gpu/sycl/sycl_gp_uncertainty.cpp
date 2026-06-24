@@ -2,7 +2,7 @@
 #include "gpu/sycl/sycl_gp_uncertainty.hpp"
 
 #include "gpu/sycl/sycl_utils.hpp"
-#include "target.hpp"
+#include "gprat/target.hpp"
 
 namespace gprat::sycl_backend
 {

@@ -120,8 +120,8 @@ CUDA_GPU get_gpu() { return CUDA_GPU(0, 1); }
 #if GPRAT_WITH_SYCL
 
 SYCL_DEVICE::SYCL_DEVICE(int id, int n_queues) :
-    id(id),
-    n_queues(n_queues),
+    id(static_cast<std::size_t>(id)),
+    n_queues(static_cast<std::size_t>(n_queues)),
     i_queue(0),
     local_memory_size(0),
     queues()
@@ -143,8 +143,8 @@ SYCL_DEVICE::SYCL_DEVICE(int id, int n_queues) :
             }
         }
 
-        std::size_t device_count = all_gpus.size();
-        if (id >= device_count)
+        const std::size_t device_count = all_gpus.size();
+        if (static_cast<std::size_t>(id) >= device_count)
         {
             throw std::runtime_error("Requested GPU device is not available.");
         }
@@ -233,7 +233,10 @@ void SYCL_DEVICE::sync_queues(std::vector<sycl::queue> &subset_of_queues)
     }
 }
 
-SYCL_DEVICE get_sycl_device(const std::size_t id, const std::size_t n_queues) { return SYCL_DEVICE(id, n_queues); }
+SYCL_DEVICE get_sycl_device(const std::size_t id, const std::size_t n_queues)
+{
+    return SYCL_DEVICE(static_cast<int>(id), static_cast<int>(n_queues));
+}
 
 SYCL_DEVICE get_sycl_device() { return SYCL_DEVICE(0, 1); }
 
@@ -349,13 +352,13 @@ int gpu_count()
                 }
             }
         }
-        int device_count = all_gpus.size();
-        return device_count;
+        return static_cast<int>(all_gpus.size());
     }
     catch (const sycl::exception &e)
     {
         std::cout << "SYCL exception: " << e.what() << "\n";
     }
+    return 0;
 
 #else
 

@@ -1,10 +1,10 @@
 #include "gpu/sycl/sycl_gp_functions.hpp"
 
-#include "gp_kernels.hpp"
+#include "gprat/kernels.hpp"
 #include "gpu/sycl/sycl_gp_algorithms.hpp"
 #include "gpu/sycl/sycl_tiled_algorithms.hpp"
 #include "gpu/sycl/sycl_utils.hpp"
-#include "target.hpp"
+#include "gprat/target.hpp"
 #include <hpx/algorithm.hpp>
 
 namespace gprat::sycl_backend
@@ -16,7 +16,7 @@ std::vector<double>
 predict(const std::vector<double> &h_training_input,
         const std::vector<double> &h_training_output,
         const std::vector<double> &h_test_input,
-        const gprat_hyper::SEKParams &sek_params,
+        const gprat::SEKParams &sek_params,
         int n_tiles,
         int n_tile_size,
         int m_tiles,
@@ -102,7 +102,7 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &h_training_input,
     const std::vector<double> &h_training_output,
     const std::vector<double> &h_test_input,
-    const gprat_hyper::SEKParams &sek_params,
+    const gprat::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -256,7 +256,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &h_training_input,
     const std::vector<double> &h_training_output,
     const std::vector<double> &h_test_input,
-    const gprat_hyper::SEKParams &sek_params,
+    const gprat::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -402,7 +402,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
 double compute_loss(const std::vector<double> &h_training_input,
                     const std::vector<double> &h_training_output,
-                    const gprat_hyper::SEKParams &sek_params,
+                    const gprat::SEKParams &sek_params,
                     int n_tiles,
                     int n_tile_size,
                     int n_regressors,
@@ -473,7 +473,7 @@ double compute_loss(const std::vector<double> &h_training_input,
 
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &h_training_input,
-         const gprat_hyper::SEKParams &sek_params,
+         const gprat::SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors,

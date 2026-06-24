@@ -5,7 +5,7 @@
 
 // GRPat
 #include "sycl_utils.hpp"
-#include <target.hpp>
+#include "gprat/target.hpp"
 
 // SYCL
 #include <sycl/sycl.hpp>
@@ -99,7 +99,6 @@ double *gemm(sycl::queue queue,
  */
 double *
 trsv(sycl::queue queue, double *f_A, double *f_b, const std::size_t N, const oneapi::math::transpose is_A_transposed);
-
 /**
  * @brief General matrix-vector multiplication: y = y - A(^T) * x
  *
@@ -192,7 +191,6 @@ class DotDiagSyrkKernel
  */
 double *
 dot_diag_gemm(sycl::queue queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N);
-
 /**
  * @brief Kernel class for vector update with diagonal GEMM
  */

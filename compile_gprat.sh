@@ -198,7 +198,18 @@ if command -v spack &>/dev/null; then
 
         elif [[ "$2" == "sycl" ]]; then # GPRat on NVIDIA GPUs with SYCL
 
-          if command -v icpx --version &>/dev/null; then
+          # Source Intel oneAPI environment if icpx is not yet in PATH
+          if ! command -v icpx &>/dev/null; then
+            ONEAPI_SETVARS="/scratch-simcl1/breyerml/Programs/spack/opt/spack/linux-zen4/intel-oneapi-compilers-2025.0.0-2mpawedxcm5k3tbn4uwjs7qfiwjdhqy6/setvars.sh"
+            if [[ -f "$ONEAPI_SETVARS" ]]; then
+              # setvars.sh requires a login shell; source just the compiler bin directory instead
+              ONEAPI_COMPILER_ROOT="$(dirname $ONEAPI_SETVARS)/compiler/2025.0"
+              export PATH="$ONEAPI_COMPILER_ROOT/bin:$PATH"
+              export LD_LIBRARY_PATH="$ONEAPI_COMPILER_ROOT/lib:${LD_LIBRARY_PATH:-}"
+            fi
+          fi
+
+          if command -v icpx &>/dev/null; then
 
             # Set default compiler to icpx
             export CXX=icpx
@@ -206,6 +217,13 @@ if command -v spack &>/dev/null; then
 
             # Set GPRat build options for SYCL on NVIDIA GPUs
             GPRAT_SYCL_NVIDIA=ON
+
+            # Load CUDA so icpx can find libdevice for NVIDIA SYCL targets
+            module load cuda/12.0.1
+            GPRAT_SYCL_CUDA_PATH=${CUDA_HOME}
+            # Detect GPU SM arch (e.g. sm_80 for A30); default to sm_80 if detection fails
+            GPRAT_SYCL_NVIDIA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d '.' | sed 's/^/sm_/')
+            GPRAT_SYCL_NVIDIA_ARCH=${GPRAT_SYCL_NVIDIA_ARCH:-sm_80}
 
             # Add oneMath installation to CMAKE_PREFIX_PATH
             CMAKE_PREFIX_PATH="${ONEMATH_NVIDIA_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
@@ -458,6 +476,8 @@ elif [[ $PRESET == "release-linux-sycl" || $PRESET == "dev-linux-sycl" ]]; then
     -DGPRAT_SYCL_AMD=$GPRAT_SYCL_AMD \
     -DGPRAT_SYCL_INTEL=$GPRAT_SYCL_INTEL \
     -DHIP_TARGETS=$HIP_TARGETS \
+    -DGPRAT_SYCL_CUDA_PATH=${GPRAT_SYCL_CUDA_PATH:-} \
+    -DGPRAT_SYCL_NVIDIA_ARCH=${GPRAT_SYCL_NVIDIA_ARCH:-} \
     -DGPRAT_ENABLE_TESTS=ON \
     -DGPRAT_ENABLE_EXAMPLES=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
