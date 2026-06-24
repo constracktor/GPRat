@@ -239,6 +239,8 @@ TEST_CASE("GP GPU: results match baseline", "[integration][gpu]")
 {
     if (!gprat::compiled_with_cuda() && !gprat::compiled_with_sycl())
         SKIP("GPU not compiled in — skipping GPU integration test.");
+    if (gprat::compiled_with_sycl() && !gprat::sycl_gpu_functional())
+        SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch).");
 
     const std::string root = get_data_directory();
 

@@ -1554,6 +1554,8 @@ int sycl_device_count()
             SKIP("GPRat not compiled with SYCL support");                                         \
         if (sycl_device_count() == 0)                                                             \
             SKIP("No SYCL GPU detected");                                                         \
+        if (!gprat::sycl_gpu_functional())                                                        \
+            SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch)");                       \
     } while (false)
 
 TEST_CASE("GP SYCL GPU: constructor", "[gpu][sycl]")

@@ -1,6 +1,9 @@
 #include "gprat/utils.hpp"
 
 #include <cstdio>
+#if GPRAT_WITH_SYCL
+#include <dlfcn.h>
+#endif
 
 GPRAT_NS_BEGIN
 
@@ -172,6 +175,20 @@ bool compiled_with_sycl()
 {
 #if GPRAT_WITH_SYCL
     return true;
+#else
+    return false;
+#endif
+}
+
+bool sycl_gpu_functional()
+{
+#if GPRAT_WITH_SYCL
+    // libonemath_lapack_cusolver.so requires sycl::_V1::detail::SubmissionInfo::SubmissionInfo()
+    // which was introduced after oneAPI 2025.0. If the symbol is absent the LAPACK backend will
+    // crash with a dynamic linker error at the first call site.
+    dlerror();  // clear any previous error
+    void *sym = dlsym(RTLD_DEFAULT, "_ZN4sycl3_V16detail14SubmissionInfoC1Ev");
+    return sym != nullptr;
 #else
     return false;
 #endif

@@ -10,6 +10,7 @@
 
 #if GPRAT_WITH_SYCL
 #include "gpu/sycl/sycl_gp_functions.hpp"
+#include "gprat/target.hpp"
 #endif
 
 GPRAT_NS_BEGIN
@@ -131,6 +132,22 @@ std::vector<double> GP::predict(const std::vector<double> &test_input, std::size
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
+#if GPRAT_WITH_SYCL
+    if (target_->is_sycl())
+    {
+        return sycl_backend::predict(
+            training_input_,
+            training_output_,
+            test_input,
+            kernel_params,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
+            *std::dynamic_pointer_cast<SYCL_DEVICE>(target_));
+    }
+#endif
 
     tiled_scheduler_local scheduler;
     return cpu::predict(
@@ -166,6 +183,22 @@ GP::predict_with_uncertainty(const std::vector<double> &test_input, std::size_t 
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
+#if GPRAT_WITH_SYCL
+    if (target_->is_sycl())
+    {
+        return sycl_backend::predict_with_uncertainty(
+            training_input_,
+            training_output_,
+            test_input,
+            kernel_params,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
+            *std::dynamic_pointer_cast<SYCL_DEVICE>(target_));
+    }
+#endif
     tiled_scheduler_local scheduler;
     return cpu::predict_with_uncertainty(
         scheduler,
@@ -198,6 +231,22 @@ GP::predict_with_full_cov(const std::vector<double> &test_input, std::size_t m_t
             static_cast<int>(m_tile_size),
             static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
+    }
+#endif
+#if GPRAT_WITH_SYCL
+    if (target_->is_sycl())
+    {
+        return sycl_backend::predict_with_full_cov(
+            training_input_,
+            training_output_,
+            test_input,
+            kernel_params,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(m_tiles),
+            static_cast<int>(m_tile_size),
+            static_cast<int>(n_reg),
+            *std::dynamic_pointer_cast<SYCL_DEVICE>(target_));
     }
 #endif
     tiled_scheduler_local scheduler;
@@ -275,6 +324,19 @@ double GP::calculate_loss()
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
     }
 #endif
+#if GPRAT_WITH_SYCL
+    if (target_->is_sycl())
+    {
+        return sycl_backend::compute_loss(
+            training_input_,
+            training_output_,
+            kernel_params,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(n_reg),
+            *std::dynamic_pointer_cast<SYCL_DEVICE>(target_));
+    }
+#endif
     tiled_scheduler_local scheduler;
     return cpu::calculate_loss(
         scheduler, training_input_, training_output_, kernel_params, n_tiles_, n_tile_size_, n_reg);
@@ -292,6 +354,27 @@ std::vector<mutable_tile_data<double>> GP::cholesky()
             static_cast<int>(n_tile_size_),
             static_cast<int>(n_reg),
             *std::dynamic_pointer_cast<CUDA_GPU>(target_));
+    }
+#endif
+#if GPRAT_WITH_SYCL
+    if (target_->is_sycl())
+    {
+        auto raw = sycl_backend::cholesky(
+            training_input_,
+            kernel_params,
+            static_cast<int>(n_tiles_),
+            static_cast<int>(n_tile_size_),
+            static_cast<int>(n_reg),
+            *std::dynamic_pointer_cast<SYCL_DEVICE>(target_));
+        std::vector<mutable_tile_data<double>> result;
+        result.reserve(raw.size());
+        for (auto &tile : raw)
+        {
+            mutable_tile_data<double> t(tile.size());
+            std::copy(tile.begin(), tile.end(), t.begin());
+            result.push_back(std::move(t));
+        }
+        return result;
     }
 #endif
     tiled_scheduler_local sched;

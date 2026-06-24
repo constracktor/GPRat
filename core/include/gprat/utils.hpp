@@ -105,6 +105,14 @@ bool compiled_with_cuda();
  */
 bool compiled_with_sycl();
 
+/**
+ * @brief Returns whether the SYCL GPU compute backend is functional at runtime.
+ *
+ * Returns false if required runtime libraries (e.g. oneMath LAPACK) are
+ * ABI-incompatible with the current SYCL runtime, even if compiled_with_sycl() is true.
+ */
+bool sycl_gpu_functional();
+
 GPRAT_NS_END
 
 #endif
