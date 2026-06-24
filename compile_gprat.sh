@@ -199,6 +199,7 @@ if command -v spack &>/dev/null; then
         elif [[ "$2" == "sycl" ]]; then # GPRat on NVIDIA GPUs with SYCL
 
           # Source Intel oneAPI environment if icpx is not yet in PATH
+          ONEAPI_COMPILER_ROOT=""
           if ! command -v icpx &>/dev/null; then
             ONEAPI_SETVARS="/scratch-simcl1/breyerml/Programs/spack/opt/spack/linux-zen4/intel-oneapi-compilers-2025.0.0-2mpawedxcm5k3tbn4uwjs7qfiwjdhqy6/setvars.sh"
             if [[ -f "$ONEAPI_SETVARS" ]]; then
@@ -207,6 +208,10 @@ if command -v spack &>/dev/null; then
               export PATH="$ONEAPI_COMPILER_ROOT/bin:$PATH"
               export LD_LIBRARY_PATH="$ONEAPI_COMPILER_ROOT/lib:${LD_LIBRARY_PATH:-}"
             fi
+          fi
+          if [[ -z "$ONEAPI_COMPILER_ROOT" ]]; then
+            # icpx was already in PATH; derive root from its location
+            ONEAPI_COMPILER_ROOT="$(dirname $(dirname $(which icpx)))"
           fi
 
           if command -v icpx &>/dev/null; then
@@ -478,6 +483,7 @@ elif [[ $PRESET == "release-linux-sycl" || $PRESET == "dev-linux-sycl" ]]; then
     -DHIP_TARGETS=$HIP_TARGETS \
     -DGPRAT_SYCL_CUDA_PATH=${GPRAT_SYCL_CUDA_PATH:-} \
     -DGPRAT_SYCL_NVIDIA_ARCH=${GPRAT_SYCL_NVIDIA_ARCH:-} \
+    -DCMAKE_BUILD_RPATH="${GPRAT_SYCL_CUDA_PATH:-}/lib64;${ONEAPI_COMPILER_ROOT}/lib" \
     -DGPRAT_ENABLE_TESTS=ON \
     -DGPRAT_ENABLE_EXAMPLES=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON

@@ -1534,4 +1534,269 @@ TEST_CASE("GP GPU: training data round-trip", "[gpu][cuda]")
     REQUIRE(gp_gpu.get_training_output() == train_out.data);
 }
 
+// SYCL GPU tests ////////////////////////////////////////////////////////////////////////////////
+// Mirror of the CUDA GPU tests above, using the same GP API.
+// Optimizer tests are omitted because the SYCL optimizer stubs are not yet implemented.
+
+#if GPRAT_WITH_SYCL
+
+namespace
+{
+int sycl_device_count()
+{
+    return gprat::gpu_count();
+}
+}  // namespace
+
+#define GPRAT_SKIP_IF_NO_SYCL_GPU()                                                                \
+    do {                                                                                           \
+        if (!gprat::compiled_with_sycl())                                                         \
+            SKIP("GPRat not compiled with SYCL support");                                         \
+        if (sycl_device_count() == 0)                                                             \
+            SKIP("No SYCL GPU detected");                                                         \
+    } while (false)
+
+TEST_CASE("GP SYCL GPU: constructor", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+
+    REQUIRE_NOTHROW(
+        (gprat::GP(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                   { true, true, true }, 0, 1)));
+}
+
+TEST_CASE("GP SYCL::predict: GPU matches CPU", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 64;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_pred = gp_cpu.predict(test_in.data, m_tiles, m_tile_size);
+    const auto gpu_pred = gp_gpu.predict(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(cpu_pred.size() == n_test);
+    REQUIRE(gpu_pred.size() == n_test);
+    for (std::size_t i = 0; i < n_test; ++i)
+        REQUIRE_THAT(gpu_pred[i], WithinRel(cpu_pred[i], 1e-4));
+}
+
+TEST_CASE("GP SYCL::predict_with_uncertainty: GPU matches CPU", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 64;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_unc = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+    const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(gpu_unc.size() == 2);
+    REQUIRE(gpu_unc[0].size() == n_test);
+    REQUIRE(gpu_unc[1].size() == n_test);
+    for (std::size_t i = 0; i < n_test; ++i)
+    {
+        REQUIRE_THAT(gpu_unc[0][i], WithinRel(cpu_unc[0][i], 1e-4));
+        REQUIRE_THAT(gpu_unc[1][i], WithinRel(cpu_unc[1][i], 1e-4));
+    }
+}
+
+TEST_CASE("GP SYCL::predict_with_full_cov: GPU matches CPU", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 64;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_cov = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size);
+    const auto gpu_cov = gp_gpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(gpu_cov.size() == 2);
+    REQUIRE(gpu_cov[0].size() == n_test);
+    for (std::size_t i = 0; i < n_test; ++i)
+        REQUIRE_THAT(gpu_cov[0][i], WithinRel(cpu_cov[0][i], 1e-4));
+}
+
+TEST_CASE("GP SYCL::calculate_loss: GPU matches CPU", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const double cpu_loss = gp_cpu.calculate_loss();
+    const double gpu_loss = gp_gpu.calculate_loss();
+
+    REQUIRE(std::isfinite(gpu_loss));
+    REQUIRE_THAT(gpu_loss, WithinRel(cpu_loss, 1e-4));
+}
+
+TEST_CASE("GP SYCL::cholesky: GPU tile count", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_L = gp_cpu.cholesky();
+    const auto gpu_L = gp_gpu.cholesky();
+
+    REQUIRE(gpu_L.size() == cpu_L.size());
+    REQUIRE(gpu_L[0].size() == cpu_L[0].size());
+    for (std::size_t t = 0; t < n_tiles; ++t)
+    {
+        const std::size_t diag = t * n_tiles + t;
+        for (std::size_t e = 0; e < tile_size * tile_size; ++e)
+            REQUIRE_THAT(gpu_L[diag].data()[e], WithinRel(cpu_L[diag].data()[e], 1e-4));
+    }
+}
+
+TEST_CASE("GP SYCL::cholesky: GPU values", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true });
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_L = gp_cpu.cholesky();
+    const auto gpu_L = gp_gpu.cholesky();
+
+    REQUIRE(gpu_L.size() == cpu_L.size());
+    for (std::size_t t = 0; t < cpu_L.size(); ++t)
+    {
+        REQUIRE(gpu_L[t].size() == cpu_L[t].size());
+        for (std::size_t e = 0; e < cpu_L[t].size(); ++e)
+            REQUIRE_THAT(gpu_L[t].data()[e], WithinRel(cpu_L[t].data()[e], 1e-4));
+    }
+}
+
+TEST_CASE("GP SYCL::predict_with_uncertainty: GPU variances positive", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 64;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(gpu_unc.size() == 2);
+    for (std::size_t i = 0; i < n_test; ++i)
+    {
+        REQUIRE(std::isfinite(gpu_unc[0][i]));
+        REQUIRE(gpu_unc[1][i] > 0.0);
+    }
+}
+
+TEST_CASE("GP SYCL GPU: training data round-trip", "[gpu][sycl]")
+{
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 64, n_tiles = 4, n_reg = 8;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
+
+    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                     { true, true, true }, 0, 1);
+
+    REQUIRE(gp_gpu.get_training_input() == train_in.data);
+    REQUIRE(gp_gpu.get_training_output() == train_out.data);
+}
+
+#endif  // GPRAT_WITH_SYCL
+
 }  // namespace gprat::test
