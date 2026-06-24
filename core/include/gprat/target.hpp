@@ -312,6 +312,7 @@ struct SYCL_DEVICE : public Target
     void sync_queues(std::vector<sycl::queue> &subset_of_queues);
 
   private:
+    sycl::device selected_device_;
     std::vector<sycl::queue> queues;
 };
 

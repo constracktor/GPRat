@@ -1,6 +1,7 @@
 #include "gprat/target.hpp"
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 #if GPRAT_WITH_CUDA
@@ -148,10 +149,14 @@ SYCL_DEVICE::SYCL_DEVICE(int id, int n_queues) :
         {
             throw std::runtime_error("Requested GPU device is not available.");
         }
+
+        // Store the selected device so create() can target it specifically.
+        selected_device_ = all_gpus[static_cast<std::size_t>(id)];
     }
-    catch (const sycl::exception &e)
+    catch (const std::exception &e)
     {
-        std::cout << "SYCL exception: " << e.what() << "\n";
+        std::cout << "SYCL error during device selection: " << e.what() << "\n";
+        throw;
     }
 }
 
@@ -174,20 +179,25 @@ void SYCL_DEVICE::create()
     {
         // Each fresh GP object creates its own queue from a bare selector, which
         // creates a new Level-Zero context; hundreds of cycles exhaust driver
-        // resources (DEVICE_LOST). Share one context process-wide instead.
-        static const sycl::device shared_device(sycl::gpu_selector_v);
-        static const sycl::context shared_context(shared_device);
+        // resources (DEVICE_LOST). Share one context per device process-wide instead.
+        static std::unordered_map<std::size_t, sycl::context> shared_contexts;
+        auto it = shared_contexts.find(id);
+        if (it == shared_contexts.end())
+        {
+            it = shared_contexts.emplace(id, sycl::context(selected_device_)).first;
+        }
 
         queues = std::vector<sycl::queue>(n_queues);
 
         for (size_t i = 0; i < n_queues; ++i)
         {
-            queues[i] = sycl::queue(shared_context, shared_device);
+            queues[i] = sycl::queue(it->second, selected_device_);
         }
     }
-    catch (const sycl::exception &e)
+    catch (const std::exception &e)
     {
-        std::cout << "SYCL exception during creation: " << e.what() << "\n";
+        std::cout << "SYCL error during queue creation: " << e.what() << "\n";
+        throw;
     }
 }
 
