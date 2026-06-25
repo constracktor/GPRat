@@ -31,6 +31,8 @@ int main(int argc, char *argv[])
         ("step", po::value<std::size_t>()->default_value(2), "Increment of training samples")
         ("loop", po::value<std::size_t>()->default_value(2), "Number of iterations to be performed for each number of training samples")
         ("opt_iter", po::value<std::size_t>()->default_value(1), "Number of optimization iterations")
+        ("use_gpu", "use CUDA GPU backend")
+        ("use_sycl", "use SYCL GPU backend")
     ;
     // clang-format on
 
@@ -60,16 +62,28 @@ int main(int argc, char *argv[])
     std::string out_path = vm["train_y_path"].as<std::string>();
     std::string test_path = vm["test_path"].as<std::string>();
 
-    const bool use_gpu =
-        gprat::compiled_with_cuda() && gprat::gpu_count() > 0 && argc > 1 && std::strcmp(argv[1], "--use_gpu") == 0;
+    const bool use_sycl = gprat::compiled_with_sycl() && gprat::gpu_count() > 0 && vm.count("use_sycl");
+    const bool use_gpu = gprat::compiled_with_cuda() && gprat::gpu_count() > 0 && vm.count("use_gpu");
 
     for (std::size_t core = vm["start-cores"].as<std::size_t>(); core <= N_CORES; core = core * 2)
     {
-        std::vector<std::string> args(argv, argv + argc);
-        args.push_back("--hpx:threads=" + std::to_string(core));
+        // Pass only the program name and HPX-specific args (--hpx:*) to the
+        // runtime — app-specific options (--train_x_path etc.) would cause HPX
+        // to abort with "unrecognized option".
+        std::vector<std::string> hpx_args;
+        hpx_args.push_back(argv[0]);
+        for (int i = 1; i < argc; ++i)
+        {
+            std::string_view arg(argv[i]);
+            if (arg.starts_with("--hpx") || arg.starts_with("-hpx"))
+            {
+                hpx_args.push_back(std::string(arg));
+            }
+        }
+        hpx_args.push_back("--hpx:threads=" + std::to_string(core));
 
         std::vector<char *> cstr_args;
-        for (auto &arg : args)
+        for (auto &arg : hpx_args)
             cstr_args.push_back(const_cast<char *>(arg.c_str()));
 
         int new_argc = static_cast<int>(cstr_args.size());
@@ -99,7 +113,47 @@ int main(int argc, char *argv[])
 
                 auto start_total = std::chrono::high_resolution_clock::now();
 
-                if (!use_gpu)
+                if (use_sycl)
+                {
+                    target = "sycl";
+
+                    auto start_init = std::chrono::high_resolution_clock::now();
+                    gprat::GP gp_sycl(
+                        training_input.data,
+                        training_output.data,
+                        n_tiles,
+                        tile_size,
+                        n_reg,
+                        { 1.0, 1.0, 0.1 },
+                        { true, true, true },
+                        0,
+                        1);
+                    auto end_init = std::chrono::high_resolution_clock::now();
+                    init_time = end_init - start_init;
+
+                    auto start_cholesky = std::chrono::high_resolution_clock::now();
+                    const auto cholesky_sycl = gp_sycl.cholesky();
+                    auto end_cholesky = std::chrono::high_resolution_clock::now();
+                    cholesky_time = end_cholesky - start_cholesky;
+
+                    opt_time = std::chrono::seconds(-1);
+
+                    auto start_pred_uncer = std::chrono::high_resolution_clock::now();
+                    const auto sum_sycl = gp_sycl.predict_with_uncertainty(test_input.data, result.first, result.second);
+                    auto end_pred_uncer = std::chrono::high_resolution_clock::now();
+                    pred_uncer_time = end_pred_uncer - start_pred_uncer;
+
+                    auto start_pred_full_cov = std::chrono::high_resolution_clock::now();
+                    const auto full_sycl = gp_sycl.predict_with_full_cov(test_input.data, result.first, result.second);
+                    auto end_pred_full_cov = std::chrono::high_resolution_clock::now();
+                    pred_full_cov_time = end_pred_full_cov - start_pred_full_cov;
+
+                    auto start_pred = std::chrono::high_resolution_clock::now();
+                    const auto pred_sycl = gp_sycl.predict(test_input.data, result.first, result.second);
+                    auto end_pred = std::chrono::high_resolution_clock::now();
+                    pred_time = end_pred - start_pred;
+                }
+                else if (!use_gpu)
                 {
                     target = "cpu";
 

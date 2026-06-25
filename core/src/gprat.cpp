@@ -370,9 +370,16 @@ std::vector<mutable_tile_data<double>> GP::cholesky()
         result.reserve(raw.size());
         for (auto &tile : raw)
         {
-            mutable_tile_data<double> t(tile.size());
-            std::copy(tile.begin(), tile.end(), t.begin());
-            result.push_back(std::move(t));
+            if (tile.empty())
+            {
+                result.emplace_back();
+            }
+            else
+            {
+                mutable_tile_data<double> t(tile.size());
+                std::copy(tile.begin(), tile.end(), t.begin());
+                result.push_back(std::move(t));
+            }
         }
         return result;
     }

@@ -201,10 +201,10 @@ if command -v spack &>/dev/null; then
           # Source Intel oneAPI environment if icpx is not yet in PATH
           ONEAPI_COMPILER_ROOT=""
           if ! command -v icpx &>/dev/null; then
-            ONEAPI_SETVARS="/scratch-simcl1/breyerml/Programs/spack/opt/spack/linux-zen4/intel-oneapi-compilers-2025.0.0-2mpawedxcm5k3tbn4uwjs7qfiwjdhqy6/setvars.sh"
+            ONEAPI_SETVARS="/import/sgs.scratch-simcl1/breyerml/Programs/spack/opt/spack/linux-zen4/intel-oneapi-compilers-2025.1.1-5ynklzzqslh265azbglzqdtecdghl7ob/setvars.sh"
             if [[ -f "$ONEAPI_SETVARS" ]]; then
               # setvars.sh requires a login shell; source just the compiler bin directory instead
-              ONEAPI_COMPILER_ROOT="$(dirname $ONEAPI_SETVARS)/compiler/2025.0"
+              ONEAPI_COMPILER_ROOT="$(dirname $ONEAPI_SETVARS)/compiler/2025.1"
               export PATH="$ONEAPI_COMPILER_ROOT/bin:$PATH"
               export LD_LIBRARY_PATH="$ONEAPI_COMPILER_ROOT/lib:${LD_LIBRARY_PATH:-}"
             fi

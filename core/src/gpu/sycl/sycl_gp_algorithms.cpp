@@ -458,16 +458,14 @@ std::vector<double> copy_tiled_vector_to_host_vector(std::vector<hpx::shared_fut
     try
     {
         std::vector<double> h_vector(n_tiles * n_tile_size);
-        std::vector<sycl::queue> queues(n_tiles);
+        sycl::queue queue = sycl_device.next_queue();
 
         for (std::size_t i = 0; i < n_tiles; i++)
         {
-            queues[i] = sycl_device.next_queue();
-
-            queues[i].memcpy(h_vector.data() + i * n_tile_size, d_tiles[i].get(), n_tile_size * sizeof(double));
+            queue.memcpy(h_vector.data() + i * n_tile_size, d_tiles[i].get(), n_tile_size * sizeof(double));
         }
 
-        sycl_device.sync_queues(queues);
+        queue.wait();
         return h_vector;
     }
     catch (const sycl::exception &e)
@@ -486,24 +484,25 @@ std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
     try
     {
         std::vector<std::vector<double>> h_tiles(n_tiles * n_tiles);
-        std::vector<sycl::queue> queues(n_tiles * (n_tiles + 1) / 2);
+        sycl::queue queue = sycl_device.next_queue();
 
         for (std::size_t i = 0; i < n_tiles; ++i)
         {
             for (std::size_t j = 0; j <= i; ++j)
             {
-                queues[i] = sycl_device.next_queue();
                 h_tiles[i * n_tiles + j].resize(n_tile_size * n_tile_size);
-
-                queues[i].memcpy(h_tiles[i * n_tiles + j].data(),
-                                 d_tiles[i * n_tiles + j].get(),
-                                 n_tile_size * n_tile_size * sizeof(double));
-
-                sycl::free(d_tiles[i * n_tiles + j].get(), queues[i]);
+                queue.memcpy(h_tiles[i * n_tiles + j].data(),
+                             d_tiles[i * n_tiles + j].get(),
+                             n_tile_size * n_tile_size * sizeof(double));
             }
         }
 
-        sycl_device.sync_queues(queues);
+        queue.wait();
+
+        for (std::size_t i = 0; i < n_tiles; ++i)
+            for (std::size_t j = 0; j <= i; ++j)
+                sycl::free(d_tiles[i * n_tiles + j].get(), queue);
+
         return h_tiles;
     }
     catch (const sycl::exception &e)
