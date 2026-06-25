@@ -1,4 +1,4 @@
-﻿#ifndef GPRAT_DETAIL_ACTIONS_HPP
+#ifndef GPRAT_DETAIL_ACTIONS_HPP
 #define GPRAT_DETAIL_ACTIONS_HPP
 
 #pragma once
