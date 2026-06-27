@@ -68,6 +68,8 @@ then
 
 			echo "Found gprat_gpu_clang environment, activating it."
 			spack env activate gprat_gpu_clang
+			module load cuda/12.0.1
+			module load clang/17.0.1
 			LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
 			LD_LIBRARY_PATH=$(spack location -i openblas)/lib:$LD_LIBRARY_PATH
 			LD_LIBRARY_PATH=$(spack location -i intel-oneapi-mkl)/lib:$LD_LIBRARY_PATH
@@ -107,7 +109,7 @@ then
 		if spack env list | grep -q "gprat_cpu_gcc"; then
 			echo "Found gprat_cpu_gcc environment, activating it."
 			spack env activate gprat_cpu_gcc
-			module load gcc/14.2.0
+			module load gcc/14.1.0
 			LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
 			LD_LIBRARY_PATH=$(spack location -i openblas)/lib:$LD_LIBRARY_PATH
 			LD_LIBRARY_PATH=$(spack location -i intel-oneapi-mkl)/lib:$LD_LIBRARY_PATH

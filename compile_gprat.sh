@@ -61,7 +61,7 @@ elif [[ "$2" == "sycl" ]]; then
     echo "Input parameter for release or dev mode is missing. Using default: Build in Release mode"
     PRESET=release-linux-sycl
   fi
-elif [[ "$2" != "cpu" ]]; then
+else
   echo "Input parameter is not any of {cpu,cuda,sycl}. Using default: CPU in release mode."
   PRESET=release-linux
 fi
@@ -86,6 +86,14 @@ else
   GPRAT_APEX_STEPS=OFF
   GPRAT_APEX_CHOLESKY=OFF
 fi
+
+###################################################################################################
+# SYCL target defaults (overridden per host below)
+###################################################################################################
+GPRAT_SYCL_NVIDIA=${GPRAT_SYCL_NVIDIA:-OFF}
+GPRAT_SYCL_AMD=${GPRAT_SYCL_AMD:-OFF}
+GPRAT_SYCL_INTEL=${GPRAT_SYCL_INTEL:-OFF}
+HIP_TARGETS=${HIP_TARGETS:-}
 
 ###################################################################################################
 # Pick Spack installation depending on the host
