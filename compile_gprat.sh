@@ -298,8 +298,39 @@ if command -v spack &>/dev/null; then
 
         if [[ "$2" == "sycl" ]]; then # GPRat on AMD GPUs with SYCL
 
+          # Source Intel oneAPI environment if icpx is not yet in PATH
+          ONEAPI_COMPILER_ROOT=""
+          if ! command -v icpx &>/dev/null; then
+            ONEAPI_SETVARS="/import/sgs.scratch-simcl1/breyerml/Programs/spack/opt/spack/linux-zen4/intel-oneapi-compilers-2025.1.1-5ynklzzqslh265azbglzqdtecdghl7ob/setvars.sh"
+            if [[ -f "$ONEAPI_SETVARS" ]]; then
+              # setvars.sh requires a login shell; source just the compiler bin directory instead
+              ONEAPI_COMPILER_ROOT="$(dirname $ONEAPI_SETVARS)/compiler/2025.1"
+              export PATH="$ONEAPI_COMPILER_ROOT/bin:$PATH"
+              export LD_LIBRARY_PATH="$ONEAPI_COMPILER_ROOT/lib:${LD_LIBRARY_PATH:-}"
+            fi
+          fi
+          if [[ -z "$ONEAPI_COMPILER_ROOT" ]] && command -v icpx &>/dev/null; then
+            # icpx was already in PATH; derive root from its location
+            ONEAPI_COMPILER_ROOT="$(dirname $(dirname $(which icpx)))"
+          fi
+
+          # Set up ROCm/HIP environment (required for AMD GPU device libraries at link time)
+          ROCM_PATH=${ROCM_PATH:-/opt/rocm-6.4.0}
+          if [[ -d "$ROCM_PATH" ]]; then
+            export PATH="$ROCM_PATH/bin:$PATH"
+            export LD_LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib64:$ROCM_PATH/hip/lib:${LD_LIBRARY_PATH:-}"
+            export LIBRARY_PATH="$ROCM_PATH/lib:$ROCM_PATH/lib64:$ROCM_PATH/hip/lib:${LIBRARY_PATH:-}"
+            export ROCM_PATH
+          fi
+          # Compatibility shim: libamd_comgr.so.2 → libamd_comgr.so.3 for icpx HIP adapter
+          COMGR_COMPAT_DIR="/data/scratch-simcl1/breyerml/Programs/.modulefiles/icpx"
+          if [[ -d "$COMGR_COMPAT_DIR" ]]; then
+            export LD_LIBRARY_PATH="$COMGR_COMPAT_DIR:${LD_LIBRARY_PATH:-}"
+          fi
+          export HSA_XNACK=1
+
           if command -v icpx &>/dev/null; then
-            
+
             # Set default compiler to icpx
             export CXX=icpx
             export CC=icx
