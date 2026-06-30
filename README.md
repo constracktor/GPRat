@@ -6,6 +6,10 @@ Leveraging the asynchronous many-task runtime HPX, we aim to combine the perform
 with the ease of use of commonly available Python libraries.
 Thus, GPRat can be conveniently integrated into Python projects without binding overheads or used directly with pure C++
 code.
+Computations run on CPUs as well as NVIDIA GPUs (CUDA) and Intel/AMD GPUs (SYCL), in single (fp32) and double (fp64)
+precision.
+GPRat further provides a NUMA-aware allocator for tile data, performance counters, and optional distributed execution
+via HPX actions.
 
 ## Dependencies
 
@@ -48,13 +52,30 @@ The following options can be set to include / exclude parts of the project:
 |--------------------------------|--------------------------------------------------------------------------------------|-----------------|
 | GPRAT_BUILD_CORE               | Enable/Disable building of the core library                                          | ON              |
 | GPRAT_BUILD_BINDINGS           | Enable/Disable building of the Python bindings                                       | ON              |
-| GPRAT_ENABLE_FORMAT_TARGETS    | Enable/Disable code formatting helper targets                                        | ON if top-level |
 | GPRAT_ENABLE_EXAMPLES          | Enable/Disable example projects                                                      | ON if top-level |
-| GPRAT_ENABLE_MKL               | Enable/Disable usage of MKL library                                                  | OFF             |
+| GPRAT_ENABLE_TESTS             | Enable/Disable building of unit and integration tests                                | ON if top-level |
+| GPRAT_ENABLE_FORMAT_TARGETS    | Enable/Disable code formatting helper targets                                        | ON if top-level |
+| GPRAT_ENABLE_MKL               | Enable/Disable support for Intel oneMKL                                              | OFF             |
 | GPRAT_WITH_CUDA                | Enable/disable compilation with CUDA support (NVIDIA GPUs)                           | OFF             |
 | GPRAT_WITH_SYCL                | Enable/disable compilation with SYCL support (Intel and AMD GPUs via oneMath)        | OFF             |
+| GPRAT_WITH_DISTRIBUTED         | Enable/disable distributed GP support via HPX actions                                | OFF             |
 | GPRAT_APEX_STEPS               | Enable/disable compilation for steps duration measurement with APEX                  | OFF             |
 | GPRAT_APEX_CHOLESKY            | Enable/disable compilation for measuring cholesky assembly and computation with APEX | OFF             |
+
+A convenience script `compile_gprat.sh` is provided to configure, build, and install GPRat with a single command.
+It takes five parameters:
+
+```sh
+./compile_gprat.sh [python/cpp] [cpu/cuda/sycl] [release/dev] [mkl/none] [steps/cholesky/none]
+```
+
+- `$1`: build the Python bindings (`python`) or the C++ library (`cpp`)
+- `$2`: backend, CPU (`cpu`), CUDA for NVIDIA GPUs (`cuda`), or SYCL for Intel and AMD GPUs (`sycl`)
+- `$3`: build in `release` or `dev` mode
+- `$4`: enable Intel oneMKL (`mkl`) or use OpenBLAS (`none`)
+- `$5`: APEX profiling, measure step durations (`steps`), cholesky assembly and computation (`cholesky`), or disable profiling (`none`)
+
+Computations are supported in both single (fp32) and double (fp64) precision.
 
 Respective scripts can be found in this directory.
 
@@ -73,13 +94,15 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 - The example is built as part of the main project.
   - Go to `build/` and execute `./gprat_cpp [--use-gpu]` to run the example.
   - If you want to use an installed GPRat version:
-    Run `./run_gprat_cpp.sh [cpu/cuda/sycl] [mkl/none] [nvidia/amd/intel]` to build and run the example.
+    Run `./run_gprat_cpp.sh [cpu/cuda/sycl] [nvidia/amd/intel]` to build and run the example.
+    The second parameter selects the SYCL device and is only required when GPRat was compiled with the SYCL backend.
 
 ### To run GPRat with Python
 
 - Go to [`examples/gprat_python`](examples/gprat_python/)
 - Set parameters in [`config.json`](examples/gprat_python/config.json)
-- Run `./run_gprat_python.sh [cpu/cuda/sycl]` to run the example
+- Run `./run_gprat_python.sh [cpu/cuda/sycl] [nvidia/amd/intel]` to run the example.
+  The second parameter selects the SYCL device and is only required when GPRat was compiled with the SYCL backend.
 
 ### To run GPflow reference
 
