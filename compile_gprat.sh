@@ -217,7 +217,7 @@ if command -v spack &>/dev/null; then
               export LD_LIBRARY_PATH="$ONEAPI_COMPILER_ROOT/lib:${LD_LIBRARY_PATH:-}"
             fi
           fi
-          if [[ -z "$ONEAPI_COMPILER_ROOT" ]]; then
+          if [[ -z "$ONEAPI_COMPILER_ROOT" ]] && command -v icpx &>/dev/null; then
             # icpx was already in PATH; derive root from its location
             ONEAPI_COMPILER_ROOT="$(dirname $(dirname $(which icpx)))"
           fi
@@ -266,7 +266,7 @@ if command -v spack &>/dev/null; then
   # simcl1n3 with AMD GPU #########################################################################
   elif [[ "$HOSTNAME" == "simcl1n3" ]]; then
 
-      if [[ "$2" == "cpu" ]]; then # CPU build
+    if [[ "$2" == "cpu" ]]; then # CPU build
 
       # Check if the gprat_cpu_gcc environment exists
       if spack env list | grep -q "gprat_cpu_gcc"; then

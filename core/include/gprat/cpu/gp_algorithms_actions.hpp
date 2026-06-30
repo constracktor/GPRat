@@ -96,7 +96,7 @@ GPRAT_DECLARE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_output,
                                "gen_tile_output");
 GPRAT_DECLARE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_zeros,
                                GPRAT_NS::cpu::gen_tile_zeros_distributed_action,
-                               "gen_tile_output");
+                               "gen_tile_zeros");
 GPRAT_DECLARE_PLAIN_ACTION_FOR(&GPRAT_NS::cpu::gen_tile_identity,
                                GPRAT_NS::cpu::gen_tile_identity_distributed_action,
                                "gen_tile_identity");
