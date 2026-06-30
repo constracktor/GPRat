@@ -71,10 +71,7 @@ bool load_or_create_expected_results(
                 (!fallback_results.full.empty() &&
                  (results.full.empty() || results.full.size() != fallback_results.full.size())) ||
                 (!fallback_results.pred.empty() &&
-                 results.pred.size() != fallback_results.pred.size()) ||
-                (!fallback_results.sum_no_optimize.empty() && results.sum_no_optimize.empty()) ||
-                (!fallback_results.full_no_optimize.empty() && results.full_no_optimize.empty()) ||
-                (!fallback_results.pred_no_optimize.empty() && results.pred_no_optimize.empty());
+                 results.pred.size() != fallback_results.pred.size());
             if (!stale)
                 return true;
 
@@ -165,11 +162,9 @@ gprat_results run_on_data_gpu(const std::string &train_path, const std::string &
     results_gpu.cholesky = to_vector(gp_gpu.cholesky());
     // NOTE: optimize and optimize_step are currently not implemented for GPU.
     // When GPU optimize is added, extend this function and update the GPU test case to verify losses.
-    results_gpu.sum_no_optimize =
-        gp_gpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
-    results_gpu.full_no_optimize =
-        gp_gpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
-    results_gpu.pred_no_optimize = gp_gpu.predict(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.sum = gp_gpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.full = gp_gpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.pred = gp_gpu.predict(test_input.data, test_tiles.first, test_tiles.second);
 
     gprat::stop_hpx_runtime();
 
@@ -266,28 +261,28 @@ TEST_CASE("GP GPU: results match baseline", "[integration][gpu]")
         }
     }
 
-    for (std::size_t i = 0, n = results.sum_no_optimize.size(); i != n; ++i)
+    for (std::size_t i = 0, n = results.sum.size(); i != n; ++i)
     {
-        for (std::size_t j = 0, m = results.sum_no_optimize[i].size(); j != m; ++j)
+        for (std::size_t j = 0, m = results.sum[i].size(); j != m; ++j)
         {
             INFO("GPU sum " << i << " " << j);
-            REQUIRE_THAT(results.sum_no_optimize[i][j], WithinRel(expected_results.sum_no_optimize[i][j], eps));
+            REQUIRE_THAT(results.sum[i][j], WithinRel(expected_results.sum[i][j], eps));
         }
     }
 
-    for (std::size_t i = 0, n = results.full_no_optimize.size(); i != n; ++i)
+    for (std::size_t i = 0, n = results.full.size(); i != n; ++i)
     {
-        for (std::size_t j = 0, m = results.full_no_optimize[i].size(); j != m; ++j)
+        for (std::size_t j = 0, m = results.full[i].size(); j != m; ++j)
         {
             INFO("GPU full " << i << " " << j);
-            REQUIRE_THAT(results.full_no_optimize[i][j], WithinRel(expected_results.full_no_optimize[i][j], eps));
+            REQUIRE_THAT(results.full[i][j], WithinRel(expected_results.full[i][j], eps));
         }
     }
 
-    for (std::size_t i = 0, n = results.pred_no_optimize.size(); i != n; ++i)
+    for (std::size_t i = 0, n = results.pred.size(); i != n; ++i)
     {
         INFO("GPU pred " << i);
-        REQUIRE_THAT(results.pred_no_optimize[i], WithinRel(expected_results.pred_no_optimize[i], eps));
+        REQUIRE_THAT(results.pred[i], WithinRel(expected_results.pred[i], eps));
     }
 }
 

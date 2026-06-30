@@ -13,9 +13,6 @@ struct gprat_results
     std::vector<std::vector<double>> sum;
     std::vector<std::vector<double>> full;
     std::vector<double> pred;
-    std::vector<std::vector<double>> sum_no_optimize;
-    std::vector<std::vector<double>> full_no_optimize;
-    std::vector<double> pred_no_optimize;
 };
 
 // The following two functions are for JSON (de-)serialization
@@ -27,9 +24,6 @@ inline void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, cons
         { "sum", boost::json::value_from(results.sum) },
         { "full", boost::json::value_from(results.full) },
         { "pred", boost::json::value_from(results.pred) },
-        { "sum_no_optimize", boost::json::value_from(results.sum_no_optimize) },
-        { "full_no_optimize", boost::json::value_from(results.full_no_optimize) },
-        { "pred_no_optimize", boost::json::value_from(results.pred_no_optimize) },
     };
 }
 
@@ -49,9 +43,6 @@ inline gprat_results tag_invoke(boost::json::value_to_tag<gprat_results>, const 
     extract(obj, results.sum, "sum");
     extract(obj, results.full, "full");
     extract(obj, results.pred, "pred");
-    extract(obj, results.sum_no_optimize, "sum_no_optimize");
-    extract(obj, results.full_no_optimize, "full_no_optimize");
-    extract(obj, results.pred_no_optimize, "pred_no_optimize");
     return results;
 }
 
