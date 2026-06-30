@@ -1,6 +1,5 @@
 #include "gprat/gpu/gp_functions.cuh"
 
-#include "apex_utils.hpp"
 #include "gprat/gpu/cuda_utils.cuh"
 #include "gprat/gpu/gp_algorithms.cuh"
 #include "gprat/gpu/tiled_algorithms.cuh"
@@ -8,6 +7,7 @@
 #include "gprat/target.hpp"
 #include "gprat/tile_data.hpp"
 
+#include "apex_utils.hpp"
 #include <cuda_runtime.h>
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>

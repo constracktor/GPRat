@@ -8,18 +8,15 @@
 
 GPRAT_NS_BEGIN
 
-mutable_tile_data<double> potrf(const mutable_tile_data<double> &A, const int N)
-{
-    return detail::potrf_impl(A, N);
-}
+mutable_tile_data<double> potrf(const mutable_tile_data<double> &A, const int N) { return detail::potrf_impl(A, N); }
 
-mutable_tile_data<double> trsm(
-    const const_tile_data<double> &L,
-    const mutable_tile_data<double> &A,
-    const int N,
-    const int M,
-    const BLAS_TRANSPOSE transpose_L,
-    const BLAS_SIDE side_L)
+mutable_tile_data<double>
+trsm(const const_tile_data<double> &L,
+     const mutable_tile_data<double> &A,
+     const int N,
+     const int M,
+     const BLAS_TRANSPOSE transpose_L,
+     const BLAS_SIDE side_L)
 {
     return detail::trsm_impl(L, A, N, M, transpose_L, side_L);
 }
@@ -29,52 +26,49 @@ mutable_tile_data<double> syrk(const mutable_tile_data<double> &A, const const_t
     return detail::syrk_impl(A, B, N);
 }
 
-mutable_tile_data<double> gemm(
-    const const_tile_data<double> &A,
-    const const_tile_data<double> &B,
-    const mutable_tile_data<double> &C,
-    const int N,
-    const int M,
-    const int K,
-    const BLAS_TRANSPOSE transpose_A,
-    const BLAS_TRANSPOSE transpose_B)
+mutable_tile_data<double>
+gemm(const const_tile_data<double> &A,
+     const const_tile_data<double> &B,
+     const mutable_tile_data<double> &C,
+     const int N,
+     const int M,
+     const int K,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_TRANSPOSE transpose_B)
 {
     return detail::gemm_impl(A, B, C, N, M, K, transpose_A, transpose_B);
 }
 
 mutable_tile_data<double> trsv(
-    const const_tile_data<double> &L,
-    const mutable_tile_data<double> &a,
-    const int N,
-    const BLAS_TRANSPOSE transpose_L)
+    const const_tile_data<double> &L, const mutable_tile_data<double> &a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
     return detail::trsv_impl(L, a, N, transpose_L);
 }
 
-mutable_tile_data<double> gemv(
-    const const_tile_data<double> &A,
-    const const_tile_data<double> &a,
-    const mutable_tile_data<double> &b,
-    const int N,
-    const int M,
-    const BLAS_ALPHA alpha,
-    const BLAS_TRANSPOSE transpose_A)
+mutable_tile_data<double>
+gemv(const const_tile_data<double> &A,
+     const const_tile_data<double> &a,
+     const mutable_tile_data<double> &b,
+     const int N,
+     const int M,
+     const BLAS_ALPHA alpha,
+     const BLAS_TRANSPOSE transpose_A)
 {
     return detail::gemv_impl(A, a, b, N, M, alpha, transpose_A);
 }
 
-mutable_tile_data<double> dot_diag_syrk(
-    const const_tile_data<double> &A, const mutable_tile_data<double> &r, const int N, const int M)
+mutable_tile_data<double>
+dot_diag_syrk(const const_tile_data<double> &A, const mutable_tile_data<double> &r, const int N, const int M)
 {
     return detail::dot_diag_syrk_impl(A, r, N, M);
 }
 
-mutable_tile_data<double> dot_diag_gemm(
-    const const_tile_data<double> &A,
-    const const_tile_data<double> &B,
-    const mutable_tile_data<double> &r,
-    const int N,
-    const int M)
+mutable_tile_data<double>
+dot_diag_gemm(const const_tile_data<double> &A,
+              const const_tile_data<double> &B,
+              const mutable_tile_data<double> &r,
+              const int N,
+              const int M)
 {
     return detail::dot_diag_gemm_impl(A, B, r, N, M);
 }
@@ -84,10 +78,7 @@ mutable_tile_data<double> axpy(const mutable_tile_data<double> &y, const const_t
     return detail::axpy_impl(y, x, N);
 }
 
-double dot(std::span<const double> a, std::span<const double> b, const int N)
-{
-    return detail::dot_impl(a, b, N);
-}
+double dot(std::span<const double> a, std::span<const double> b, const int N) { return detail::dot_impl(a, b, N); }
 
 #ifdef HPX_HAVE_MODULE_PERFORMANCE_COUNTERS
 namespace detail

@@ -246,8 +246,7 @@ void run(hpx::program_options::variables_map &vm)
 #undef REQUIRE_THAT
 #define REQUIRE_THAT(a, b)                                                                                             \
     if (!(b).match(a))                                                                                                 \
-        throw std::runtime_error(                                                                                      \
-            std::string(#a) + " != " + #b + ": " + std::to_string(a) + " " + (b).describe());
+        throw std::runtime_error(std::string(#a) + " != " + #b + ": " + std::to_string(a) + " " + (b).describe());
                 const auto &expected_results = *test_results;
                 std::cerr << "Validating results..." << std::endl;
                 REQUIRE(results.cholesky.size() == expected_results.cholesky.size());

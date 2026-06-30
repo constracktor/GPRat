@@ -54,8 +54,7 @@ hpx::future<double> compute_loss_distributed(const tile_handle<double> &K_diag_t
         hpx::launch::async,
         [=](hpx::future<mutable_tile_data<double>> &&K_diag_tiled,
             hpx::future<mutable_tile_data<double>> &&alpha_tiled,
-            hpx::future<mutable_tile_data<double>> &&y_tiled)
-        {
+            hpx::future<mutable_tile_data<double>> &&y_tiled) {
             return cpu::compute_loss(
                 K_diag_tiled.get().as_span(), alpha_tiled.get().as_span(), y_tiled.get().as_span(), N);
         },

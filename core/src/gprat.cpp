@@ -9,8 +9,9 @@
 #endif
 
 #if GPRAT_WITH_SYCL
-#include "gpu/sycl/sycl_gp_functions.hpp"
 #include "gprat/target.hpp"
+
+#include "gpu/sycl/sycl_gp_functions.hpp"
 #endif
 
 GPRAT_NS_BEGIN

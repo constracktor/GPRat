@@ -3,8 +3,8 @@
 
 // GPRat
 #include "gprat/hyperparameters.hpp"
-#include "gprat/target.hpp"
 #include "gprat/kernels.hpp"
+#include "gprat/target.hpp"
 
 // HPX
 #include <hpx/future.hpp>

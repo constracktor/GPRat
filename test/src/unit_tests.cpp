@@ -1,19 +1,19 @@
 #include "gprat/cpu/adapter_cblas_fp32.hpp"
 #include "gprat/cpu/adapter_cblas_fp64.hpp"
-#include "gprat/performance_counters.hpp"
 #include "gprat/cpu/gp_algorithms.hpp"
 #include "gprat/gprat.hpp"
 #include "gprat/hyperparameters.hpp"
 #include "gprat/kernels.hpp"
+#include "gprat/performance_counters.hpp"
 #include "gprat/utils.hpp"
-#include <cstdio>
-#include <fstream>
-#include <unistd.h>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <cstdio>
+#include <fstream>
 #include <sstream>
+#include <unistd.h>
 using Catch::Matchers::ContainsSubstring;
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
@@ -25,7 +25,9 @@ static gprat::mutable_tile_data<T> make_tile(std::initializer_list<T> vals)
     gprat::mutable_tile_data<T> t(vals.size());
     std::size_t i = 0;
     for (const auto &v : vals)
+    {
         t.data()[i++] = v;
+    }
     return t;
 }
 
@@ -44,6 +46,7 @@ namespace
 struct hpx_runtime_guard
 {
     hpx_runtime_guard() { gprat::start_hpx_runtime(0, nullptr); }
+
     ~hpx_runtime_guard() { gprat::stop_hpx_runtime(); }
 };
 }  // namespace
@@ -154,8 +157,7 @@ TEST_CASE("GP::optimize: loss count", "[unit][optimizer][cpu]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, opt_iter };
@@ -177,8 +179,7 @@ TEST_CASE("GP::optimize_step: finite loss", "[unit][optimizer][cpu]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 1 };
@@ -200,8 +201,7 @@ TEST_CASE("GP::calculate_loss: finite", "[unit][loss][cpu]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const double loss = gp.calculate_loss();
@@ -222,8 +222,7 @@ TEST_CASE("GP::optimize: loss decreases", "[unit][optimizer][cpu][fragile]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.1, 0.9, 0.999, 1e-8, 10 };
@@ -324,8 +323,7 @@ TEST_CASE("GP: training data round-trip", "[unit][gp]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     REQUIRE(gp.get_training_input() == train_in.data);
     REQUIRE(gp.get_training_output() == train_out.data);
@@ -341,8 +339,7 @@ TEST_CASE("GP: repr fields", "[unit][gp]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     const auto s = gp.repr();
     REQUIRE_THAT(s, ContainsSubstring("lengthscale"));
@@ -363,8 +360,7 @@ TEST_CASE("GP::predict: output size", "[unit][gp][predict]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const auto pred = gp.predict(test_in.data, m_tiles, m_tile_size);
@@ -391,8 +387,7 @@ TEST_CASE("GP::cholesky: tile structure", "[unit][gp][cholesky]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const auto L = gp.cholesky();
@@ -414,8 +409,7 @@ TEST_CASE("GP::optimize: no trainable params", "[unit][optimizer][cpu]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { false, false, false });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { false, false, false });
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.1, 0.9, 0.999, 1e-8, 5 };
@@ -423,7 +417,9 @@ TEST_CASE("GP::optimize: no trainable params", "[unit][optimizer][cpu]")
 
     // All losses should be equal — no parameters moved
     for (std::size_t i = 1; i < losses.size(); ++i)
+    {
         REQUIRE_THAT(losses[i], WithinRel(losses[0], 1e-10));
+    }
 }
 
 // GP kernel_params live mutation /////////////////////////////////////////////////////////////////
@@ -438,8 +434,7 @@ TEST_CASE("GP::calculate_loss: sensitive to kernel_params", "[unit][gp][loss]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
 
     hpx_runtime_guard hpx_guard;
     const double loss_before = gp.calculate_loss();
@@ -470,27 +465,15 @@ TEST_CASE("tile_count_per_dim: positive for medium n", "[unit][tiles]")
 // compiled_with_cuda / compiled_with_sycl ////////////////////////////////////////////////////////
 
 #if !GPRAT_WITH_CUDA
-TEST_CASE("compiled_with_cuda: false", "[unit][target]")
-{
-    REQUIRE_FALSE(gprat::compiled_with_cuda());
-}
+TEST_CASE("compiled_with_cuda: false", "[unit][target]") { REQUIRE_FALSE(gprat::compiled_with_cuda()); }
 #else
-TEST_CASE("compiled_with_cuda: true", "[unit][target]")
-{
-    REQUIRE(gprat::compiled_with_cuda());
-}
+TEST_CASE("compiled_with_cuda: true", "[unit][target]") { REQUIRE(gprat::compiled_with_cuda()); }
 #endif
 
 #if !GPRAT_WITH_SYCL
-TEST_CASE("compiled_with_sycl: false", "[unit][target]")
-{
-    REQUIRE_FALSE(gprat::compiled_with_sycl());
-}
+TEST_CASE("compiled_with_sycl: false", "[unit][target]") { REQUIRE_FALSE(gprat::compiled_with_sycl()); }
 #else
-TEST_CASE("compiled_with_sycl: true", "[unit][target]")
-{
-    REQUIRE(gprat::compiled_with_sycl());
-}
+TEST_CASE("compiled_with_sycl: true", "[unit][target]") { REQUIRE(gprat::compiled_with_sycl()); }
 #endif
 
 // GP GPU constructor throws without CUDA/SYCL ////////////////////////////////////////////////////
@@ -507,8 +490,8 @@ TEST_CASE("GP GPU: throws without CUDA/SYCL", "[unit][gp]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
     REQUIRE_THROWS_AS(
-        (gprat::GP(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                   { true, true, true }, 0, 1)),
+        (gprat::GP(
+            train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1)),
         std::runtime_error);
 }
 #endif
@@ -673,7 +656,6 @@ TEST_CASE("fp32 BLAS: basic ops", "[unit][blas][fp32]")
         REQUIRE_THAT(static_cast<double>(out.data()[0]), WithinAbs(1.0, 1e-4));
         REQUIRE_THAT(static_cast<double>(out.data()[1]), WithinAbs(1.0, 1e-4));
     }
-
 }
 
 // HPX runtime suspend/resume /////////////////////////////////////////////////////////////////////
@@ -692,10 +674,8 @@ TEST_CASE("hpx: suspend and resume", "[unit][hpx]")
     const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { true, true, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
     REQUIRE(std::isfinite(gp.calculate_loss()));
-
 }
 
 // gpu_algorithms coverage: gen_tile_identity, gen_tile_zeros, gen_tile_output //////////////////
@@ -709,8 +689,7 @@ TEST_CASE("GP::optimize: noise-only trainable", "[unit][optimizer][cpu]")
     const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
-    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                 { false, false, true });
+    gprat::GP gp(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { false, false, true });
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 3 };
     const auto losses = gp.optimize(params);
@@ -775,9 +754,11 @@ TEST_CASE("load_data: throws on short file", "[unit][utils]")
         ::close(fd);
     }
     const std::string tmp(tmp_buf.data());
+
     struct Cleanup
     {
         const std::string &path;
+
         ~Cleanup() { std::remove(path.c_str()); }
     } cleanup{ tmp };
 
@@ -827,12 +808,12 @@ int cuda_device_count()
 }  // namespace
 
 // Macro that skips the test if CUDA is unavailable or no GPU is present.
-#define GPRAT_SKIP_IF_NO_GPU()                                                                     \
-    do {                                                                                           \
-        if (!gprat::compiled_with_cuda())                                                          \
-            SKIP("GPRat not compiled with CUDA support");                                          \
-        if (cuda_device_count() == 0)                                                              \
-            SKIP("No NVIDIA GPU detected");                                                        \
+#define GPRAT_SKIP_IF_NO_GPU()                                                                                         \
+    do {                                                                                                               \
+        if (!gprat::compiled_with_cuda())                                                                              \
+            SKIP("GPRat not compiled with CUDA support");                                                              \
+        if (cuda_device_count() == 0)                                                                                  \
+            SKIP("No NVIDIA GPU detected");                                                                            \
     } while (false)
 
 TEST_CASE("GP GPU: constructor", "[gpu][cuda]")
@@ -848,9 +829,8 @@ TEST_CASE("GP GPU: constructor", "[gpu][cuda]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
     // Should not throw when a real GPU is present.
-    REQUIRE_NOTHROW(
-        (gprat::GP(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                   { true, true, true }, 0, 1)));
+    REQUIRE_NOTHROW((gprat::GP(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1)));
 }
 
 TEST_CASE("GP::predict: GPU matches CPU", "[gpu][cuda]")
@@ -867,10 +847,9 @@ TEST_CASE("GP::predict: GPU matches CPU", "[gpu][cuda]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_pred = gp_cpu.predict(test_in.data, m_tiles, m_tile_size);
@@ -879,7 +858,9 @@ TEST_CASE("GP::predict: GPU matches CPU", "[gpu][cuda]")
     REQUIRE(cpu_pred.size() == n_test);
     REQUIRE(gpu_pred.size() == n_test);
     for (std::size_t i = 0; i < n_test; ++i)
+    {
         REQUIRE_THAT(gpu_pred[i], WithinRel(cpu_pred[i], 1e-4));
+    }
 }
 
 TEST_CASE("GP::predict_with_uncertainty: GPU matches CPU", "[gpu][cuda]")
@@ -896,10 +877,9 @@ TEST_CASE("GP::predict_with_uncertainty: GPU matches CPU", "[gpu][cuda]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_unc = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
@@ -930,10 +910,9 @@ TEST_CASE("GP::predict_with_full_cov: GPU matches CPU", "[gpu][cuda]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_cov = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size);
@@ -942,7 +921,9 @@ TEST_CASE("GP::predict_with_full_cov: GPU matches CPU", "[gpu][cuda]")
     REQUIRE(gpu_cov.size() == 2);
     REQUIRE(gpu_cov[0].size() == n_test);
     for (std::size_t i = 0; i < n_test; ++i)
+    {
         REQUIRE_THAT(gpu_cov[0][i], WithinRel(cpu_cov[0][i], 1e-4));
+    }
 }
 
 TEST_CASE("GP::calculate_loss: GPU matches CPU", "[gpu][cuda]")
@@ -957,10 +938,9 @@ TEST_CASE("GP::calculate_loss: GPU matches CPU", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const double cpu_loss = gp_cpu.calculate_loss();
@@ -982,10 +962,9 @@ TEST_CASE("GP::cholesky: GPU tile count", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_L = gp_cpu.cholesky();
@@ -998,7 +977,9 @@ TEST_CASE("GP::cholesky: GPU tile count", "[gpu][cuda]")
     {
         const std::size_t diag = t * n_tiles + t;
         for (std::size_t e = 0; e < tile_size * tile_size; ++e)
+        {
             REQUIRE_THAT(gpu_L[diag].data()[e], WithinRel(cpu_L[diag].data()[e], 1e-4));
+        }
     }
 }
 
@@ -1020,8 +1001,7 @@ TEST_CASE("fp64 BLAS: basic ops", "[unit][blas][fp64]")
     {
         const std::vector<double> a = { 1.0, 2.0, 3.0 };
         const std::vector<double> b = { 4.0, 5.0, 6.0 };
-        REQUIRE_THAT(gprat::dot(std::span<const double>(a), std::span<const double>(b), 3),
-                     WithinAbs(32.0, 1e-10));
+        REQUIRE_THAT(gprat::dot(std::span<const double>(a), std::span<const double>(b), 3), WithinAbs(32.0, 1e-10));
     }
 
     // axpy: y -= x
@@ -1170,7 +1150,6 @@ TEST_CASE("fp64 BLAS: basic ops", "[unit][blas][fp64]")
         REQUIRE_THAT(static_cast<double>(out.data()[0]), WithinAbs(1.0, 1e-10));
         REQUIRE_THAT(static_cast<double>(out.data()[1]), WithinAbs(1.0, 1e-10));
     }
-
 }
 
 // fp32 BLAS: additional transpose/side/alpha paths //////////////////////////////////////////////
@@ -1249,7 +1228,6 @@ TEST_CASE("fp32 BLAS: transpose and side variants", "[unit][blas][fp32]")
         REQUIRE_THAT(static_cast<double>(r.data()[0]), WithinAbs(3.0, 1e-5));
         REQUIRE_THAT(static_cast<double>(r.data()[1]), WithinAbs(8.0, 1e-5));
     }
-
 }
 
 // performance counters //////////////////////////////////////////////////////////////////////////
@@ -1319,7 +1297,9 @@ TEST_CASE("perf_counters: force_evict", "[unit][perf]")
     gprat::force_evict_memory(buf.data(), sizeof(buf));
     // verify buffer contents are unchanged after eviction
     for (const auto v : buf)
+    {
         REQUIRE_THAT(v, WithinAbs(3.14, 1e-15));
+    }
 }
 
 TEST_CASE("perf_counters: force_evict span", "[unit][perf]")
@@ -1327,7 +1307,9 @@ TEST_CASE("perf_counters: force_evict span", "[unit][perf]")
     std::vector<double> data(32, 1.5);
     gprat::force_evict_memory(std::span<const double>(data));
     for (const auto v : data)
+    {
         REQUIRE_THAT(v, WithinAbs(1.5, 1e-15));
+    }
 }
 
 // GPU optimize and optimize_step tests //////////////////////////////////////////////////////////
@@ -1344,8 +1326,8 @@ TEST_CASE("GP::optimize: GPU loss count", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 5 };
@@ -1353,7 +1335,9 @@ TEST_CASE("GP::optimize: GPU loss count", "[gpu][cuda]")
 
     REQUIRE(losses.size() == 5);
     for (const double l : losses)
+    {
         REQUIRE(std::isfinite(l));
+    }
 }
 
 TEST_CASE("GP::optimize: GPU losses decrease", "[gpu][cuda][fragile]")
@@ -1368,8 +1352,8 @@ TEST_CASE("GP::optimize: GPU losses decrease", "[gpu][cuda][fragile]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 4);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 4);
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 10 };
@@ -1391,8 +1375,8 @@ TEST_CASE("GP::optimize_step: GPU finite loss", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 3 };
@@ -1417,10 +1401,9 @@ TEST_CASE("GP::optimize: GPU matches CPU", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 5 };
@@ -1429,7 +1412,9 @@ TEST_CASE("GP::optimize: GPU matches CPU", "[gpu][cuda]")
 
     REQUIRE(cpu_losses.size() == gpu_losses.size());
     for (std::size_t i = 0; i < cpu_losses.size(); ++i)
+    {
         REQUIRE_THAT(gpu_losses[i], WithinRel(cpu_losses[i], 1e-3));
+    }
 }
 
 TEST_CASE("GP::cholesky: GPU values", "[gpu][cuda]")
@@ -1444,10 +1429,9 @@ TEST_CASE("GP::cholesky: GPU values", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_L = gp_cpu.cholesky();
@@ -1458,7 +1442,9 @@ TEST_CASE("GP::cholesky: GPU values", "[gpu][cuda]")
     {
         REQUIRE(gpu_L[t].size() == cpu_L[t].size());
         for (std::size_t e = 0; e < cpu_L[t].size(); ++e)
+        {
             REQUIRE_THAT(gpu_L[t].data()[e], WithinRel(cpu_L[t].data()[e], 1e-4));
+        }
     }
 }
 
@@ -1476,8 +1462,8 @@ TEST_CASE("GP::predict_with_uncertainty: GPU variances positive", "[gpu][cuda]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
@@ -1502,8 +1488,8 @@ TEST_CASE("GP::optimize: GPU no trainable params", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { false, false, false }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { false, false, false }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const gprat::AdamParams params{ 0.01, 0.9, 0.999, 1e-8, 3 };
@@ -1527,8 +1513,8 @@ TEST_CASE("GP GPU: training data round-trip", "[gpu][cuda]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     REQUIRE(gp_gpu.get_training_input() == train_in.data);
     REQUIRE(gp_gpu.get_training_output() == train_out.data);
@@ -1542,20 +1528,17 @@ TEST_CASE("GP GPU: training data round-trip", "[gpu][cuda]")
 
 namespace
 {
-int sycl_device_count()
-{
-    return gprat::gpu_count();
-}
+int sycl_device_count() { return gprat::gpu_count(); }
 }  // namespace
 
-#define GPRAT_SKIP_IF_NO_SYCL_GPU()                                                                \
-    do {                                                                                           \
-        if (!gprat::compiled_with_sycl())                                                         \
-            SKIP("GPRat not compiled with SYCL support");                                         \
-        if (sycl_device_count() == 0)                                                             \
-            SKIP("No SYCL GPU detected");                                                         \
-        if (!gprat::sycl_gpu_functional())                                                        \
-            SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch)");                       \
+#define GPRAT_SKIP_IF_NO_SYCL_GPU()                                                                                    \
+    do {                                                                                                               \
+        if (!gprat::compiled_with_sycl())                                                                              \
+            SKIP("GPRat not compiled with SYCL support");                                                              \
+        if (sycl_device_count() == 0)                                                                                  \
+            SKIP("No SYCL GPU detected");                                                                              \
+        if (!gprat::sycl_gpu_functional())                                                                             \
+            SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch)");                                            \
     } while (false)
 
 TEST_CASE("GP SYCL GPU: constructor", "[gpu][sycl]")
@@ -1570,9 +1553,8 @@ TEST_CASE("GP SYCL GPU: constructor", "[gpu][sycl]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    REQUIRE_NOTHROW(
-        (gprat::GP(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                   { true, true, true }, 0, 1)));
+    REQUIRE_NOTHROW((gprat::GP(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1)));
 }
 
 TEST_CASE("GP SYCL::predict: GPU matches CPU", "[gpu][sycl]")
@@ -1589,10 +1571,9 @@ TEST_CASE("GP SYCL::predict: GPU matches CPU", "[gpu][sycl]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_pred = gp_cpu.predict(test_in.data, m_tiles, m_tile_size);
@@ -1601,7 +1582,9 @@ TEST_CASE("GP SYCL::predict: GPU matches CPU", "[gpu][sycl]")
     REQUIRE(cpu_pred.size() == n_test);
     REQUIRE(gpu_pred.size() == n_test);
     for (std::size_t i = 0; i < n_test; ++i)
+    {
         REQUIRE_THAT(gpu_pred[i], WithinRel(cpu_pred[i], 1e-4));
+    }
 }
 
 TEST_CASE("GP SYCL::predict_with_uncertainty: GPU matches CPU", "[gpu][sycl]")
@@ -1618,10 +1601,9 @@ TEST_CASE("GP SYCL::predict_with_uncertainty: GPU matches CPU", "[gpu][sycl]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_unc = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
@@ -1651,10 +1633,9 @@ TEST_CASE("GP SYCL::predict_with_full_cov: GPU matches CPU", "[gpu][sycl]")
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_cov = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size);
@@ -1663,7 +1644,9 @@ TEST_CASE("GP SYCL::predict_with_full_cov: GPU matches CPU", "[gpu][sycl]")
     REQUIRE(gpu_cov.size() == 2);
     REQUIRE(gpu_cov[0].size() == n_test);
     for (std::size_t i = 0; i < n_test; ++i)
+    {
         REQUIRE_THAT(gpu_cov[0][i], WithinRel(cpu_cov[0][i], 1e-4));
+    }
 }
 
 TEST_CASE("GP SYCL::calculate_loss: GPU matches CPU", "[gpu][sycl]")
@@ -1678,10 +1661,9 @@ TEST_CASE("GP SYCL::calculate_loss: GPU matches CPU", "[gpu][sycl]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const double cpu_loss = gp_cpu.calculate_loss();
@@ -1703,10 +1685,9 @@ TEST_CASE("GP SYCL::cholesky: GPU tile count", "[gpu][sycl]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_L = gp_cpu.cholesky();
@@ -1718,7 +1699,9 @@ TEST_CASE("GP SYCL::cholesky: GPU tile count", "[gpu][sycl]")
     {
         const std::size_t diag = t * n_tiles + t;
         for (std::size_t e = 0; e < tile_size * tile_size; ++e)
+        {
             REQUIRE_THAT(gpu_L[diag].data()[e], WithinRel(cpu_L[diag].data()[e], 1e-4));
+        }
     }
 }
 
@@ -1734,10 +1717,9 @@ TEST_CASE("GP SYCL::cholesky: GPU values", "[gpu][sycl]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true });
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto cpu_L = gp_cpu.cholesky();
@@ -1748,7 +1730,9 @@ TEST_CASE("GP SYCL::cholesky: GPU values", "[gpu][sycl]")
     {
         REQUIRE(gpu_L[t].size() == cpu_L[t].size());
         for (std::size_t e = 0; e < cpu_L[t].size(); ++e)
+        {
             REQUIRE_THAT(gpu_L[t].data()[e], WithinRel(cpu_L[t].data()[e], 1e-4));
+        }
     }
 }
 
@@ -1766,8 +1750,8 @@ TEST_CASE("GP SYCL::predict_with_uncertainty: GPU variances positive", "[gpu][sy
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
     gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     hpx_runtime_guard hpx_guard;
     const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
@@ -1792,8 +1776,8 @@ TEST_CASE("GP SYCL GPU: training data round-trip", "[gpu][sycl]")
     gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
     gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, n_reg);
 
-    gprat::GP gp_gpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
-                     { true, true, true }, 0, 1);
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
 
     REQUIRE(gp_gpu.get_training_input() == train_in.data);
     REQUIRE(gp_gpu.get_training_output() == train_out.data);

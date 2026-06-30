@@ -1,10 +1,11 @@
 #include "gpu/sycl/sycl_gp_functions.hpp"
 
 #include "gprat/kernels.hpp"
+#include "gprat/target.hpp"
+
 #include "gpu/sycl/sycl_gp_algorithms.hpp"
 #include "gpu/sycl/sycl_tiled_algorithms.hpp"
 #include "gpu/sycl/sycl_utils.hpp"
-#include "gprat/target.hpp"
 #include <hpx/algorithm.hpp>
 
 namespace gprat::sycl_backend

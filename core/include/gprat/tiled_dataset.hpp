@@ -258,9 +258,7 @@ class tile_handle
         generation_(generation)
     { }
 
-    tile_handle(std::shared_ptr<std::vector<hpx::id_type>> managers,
-                std::size_t tile_index,
-                std::size_t generation) :
+    tile_handle(std::shared_ptr<std::vector<hpx::id_type>> managers, std::size_t tile_index, std::size_t generation) :
         managers_(std::move(managers)),
         tile_index_(tile_index),
         generation_(generation)
@@ -299,7 +297,7 @@ class tile_handle
     {
         // Serialize the vector contents, not the shared_ptr itself.
         // cached_manager_ is a runtime cache and is not serialized.
-        ar & *managers_ & tile_index_ & generation_;
+        ar &*managers_ &tile_index_ & generation_;
     }
 
     std::shared_ptr<server::tile_manager<T>> local_manager() const

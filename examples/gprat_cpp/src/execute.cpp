@@ -125,44 +125,53 @@ void example_cpu(Runtimes &runtimes,
     gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, static_cast<std::size_t>(settings.opt_iter) };
 
     auto start_init = std::chrono::high_resolution_clock::now();
-    gprat::GP gp_cpu(
-        training_input.data,
-        training_output.data,
-        n_tiles,
-        tile_size,
-        static_cast<std::size_t>(settings.n_reg),
-        { 1.0, 1.0, 0.1 },
-        trainable);
+    gprat::GP gp_cpu(training_input.data,
+                     training_output.data,
+                     n_tiles,
+                     tile_size,
+                     static_cast<std::size_t>(settings.n_reg),
+                     { 1.0, 1.0, 0.1 },
+                     trainable);
     auto end_init = std::chrono::high_resolution_clock::now();
     runtimes.init = end_init - start_init;
 
     auto start_cholesky = std::chrono::high_resolution_clock::now();
     if (settings.cholesky)
+    {
         gp_cpu.cholesky();
+    }
     auto end_cholesky = std::chrono::high_resolution_clock::now();
     runtimes.cholesky = settings.cholesky ? end_cholesky - start_cholesky : std::chrono::seconds(-1);
 
     auto start_opt = std::chrono::high_resolution_clock::now();
     if (!settings.cholesky)
+    {
         gp_cpu.optimize(hpar);
+    }
     auto end_opt = std::chrono::high_resolution_clock::now();
     runtimes.opt = settings.cholesky ? std::chrono::seconds(-1) : end_opt - start_opt;
 
     auto start_pred_uncer = std::chrono::high_resolution_clock::now();
     if (!settings.cholesky)
+    {
         gp_cpu.predict_with_uncertainty(test_input.data, result.first, result.second);
+    }
     auto end_pred_uncer = std::chrono::high_resolution_clock::now();
     runtimes.pred_uncer = settings.cholesky ? std::chrono::seconds(-1) : end_pred_uncer - start_pred_uncer;
 
     auto start_pred_full_cov = std::chrono::high_resolution_clock::now();
     if (!settings.cholesky)
+    {
         gp_cpu.predict_with_full_cov(test_input.data, result.first, result.second);
+    }
     auto end_pred_full_cov = std::chrono::high_resolution_clock::now();
     runtimes.pred_full_cov = settings.cholesky ? std::chrono::seconds(-1) : end_pred_full_cov - start_pred_full_cov;
 
     auto start_pred = std::chrono::high_resolution_clock::now();
     if (!settings.cholesky)
+    {
         gp_cpu.predict(test_input.data, result.first, result.second);
+    }
     auto end_pred = std::chrono::high_resolution_clock::now();
     runtimes.pred = settings.cholesky ? std::chrono::seconds(-1) : end_pred - start_pred;
 }
@@ -194,7 +203,9 @@ void example_gpu(Runtimes &runtimes,
 
     auto start_cholesky = std::chrono::high_resolution_clock::now();
     if (cholesky)
+    {
         gp_gpu.cholesky();
+    }
     auto end_cholesky = std::chrono::high_resolution_clock::now();
     runtimes.cholesky = cholesky ? end_cholesky - start_cholesky : std::chrono::seconds(-1);
 
@@ -203,19 +214,25 @@ void example_gpu(Runtimes &runtimes,
 
     auto start_pred_uncer = std::chrono::high_resolution_clock::now();
     if (!cholesky)
+    {
         gp_gpu.predict_with_uncertainty(test_input.data, result.first, result.second);
+    }
     auto end_pred_uncer = std::chrono::high_resolution_clock::now();
     runtimes.pred_uncer = cholesky ? std::chrono::seconds(-1) : end_pred_uncer - start_pred_uncer;
 
     auto start_pred_full_cov = std::chrono::high_resolution_clock::now();
     if (!cholesky)
+    {
         gp_gpu.predict_with_full_cov(test_input.data, result.first, result.second);
+    }
     auto end_pred_full_cov = std::chrono::high_resolution_clock::now();
     runtimes.pred_full_cov = cholesky ? std::chrono::seconds(-1) : end_pred_full_cov - start_pred_full_cov;
 
     auto start_pred = std::chrono::high_resolution_clock::now();
     if (!cholesky)
+    {
         gp_gpu.predict(test_input.data, result.first, result.second);
+    }
     auto end_pred = std::chrono::high_resolution_clock::now();
     runtimes.pred = cholesky ? std::chrono::seconds(-1) : end_pred - start_pred;
 }
@@ -239,7 +256,9 @@ int main(int argc, char *argv[])
         auto resolve = [&](std::string &p)
         {
             if (!std::filesystem::path(p).is_absolute())
+            {
                 p = (config_dir / p).lexically_normal().string();
+            }
         };
         resolve(settings.train_in_file);
         resolve(settings.train_out_file);
@@ -267,9 +286,13 @@ int main(int argc, char *argv[])
         {
             use_gpu = true;
             if (gprat::compiled_with_cuda())
+            {
                 std::cout << "Using CUDA GPU for computations.\n";
+            }
             else if (gprat::compiled_with_sycl())
+            {
                 std::cout << "Using SYCL GPU for computations.\n";
+            }
         }
     }
     else
@@ -288,7 +311,9 @@ int main(int argc, char *argv[])
 
         std::vector<char *> cstr_args;
         for (auto &arg : args)
+        {
             cstr_args.push_back(const_cast<char *>(arg.c_str()));
+        }
 
         int new_argc = static_cast<int>(cstr_args.size());
         char **new_argv = cstr_args.data();

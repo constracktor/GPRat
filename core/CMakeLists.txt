@@ -87,8 +87,10 @@ if(GPRAT_WITH_SYCL)
 endif()
 
 # Distributed HPX sources (HPX actions, tile cache, tiled dataset)
-option(GPRAT_WITH_DISTRIBUTED "Enable distributed GP support via HPX actions" OFF)
-add_compile_definitions(GPRAT_WITH_DISTRIBUTED=$<BOOL:${GPRAT_WITH_DISTRIBUTED}>)
+option(GPRAT_WITH_DISTRIBUTED "Enable distributed GP support via HPX actions"
+       OFF)
+add_compile_definitions(
+  GPRAT_WITH_DISTRIBUTED=$<BOOL:${GPRAT_WITH_DISTRIBUTED}>)
 
 if(GPRAT_WITH_DISTRIBUTED)
   list(
@@ -101,14 +103,12 @@ if(GPRAT_WITH_DISTRIBUTED)
     src/tile_cache.cpp
     src/tiled_dataset.cpp)
 
-  # HPX registration macros create static factory objects that icpx sees as unused
+  # HPX registration macros create static factory objects that icpx sees as
+  # unused
   set_source_files_properties(
-    src/cpu/adapter_cblas_fp64_actions.cpp
-    src/cpu/gp_algorithms_actions.cpp
-    src/cpu/gp_uncertainty_actions.cpp
-    src/cpu/gp_optimizer_actions.cpp
-    src/tiled_dataset.cpp
-    PROPERTIES COMPILE_OPTIONS "-Wno-unused-variable")
+    src/cpu/adapter_cblas_fp64_actions.cpp src/cpu/gp_algorithms_actions.cpp
+    src/cpu/gp_uncertainty_actions.cpp src/cpu/gp_optimizer_actions.cpp
+    src/tiled_dataset.cpp PROPERTIES COMPILE_OPTIONS "-Wno-unused-variable")
 endif()
 
 if(GPRAT_WITH_CUDA)
@@ -175,9 +175,16 @@ if(GPRAT_WITH_SYCL)
   find_package(oneMath REQUIRED)
 
   # Select SYCL backend architecture
-  set(GPRAT_SYCL_CUDA_PATH "" CACHE PATH "CUDA installation path for icpx NVIDIA SYCL target.")
+  set(GPRAT_SYCL_CUDA_PATH
+      ""
+      CACHE PATH "CUDA installation path for icpx NVIDIA SYCL target.")
 
-  set(GPRAT_SYCL_NVIDIA_ARCH "" CACHE STRING "NVIDIA GPU SM arch for SYCL (e.g. sm_80). Derived from GPRAT_SYCL_CUDA_PATH if empty.")
+  set(GPRAT_SYCL_NVIDIA_ARCH
+      ""
+      CACHE
+        STRING
+        "NVIDIA GPU SM arch for SYCL (e.g. sm_80). Derived from GPRAT_SYCL_CUDA_PATH if empty."
+  )
 
   set(SYCL_FLAGS ${SYCL_FLAGS} -Wno-unused-command-line-argument)
 
@@ -185,10 +192,13 @@ if(GPRAT_WITH_SYCL)
 
     set(SYCL_FLAGS ${SYCL_FLAGS} -fsycl -fsycl-targets=nvptx64-nvidia-cuda)
     if(GPRAT_SYCL_CUDA_PATH)
-      list(APPEND SYCL_FLAGS "SHELL:-Xsycl-target-backend --cuda-path=${GPRAT_SYCL_CUDA_PATH}")
+      list(APPEND SYCL_FLAGS
+           "SHELL:-Xsycl-target-backend --cuda-path=${GPRAT_SYCL_CUDA_PATH}")
     endif()
     if(GPRAT_SYCL_NVIDIA_ARCH)
-      list(APPEND SYCL_FLAGS "SHELL:-Xsycl-target-backend --cuda-gpu-arch=${GPRAT_SYCL_NVIDIA_ARCH}")
+      list(
+        APPEND SYCL_FLAGS
+        "SHELL:-Xsycl-target-backend --cuda-gpu-arch=${GPRAT_SYCL_NVIDIA_ARCH}")
     endif()
 
   elseif(GPRAT_SYCL_AMD)

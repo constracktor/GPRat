@@ -61,19 +61,18 @@ bool load_or_create_expected_results(
             // Stale if any field present in the current run is absent or has a different outer
             // size in the baseline (e.g. CPU baseline loaded by the GPU test, or n_tiles changed).
             const bool stale =
-                (!fallback_results.cholesky.empty() &&
-                 (results.cholesky.empty() ||
-                  results.cholesky.size() != fallback_results.cholesky.size())) ||
-                (!fallback_results.losses.empty() &&
-                 results.losses.size() != fallback_results.losses.size()) ||
-                (!fallback_results.sum.empty() &&
-                 (results.sum.empty() || results.sum.size() != fallback_results.sum.size())) ||
-                (!fallback_results.full.empty() &&
-                 (results.full.empty() || results.full.size() != fallback_results.full.size())) ||
-                (!fallback_results.pred.empty() &&
-                 results.pred.size() != fallback_results.pred.size());
+                (!fallback_results.cholesky.empty()
+                 && (results.cholesky.empty() || results.cholesky.size() != fallback_results.cholesky.size()))
+                || (!fallback_results.losses.empty() && results.losses.size() != fallback_results.losses.size())
+                || (!fallback_results.sum.empty()
+                    && (results.sum.empty() || results.sum.size() != fallback_results.sum.size()))
+                || (!fallback_results.full.empty()
+                    && (results.full.empty() || results.full.size() != fallback_results.full.size()))
+                || (!fallback_results.pred.empty() && results.pred.size() != fallback_results.pred.size());
             if (!stale)
+            {
                 return true;
+            }
 
             std::cerr << "Baseline in " << filename << " is incomplete or mismatched"
                       << " — overwriting with current results.\n";
@@ -91,7 +90,9 @@ std::string get_data_directory()
 {
     const char *env_root = std::getenv("GPRAT_ROOT");
     if (env_root)
+    {
         return env_root;
+    }
     return "../data";
 }
 
@@ -233,9 +234,13 @@ TEST_CASE("GP CPU: results match baseline", "[integration][cpu]")
 TEST_CASE("GP GPU: results match baseline", "[integration][gpu]")
 {
     if (!gprat::compiled_with_cuda() && !gprat::compiled_with_sycl())
+    {
         SKIP("GPU not compiled in — skipping GPU integration test.");
+    }
     if (gprat::compiled_with_sycl() && !gprat::sycl_gpu_functional())
+    {
         SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch).");
+    }
 
     const std::string root = get_data_directory();
 

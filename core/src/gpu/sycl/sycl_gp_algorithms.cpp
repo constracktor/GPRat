@@ -1,10 +1,11 @@
 #include "gpu/sycl/sycl_gp_algorithms.hpp"
 
 #include "gprat/kernels.hpp"
+#include "gprat/target.hpp"
+
 #include "gpu/sycl/sycl_gp_optimizer.hpp"
 #include "gpu/sycl/sycl_kernels.hpp"
 #include "gpu/sycl/sycl_utils.hpp"
-#include "gprat/target.hpp"
 #include <hpx/algorithm.hpp>
 
 namespace gprat::sycl_backend
@@ -500,8 +501,12 @@ std::vector<std::vector<double>> move_lower_tiled_matrix_to_host(
         queue.wait();
 
         for (std::size_t i = 0; i < n_tiles; ++i)
+        {
             for (std::size_t j = 0; j <= i; ++j)
+            {
                 sycl::free(d_tiles[i * n_tiles + j].get(), queue);
+            }
+        }
 
         return h_tiles;
     }

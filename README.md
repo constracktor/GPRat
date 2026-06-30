@@ -133,10 +133,10 @@ We specifically thank the follow contributors:
 - [Henrik Möllmann](https://www.linkedin.com/in/moellh/):
   [CUDA backend via cuBLAS/cuSOLVER](tbd.).
 
-- Marcel Graf:
+- [Marcel Graf](https://github.com/MarcelGraf0710):
   [SYCL backend via oneMath](tbd.).
 
-- [Tim Niederhausen](https://github.com/constracktor):
+- [Tim Niederhausen](https://github.com/timniederhausen):
   [Distributed GP via HPX actions](tbd.).
 
 ## How To Cite

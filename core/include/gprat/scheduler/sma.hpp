@@ -99,8 +99,8 @@ cholesky_trsm_on(const tiled_scheduler_sma &sched, std::size_t /*n_tiles*/, std:
     return (k + m) % sched.num_localities;
 }
 
-constexpr std::size_t
-cholesky_gemm_on(const tiled_scheduler_sma &sched, std::size_t /*n_tiles*/, std::size_t /*k*/, std::size_t m, std::size_t n)
+constexpr std::size_t cholesky_gemm_on(
+    const tiled_scheduler_sma &sched, std::size_t /*n_tiles*/, std::size_t /*k*/, std::size_t m, std::size_t n)
 {
     return (m + n) % sched.num_localities;
 }
