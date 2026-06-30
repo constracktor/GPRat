@@ -136,6 +136,9 @@ We specifically thank the follow contributors:
 - Marcel Graf:
   [SYCL backend via oneMath](tbd.).
 
+- [Tim Niederhausen](https://github.com/constracktor):
+  [Distributed GP via HPX actions](tbd.).
+
 ## How To Cite
 
 ```
