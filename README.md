@@ -117,7 +117,8 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
   - `--train_x_path`/`--train_y_path`/`--test_path`: point at a larger dataset (e.g. one generated via
     [`data/generators`](data/generators/)) for a real scaling study; the defaults point at the small `data/data_1024`
     correctness fixture
-  - `--timings_csv`: where per-run timings are appended
+  - `--output_csv`: where per-run timings are appended (defaults to `examples/gprat_distributed/output.csv`,
+    matching the other examples)
 - The script only launches a single HPX locality; running across multiple localities/nodes requires additional
   HPX network configuration (parcelport, AGAS bootstrap, hostfile/mpirun setup) specific to the target cluster.
 

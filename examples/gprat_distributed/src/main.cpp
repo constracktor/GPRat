@@ -11,6 +11,7 @@
 #include "gprat/tiled_dataset.hpp"
 #include "gprat/utils.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <hpx/compute.hpp>
 #include <hpx/hpx.hpp>
@@ -159,7 +160,7 @@ void run(hpx::program_options::variables_map &vm)
             finish_step("predict_with_full_cov", predict_with_full_cov_time);
 
             // Save parameters and times to a .csv file with a header
-            const auto &csv_path = vm["timings_csv"].as<std::string>();
+            const auto &csv_path = vm["output_csv"].as<std::string>();
             const std::string csv_header =
                 "Cores,Localities,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,"
                 "Cholesky_time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop";
@@ -180,9 +181,9 @@ void run(hpx::program_options::variables_map &vm)
                 if (existing_header != csv_header)
                 {
                     throw std::runtime_error(
-                        "timings_csv '" + csv_path
+                        "output_csv '" + csv_path
                         + "' already exists with a different column layout. Use a different "
-                          "--timings_csv path or remove the old file.");
+                          "--output_csv path or remove the old file.");
                 }
             }
             outfile << hpx::get_locality_id() << "," << n_localities << "," << n_train << "," << n_test << ","
@@ -258,13 +259,18 @@ int main(int argc, char *argv[])
     namespace po = hpx::program_options;
     po::options_description desc("Allowed options");
 
+    // Default to <example dir>/output.csv, matching gprat_cpp's convention of writing
+    // its output next to the example sources regardless of the current working directory.
+    const std::string default_output_csv =
+        (std::filesystem::path(GPRAT_DISTRIBUTED_DIR) / "output.csv").string();
+
     // clang-format off
     desc.add_options()
         ("help", "produce help message")
         ("train_x_path", po::value<std::string>()->default_value("data/data_1024/training_input.txt"), "training data (x)")
         ("train_y_path", po::value<std::string>()->default_value("data/data_1024/training_output.txt"), "training data (y)")
         ("test_path", po::value<std::string>()->default_value("data/data_1024/test_input.txt"), "test data")
-        ("timings_csv", po::value<std::string>()->default_value("timings.csv"), "output timing reports")
+        ("output_csv", po::value<std::string>()->default_value(default_output_csv), "output timing reports")
         ("tiles", po::value<std::size_t>()->default_value(16), "tiles per dimension")
         ("regressors", po::value<std::size_t>()->default_value(8), "num regressors")
         ("start", po::value<std::size_t>()->default_value(128), "Starting number of training samples")
