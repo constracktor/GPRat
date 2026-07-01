@@ -159,12 +159,31 @@ void run(hpx::program_options::variables_map &vm)
             finish_step("predict_with_full_cov", predict_with_full_cov_time);
 
             // Save parameters and times to a .csv file with a header
-            std::ofstream outfile(vm["timings_csv"].as<std::string>(), std::ios::app);
+            const auto &csv_path = vm["timings_csv"].as<std::string>();
+            const std::string csv_header =
+                "Cores,Localities,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,"
+                "Cholesky_time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop";
+
+            std::ofstream outfile(csv_path, std::ios::app);
             if (outfile.tellp() == 0)
             {
                 // If file is empty, write the header
-                outfile << "Cores,Localities,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,"
-                           "Cholesky_time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
+                outfile << csv_header << "\n";
+            }
+            else
+            {
+                // Guard against silently misaligned columns when appending to a file written
+                // by an older/different version of this binary.
+                std::ifstream existing(csv_path);
+                std::string existing_header;
+                std::getline(existing, existing_header);
+                if (existing_header != csv_header)
+                {
+                    throw std::runtime_error(
+                        "timings_csv '" + csv_path
+                        + "' already exists with a different column layout. Use a different "
+                          "--timings_csv path or remove the old file.");
+                }
             }
             outfile << hpx::get_locality_id() << "," << n_localities << "," << n_train << "," << n_test << ","
                     << n_tiles << "," << n_reg << "," << OPT_ITER << "," << total_timer.elapsed() << "," << init_time
@@ -253,7 +272,7 @@ int main(int argc, char *argv[])
         ("step", po::value<std::size_t>()->default_value(2), "Increment of training samples")
         ("n_test", po::value<std::size_t>()->default_value(128), "Number of test samples")
         ("loop", po::value<std::size_t>()->default_value(1), "Number of iterations to be performed for each number of training samples")
-        ("opt_iter", po::value<std::size_t>()->default_value(3), "Number of optimization iterations*/")
+        ("opt_iter", po::value<std::size_t>()->default_value(3), "Number of optimization iterations")
         ("enabled", po::value<std::size_t>()->default_value((std::numeric_limits<std::size_t>::max)()), "Bitmask of enabled steps")
     ;
     // clang-format on

@@ -10,16 +10,18 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+is_simcl_host() {
+  case " simcl1n1 simcl1n2 simcl1n3 simcl1n4 " in
+    *" $1 "*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 ###################################################################################################
 # Set Spack if on simcl1n1, simcl1n2, simcl1n3, or simcl1n4
 ###################################################################################################
 
-if [[ \
-  "$HOSTNAME" == "simcl1n1" || \
-  "$HOSTNAME" == "simcl1n2" || \
-  "$HOSTNAME" == "simcl1n3" || \
-  "$HOSTNAME" == "simcl1n4" ]];
-then
+if is_simcl_host "$HOSTNAME"; then
 
   spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
   source $spack_destination/spack/share/spack/setup-env.sh
@@ -66,12 +68,7 @@ if command -v spack &>/dev/null; then
     fi
 
   # simcl1n1, simcl1n2, simcl1n3, simcl1n4 (CPU only) #############################################
-  elif [[ \
-    "$HOSTNAME" == "simcl1n1" || \
-    "$HOSTNAME" == "simcl1n2" || \
-    "$HOSTNAME" == "simcl1n3" || \
-    "$HOSTNAME" == "simcl1n4" ]];
-  then
+  elif is_simcl_host "$HOSTNAME"; then
 
     if spack env list | grep -q "gprat_cpu_gcc"; then
       echo "Found gprat_cpu_gcc environment, activating it."
@@ -120,7 +117,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GPRAT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$GPRAT_ROOT"
 
-cmake --preset release-linux -DGPRAT_WITH_DISTRIBUTED=ON -DHPX_DIR=$HPX_CMAKE
+HPX_DIR_ARGS=()
+if [[ -n "$HPX_CMAKE" ]]; then
+  HPX_DIR_ARGS=(-DHPX_DIR="$HPX_CMAKE")
+fi
+
+cmake --preset release-linux -DGPRAT_WITH_DISTRIBUTED=ON "${HPX_DIR_ARGS[@]}"
 cmake --build --preset release-linux --target gprat_distributed -j
 
 ###################################################################################################
