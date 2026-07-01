@@ -104,6 +104,23 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 - Run `./run_gprat_python.sh [cpu/cuda/sycl] [nvidia/amd/intel]` to run the example.
   The second parameter selects the SYCL device and is only required when GPRat was compiled with the SYCL backend.
 
+### To run the distributed GPRat benchmark
+
+- Configure the main project with `-DGPRAT_WITH_DISTRIBUTED=ON` to build [`examples/gprat_distributed`](examples/gprat_distributed/).
+- The example is a CLI-driven scaling benchmark (no `config.json`) rather than a single "run one example" tool,
+  since it sweeps over training-set sizes rather than running one fixed configuration.
+- Go to `build/` and execute `./gprat_distributed [options]`, or run `./run_gprat_distributed.sh [options]` to
+  build and run it. Useful options:
+  - `--start`/`--end`/`--step`: training-set sizes to sweep over (e.g. `--start 128 --end 4096 --step 2`)
+  - `--tiles`, `--regressors`, `--n_test`, `--opt_iter`, `--loop`: problem size and repetition count
+  - `--enabled`: bitmask to select which of cholesky/optimize/predict/predict_with_uncertainty/predict_with_full_cov to run
+  - `--train_x_path`/`--train_y_path`/`--test_path`: point at a larger dataset (e.g. one generated via
+    [`data/generators`](data/generators/)) for a real scaling study; the defaults point at the small `data/data_1024`
+    correctness fixture
+  - `--timings_csv`: where per-run timings are appended
+- The script only launches a single HPX locality; running across multiple localities/nodes requires additional
+  HPX network configuration (parcelport, AGAS bootstrap, hostfile/mpirun setup) specific to the target cluster.
+
 ### To run GPflow reference
 
 - Go to [`examples/gpflow_reference`](examples/gpflow_reference/)

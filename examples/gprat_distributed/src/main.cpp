@@ -11,74 +11,14 @@
 #include "gprat/tiled_dataset.hpp"
 #include "gprat/utils.hpp"
 
-#include "../../test/src/test_data.hpp"
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <fstream>
 #include <hpx/compute.hpp>
 #include <hpx/hpx.hpp>
 #include <hpx/hpx_init.hpp>
 #include <hpx/hpx_init_params.hpp>
 #include <iostream>
-#include <span>
-
-// This is a standalone example, so including this directly is fine.
-// Better than having the whole project depend on compiled Boost.Json!
-#include <boost/json/src.hpp>
 
 GPRAT_NS_BEGIN
-
-gprat_results load_test_data_results(const std::string &filename)
-{
-    std::ifstream ifs(filename);
-    if (!ifs.fail())
-    {
-        using iterator_type = std::istreambuf_iterator<char>;
-        const std::string content(iterator_type{ ifs }, iterator_type{});
-        return boost::json::value_to<gprat_results>(boost::json::parse(content));
-    }
-    throw std::runtime_error("Failed to load " + filename);
-}
-
-void validate_two_dim_result(const std::vector<std::vector<double>> &expected,
-                             const std::vector<mutable_tile_data<double>> &actual)
-{
-    if (expected.size() != actual.size())
-    {
-        throw std::runtime_error("expected.size() != actual.size()");
-    }
-
-    constexpr double margin = 0.00001;
-    bool is_valid = true;
-    for (std::size_t i = 0; i < expected.size(); i++)
-    {
-        if (expected[i].size() != actual[i].size())
-        {
-            throw std::runtime_error("expected[i].size() != actual[i].size(): i = " + std::to_string(i));
-        }
-
-        const std::span<const double> actual_data = actual[i];
-        for (std::size_t j = 0; j < expected[i].size(); j++)
-        {
-            const auto &expected_value = expected[i][j];
-            const auto &actual_value = actual_data[j];
-
-            // XXX: no std::abs(expected - actual) due to infinity
-            const bool is_in_range =
-                (expected_value + margin >= actual_value) && (actual_value + margin >= expected_value);
-            if (!is_in_range)
-            {
-                std::cerr << "MISMATCH at " << i << " " << j << " " << expected_value << " !~= " << actual_value
-                          << std::endl;
-                is_valid = false;
-            }
-        }
-    }
-
-    if (!is_valid)
-    {
-        throw std::runtime_error("Invalid results (see stderr for details)");
-    }
-}
 
 void finish_step(const char *name, double elapsed_seconds)
 {
@@ -105,15 +45,8 @@ void run(hpx::program_options::variables_map &vm)
     const auto &out_path = vm["train_y_path"].as<std::string>();
     const auto &test_path = vm["test_path"].as<std::string>();
 
-    std::optional<gprat_results> test_results;
-    const auto test_results_path = vm["test_results_path"].as<std::string>();
-    if (!test_results_path.empty())
-    {
-        test_results = load_test_data_results(test_results_path);
-        std::cerr << "We have comparison data!" << std::endl;
-    }
-
     tiled_scheduler_sma scheduler;
+    const auto n_localities = hpx::get_num_localities().get();
 
     for (std::size_t start = START; start <= END; start = start * STEP)
     {
@@ -133,13 +66,15 @@ void run(hpx::program_options::variables_map &vm)
 
             /////////////////////
             ////// data loading
+            hpx::chrono::high_resolution_timer init_timer;
             GP_data training_input(train_path, n_train, n_reg);
             GP_data training_output(out_path, n_train, n_reg);
             GP_data test_input(test_path, n_test, n_reg);
+            const auto init_time = init_timer.elapsed();
+            finish_step("init", init_time);
 
             /////////////////////
             ///// GP
-            gprat_results results;
 
             // Start with a clean slate
             hpx::reset_active_counters();
@@ -147,8 +82,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer cholesky_timer;
             if (enabled & (1 << 0))
             {
-                results.cholesky =
-                    to_vector(cpu::cholesky(scheduler, training_input.data, sek_params, n_tiles, tile_size, n_reg));
+                cpu::cholesky(scheduler, training_input.data, sek_params, n_tiles, tile_size, n_reg);
             }
             const auto cholesky_time = cholesky_timer.elapsed();
             finish_step("cholesky", cholesky_time);
@@ -156,7 +90,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer opt_timer;
             if (enabled & (1 << 1))
             {
-                results.losses = cpu::optimize(
+                cpu::optimize(
                     scheduler,
                     training_input.data,
                     training_output.data,
@@ -173,7 +107,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer predict_timer;
             if (enabled & (1 << 2))
             {
-                results.pred = cpu::predict(
+                cpu::predict(
                     scheduler,
                     training_input.data,
                     training_output.data,
@@ -191,7 +125,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer predict_with_uncertainty_timer;
             if (enabled & (1 << 3))
             {
-                results.sum = cpu::predict_with_uncertainty(
+                cpu::predict_with_uncertainty(
                     scheduler,
                     training_input.data,
                     training_output.data,
@@ -209,7 +143,7 @@ void run(hpx::program_options::variables_map &vm)
             hpx::chrono::high_resolution_timer predict_with_full_cov_timer;
             if (enabled & (1 << 4))
             {
-                results.full = cpu::predict_with_full_cov(
+                cpu::predict_with_full_cov(
                     scheduler,
                     training_input.data,
                     training_output.data,
@@ -229,73 +163,14 @@ void run(hpx::program_options::variables_map &vm)
             if (outfile.tellp() == 0)
             {
                 // If file is empty, write the header
-                outfile << "Cores,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,Cholesky_time,"
-                           "Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
+                outfile << "Cores,Localities,N_train,N_test,N_tiles,N_regressor,Opt_iter,Total_time,Init_time,"
+                           "Cholesky_time,Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,N_loop\n";
             }
-            outfile << hpx::get_locality_id() << "," << n_train << "," << n_test << "," << n_tiles << "," << n_reg
-                    << "," << OPT_ITER << "," << total_timer.elapsed() << "," << 0 << "," << cholesky_time << ","
-                    << opt_time << "," << predict_with_uncertainty_time << "," << predict_with_full_cov_time << ","
-                    << predict_time << "," << l << "\n";
+            outfile << hpx::get_locality_id() << "," << n_localities << "," << n_train << "," << n_test << ","
+                    << n_tiles << "," << n_reg << "," << OPT_ITER << "," << total_timer.elapsed() << "," << init_time
+                    << "," << cholesky_time << "," << opt_time << "," << predict_with_uncertainty_time << ","
+                    << predict_with_full_cov_time << "," << predict_time << "," << l << "\n";
             outfile.close();
-
-            if (test_results)
-            {
-#define REQUIRE(expr)                                                                                                  \
-    if (!(expr))                                                                                                       \
-        throw std::runtime_error(#expr);
-#undef REQUIRE_THAT
-#define REQUIRE_THAT(a, b)                                                                                             \
-    if (!(b).match(a))                                                                                                 \
-        throw std::runtime_error(std::string(#a) + " != " + #b + ": " + std::to_string(a) + " " + (b).describe());
-                const auto &expected_results = *test_results;
-                std::cerr << "Validating results..." << std::endl;
-                REQUIRE(results.cholesky.size() == expected_results.cholesky.size());
-                REQUIRE(results.losses.size() == expected_results.losses.size());
-                REQUIRE(results.sum.size() == expected_results.sum.size());
-                REQUIRE(results.sum[0].size() == expected_results.sum[0].size());
-                REQUIRE(results.full.size() == expected_results.full.size());
-                REQUIRE(results.full[0].size() == expected_results.full[0].size());
-                REQUIRE(results.pred.size() == expected_results.pred.size());
-
-                // Now we can compare content
-                // The default-constructed WithinRel() matcher has a tolerance of epsilon * 100
-                // see:
-                // https://github.com/catchorg/Catch2/blob/914aeecfe23b1e16af6ea675a4fb5dbd5a5b8d0a/docs/comparing-floating-point-numbers.md#withinrel
-                using Catch::Matchers::WithinRel;
-                double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
-                for (std::size_t i = 0, n = results.cholesky.size(); i != n; ++i)
-                {
-                    for (std::size_t j = 0, m = results.cholesky[i].size(); j != m; ++j)
-                    {
-                        REQUIRE_THAT(results.cholesky[i][j], WithinRel(expected_results.cholesky[i][j], eps));
-                    }
-                }
-                for (std::size_t i = 0, n = results.losses.size(); i != n; ++i)
-                {
-                    REQUIRE_THAT(results.losses[i], WithinRel(expected_results.losses[i], eps));
-                }
-
-                for (std::size_t i = 0, n = results.full.size(); i != n; ++i)
-                {
-                    for (std::size_t j = 0, m = results.full[i].size(); j != m; ++j)
-                    {
-                        REQUIRE_THAT(results.full[i][j], WithinRel(expected_results.full[i][j], eps));
-                    }
-                }
-
-                for (std::size_t i = 0, n = results.sum.size(); i != n; ++i)
-                {
-                    for (std::size_t j = 0, m = results.sum[i].size(); j != m; ++j)
-                    {
-                        REQUIRE_THAT(results.sum[i][j], WithinRel(expected_results.sum[i][j], eps));
-                    }
-                }
-
-                for (std::size_t i = 0, n = results.pred.size(); i != n; ++i)
-                {
-                    REQUIRE_THAT(results.pred[i], WithinRel(expected_results.pred[i], eps));
-                }
-            }
 
             std::cerr << "====================" << std::endl;
         }
@@ -342,6 +217,7 @@ int hpx_main(hpx::program_options::variables_map &vm)
         std::cerr << " Domain: " << num_pus.first << " " << num_pus.second << std::endl;
     }
 
+    bool success = true;
     try
     {
         GPRAT_NS::run(vm);
@@ -349,8 +225,13 @@ int hpx_main(hpx::program_options::variables_map &vm)
     catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
+        success = false;
     }
-    return hpx::finalize();
+
+    // hpx::finalize() always returns 0 by design; report failure via hpx_main's own
+    // return value instead, since that is what hpx::init() ultimately propagates.
+    hpx::finalize();
+    return success ? 0 : 1;
 }
 
 int main(int argc, char *argv[])
@@ -364,7 +245,6 @@ int main(int argc, char *argv[])
         ("train_x_path", po::value<std::string>()->default_value("data/data_1024/training_input.txt"), "training data (x)")
         ("train_y_path", po::value<std::string>()->default_value("data/data_1024/training_output.txt"), "training data (y)")
         ("test_path", po::value<std::string>()->default_value("data/data_1024/test_input.txt"), "test data")
-        ("test_results_path", po::value<std::string>()->default_value("data/data_1024/output.json"), "test data results to validate results with")
         ("timings_csv", po::value<std::string>()->default_value("timings.csv"), "output timing reports")
         ("tiles", po::value<std::size_t>()->default_value(16), "tiles per dimension")
         ("regressors", po::value<std::size_t>()->default_value(8), "num regressors")
