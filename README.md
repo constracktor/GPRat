@@ -136,6 +136,9 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
     Spack environment (`networking=tcp`, OpenBLAS-only — see
     `spack-repo/environments/setup_gprat_cpu_gcc_dist.sh`) and builds into a separate
     `build/release-linux-dist` directory to avoid mixing the two toolchains.
+  - Enable `-DGPRAT_TEST_MULTI_LOCALITY=ON` (in addition to `-DGPRAT_WITH_DISTRIBUTED=ON`) to register
+    CTest smoke tests (`GPRat_test_distributed_multi_locality_{1,2,4}`) that launch `gprat_distributed`
+    across 1/2/4 localities; off by default since it needs the same networking-enabled HPX build.
 
 ### To run GPflow reference
 

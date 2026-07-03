@@ -72,3 +72,34 @@ target_link_libraries(GPRat_test_unit PRIVATE GPRat::core
 target_compile_features(GPRat_test_unit PRIVATE cxx_std_17)
 catch_discover_tests(GPRat_test_unit WORKING_DIRECTORY
                      "${CMAKE_CURRENT_LIST_DIR}")
+
+# Multi-locality smoke tests for examples/gprat_distributed. Off by default: they need an HPX
+# build with networking enabled (networking=none, used by the default gprat_cpu_gcc Spack
+# environment, rejects --hpx:localities outright) -- see
+# spack-repo/environments/setup_gprat_cpu_gcc_dist.sh and the "To run the distributed GPRat
+# benchmark" section of the top-level README for how to build one.
+option(
+  GPRAT_TEST_MULTI_LOCALITY
+  "Enable gprat_distributed smoke tests across multiple HPX localities (requires an HPX build with networking enabled)"
+  OFF)
+if(GPRAT_TEST_MULTI_LOCALITY)
+  if(NOT TARGET gprat_distributed)
+    message(
+      FATAL_ERROR
+        "GPRAT_TEST_MULTI_LOCALITY requires GPRAT_WITH_DISTRIBUTED and GPRAT_ENABLE_EXAMPLES to be ON"
+    )
+  endif()
+  foreach(n_localities 1 2 4)
+    add_test(
+      NAME GPRat_test_distributed_multi_locality_${n_localities}
+      COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/scripts/run_distributed_multi_locality.sh"
+              "$<TARGET_FILE:gprat_distributed>" ${n_localities})
+    set_tests_properties(
+      GPRat_test_distributed_multi_locality_${n_localities}
+      PROPERTIES TIMEOUT 120
+                 # The binary resolves its default data/data_1024/... paths relative to the
+                 # current working directory, matching run_gprat_distributed.sh's `cd
+                 # "$GPRAT_ROOT"` before invoking it.
+                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+  endforeach()
+endif()
