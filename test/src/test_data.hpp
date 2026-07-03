@@ -3,6 +3,9 @@
 #include "gprat/gprat.hpp"
 
 #include <boost/json.hpp>
+#include <fstream>
+#include <iostream>
+#include <string>
 #include <vector>
 
 // Struct containing all results we'd like to compare
@@ -74,4 +77,54 @@ std::vector<std::vector<T>> to_vector(const std::vector<gprat::mutable_tile_data
         out.emplace_back(to_vector<T>(row));
     }
     return out;
+}
+
+/**
+ * @brief Tries to load expected results from `filename`. If the file does not exist, writes
+ *        `fallback_results` to it and returns false. Returns true when results are loaded.
+ */
+inline bool load_or_create_expected_results(
+    const std::string &filename, const gprat_results &fallback_results, gprat_results &results)
+{
+    {
+        std::ifstream ifs(filename);
+        if (!ifs.fail())
+        {
+            try
+            {
+                using iterator_type = std::istreambuf_iterator<char>;
+                const std::string content(iterator_type{ ifs }, iterator_type{});
+                results = boost::json::value_to<gprat_results>(boost::json::parse(content));
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Failed to parse baseline " << filename << ": " << e.what()
+                          << " — overwriting with current results.\n";
+                results = gprat_results{};
+            }
+
+            // Stale if any field present in the current run is absent or has a different outer
+            // size in the baseline (e.g. CPU baseline loaded by the GPU test, or n_tiles changed).
+            const bool stale =
+                (!fallback_results.cholesky.empty()
+                 && (results.cholesky.empty() || results.cholesky.size() != fallback_results.cholesky.size()))
+                || (!fallback_results.losses.empty() && results.losses.size() != fallback_results.losses.size())
+                || (!fallback_results.sum.empty()
+                    && (results.sum.empty() || results.sum.size() != fallback_results.sum.size()))
+                || (!fallback_results.full.empty()
+                    && (results.full.empty() || results.full.size() != fallback_results.full.size()))
+                || (!fallback_results.pred.empty() && results.pred.size() != fallback_results.pred.size());
+            if (!stale)
+            {
+                return true;
+            }
+
+            std::cerr << "Baseline in " << filename << " is incomplete or mismatched"
+                      << " — overwriting with current results.\n";
+        }
+    }
+
+    std::ofstream fout(filename);
+    fout << boost::json::serialize(boost::json::value_from(fallback_results));
+    return false;
 }

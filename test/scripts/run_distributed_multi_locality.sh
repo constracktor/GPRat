@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Smoke-tests the gprat_distributed binary across N HPX localities on one node.
-# Usage: run_distributed_multi_locality.sh <path-to-gprat_distributed> <N>
+# Runs a binary across N HPX localities on one node, forwarding extra arguments to node 0 only
+# (the other nodes just join the runtime and take no CLI arguments of their own).
+# Usage: run_distributed_multi_locality.sh <path-to-binary> <N> [extra node-0 args...]
 #
-# This only exercises multi-locality startup/teardown and one small correctness run; it requires
-# a binary built against an HPX with networking enabled (networking=none rejects --hpx:localities
-# outright), which is why the CTest entries that invoke this script are opt-in via
-# GPRAT_TEST_MULTI_LOCALITY (see test/CMakeLists.txt).
+# Used both for the gprat_distributed smoke tests (exit-code-only) and the distributed
+# correctness check (compares computed results to a baseline, see
+# test/src/distributed_output_correctness.cpp). Requires a binary built against an HPX with
+# networking enabled (networking=none rejects --hpx:localities outright), which is why the CTest
+# entries that invoke this script are opt-in via GPRAT_TEST_MULTI_LOCALITY (see
+# test/CMakeLists.txt).
 set -e
 
 BIN="$1"
 N="$2"
+shift 2 || true
 
 if [[ -z "$BIN" || -z "$N" ]]; then
-  echo "usage: $0 <path-to-gprat_distributed> <N>" 1>&2
+  echo "usage: $0 <path-to-binary> <N> [extra node-0 args...]" 1>&2
   exit 1
 fi
 
@@ -22,8 +26,7 @@ ZC_ARGS=(--hpx:ini=hpx.parcel.zero_copy_serialization_threshold=999999999)
 
 pids=()
 
-"$BIN" --hpx:localities="$N" --hpx:node=0 "${ZC_ARGS[@]}" \
-  --start 128 --end 128 --step 2 --tiles 2 --loop 1 --output_csv /dev/null &
+"$BIN" --hpx:localities="$N" --hpx:node=0 "${ZC_ARGS[@]}" "$@" &
 pids+=($!)
 
 for ((node = 1; node < N; node++)); do

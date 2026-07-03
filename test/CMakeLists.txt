@@ -92,8 +92,10 @@ if(GPRAT_TEST_MULTI_LOCALITY)
   foreach(n_localities 1 2 4)
     add_test(
       NAME GPRat_test_distributed_multi_locality_${n_localities}
-      COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/scripts/run_distributed_multi_locality.sh"
-              "$<TARGET_FILE:gprat_distributed>" ${n_localities})
+      COMMAND
+        bash "${CMAKE_CURRENT_LIST_DIR}/scripts/run_distributed_multi_locality.sh"
+        "$<TARGET_FILE:gprat_distributed>" ${n_localities} --start 128 --end 128 --step 2
+        --tiles 2 --loop 1 --output_csv /dev/null)
     set_tests_properties(
       GPRat_test_distributed_multi_locality_${n_localities}
       PROPERTIES TIMEOUT 120
@@ -106,5 +108,27 @@ if(GPRAT_TEST_MULTI_LOCALITY)
                  # ("Address already in use"), which then hangs its orphaned peer processes
                  # until they hit TIMEOUT. Force them to run one at a time.
                  RUN_SERIAL TRUE)
+  endforeach()
+
+  # gprat::GP (used by GPRat_test_output_correctness) always uses tiled_scheduler_local, which is
+  # locality-oblivious -- it never exercises the distributed action dispatch no matter how many
+  # localities are running. This binary instead calls the same free functions
+  # examples/gprat_distributed uses with tiled_scheduler_sma, so running it across multiple
+  # localities actually verifies that dispatch, against the same data_1024/output.json baseline.
+  add_executable(GPRat_test_distributed_output_correctness
+                 src/test_data.hpp src/distributed_output_correctness.cpp)
+  target_link_libraries(GPRat_test_distributed_output_correctness PRIVATE GPRat::core Boost::boost)
+  target_compile_features(GPRat_test_distributed_output_correctness PRIVATE cxx_std_17)
+
+  foreach(n_localities 1 2 4)
+    add_test(
+      NAME GPRat_test_distributed_output_correctness_${n_localities}
+      COMMAND
+        bash "${CMAKE_CURRENT_LIST_DIR}/scripts/run_distributed_multi_locality.sh"
+        "$<TARGET_FILE:GPRat_test_distributed_output_correctness>" ${n_localities} --data_root
+        "${CMAKE_SOURCE_DIR}/data")
+    set_tests_properties(
+      GPRat_test_distributed_output_correctness_${n_localities}
+      PROPERTIES TIMEOUT 120 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RUN_SERIAL TRUE)
   endforeach()
 endif()
