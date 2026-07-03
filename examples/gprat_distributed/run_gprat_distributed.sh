@@ -3,12 +3,30 @@
 # All arguments are forwarded to the gprat_distributed binary, e.g.:
 #   ./run_gprat_distributed.sh --start 128 --end 4096 --step 2 --tiles 8 --loop 3
 #
-# NOTE: this script only launches a single HPX locality. Running across multiple
-# localities/nodes requires additional HPX network configuration (parcelport,
-# AGAS bootstrap, hostfile/mpirun setup) that is specific to the target cluster
-# and is not set up here yet.
+# NOTE: this script only launches a single HPX locality. To launch multiple localities
+# (e.g. one per process on the same node), run this binary directly N times with
+# --hpx:localities=N --hpx:node=<index> instead of via this script, and see the
+# "To run the distributed GPRat benchmark" section in the top-level README for a
+# required workaround (HPX's TCP zero-copy serialization threshold) and the caveats
+# for launching across multiple actual nodes.
+#
+# NOTE: the default Spack environment (gprat_cpu_gcc) builds HPX with networking=none,
+# which rejects --hpx:localities outright. To build a binary that supports > 1 locality, this
+# script defaults GPRAT_DIST_MULTI_LOCALITY=1 (set it to 0 beforehand to opt back into the
+# single-locality build); on the simcl hosts this switches to the gprat_cpu_gcc_dist Spack
+# environment (networking=tcp, OpenBLAS-only, see
+# spack-repo/environments/setup_gprat_cpu_gcc_dist.sh). Since the shared scratch Spack instance
+# on those hosts is owned by another account, GPRAT_DIST_MULTI_LOCALITY=1 skips sourcing it and
+# instead uses whatever `spack` is already on the user's own PATH (e.g. a personal Spack
+# install with its own gprat_cpu_gcc_dist environment).
+#
+# With GPRAT_DIST_MULTI_LOCALITY=1, the script itself launches one run per locality count in
+# GPRAT_DIST_LOCALITIES (default "1 2 4"), spawning the N processes (--hpx:localities=N
+# --hpx:node=0..N-1) each round instead of a single-locality invocation.
 
 set -e # Exit immediately if a command exits with a non-zero status.
+
+: "${GPRAT_DIST_MULTI_LOCALITY:=1}"
 
 is_simcl_host() {
   case " simcl1n1 simcl1n2 simcl1n3 simcl1n4 " in
@@ -21,7 +39,7 @@ is_simcl_host() {
 # Set Spack if on simcl1n1, simcl1n2, simcl1n3, or simcl1n4
 ###################################################################################################
 
-if is_simcl_host "$HOSTNAME"; then
+if [[ "$GPRAT_DIST_MULTI_LOCALITY" != "1" ]] && is_simcl_host "$HOSTNAME"; then
 
   spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
   source $spack_destination/spack/share/spack/setup-env.sh
@@ -70,7 +88,24 @@ if command -v spack &>/dev/null; then
   # simcl1n1, simcl1n2, simcl1n3, simcl1n4 (CPU only) #############################################
   elif is_simcl_host "$HOSTNAME"; then
 
-    if spack env list | grep -q "gprat_cpu_gcc"; then
+    if [[ "$GPRAT_DIST_MULTI_LOCALITY" == "1" ]]; then
+
+      if spack env list | grep -q "gprat_cpu_gcc_dist"; then
+        echo "Found gprat_cpu_gcc_dist environment, activating it."
+        spack env activate gprat_cpu_gcc_dist
+        module load gcc/14.1.0
+        export CXX=g++
+        export CC=gcc
+        # No MKL variant is maintained for this environment; build against OpenBLAS.
+        GPRAT_ENABLE_MKL_ARGS=(-DGPRAT_ENABLE_MKL=OFF)
+        LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
+        LD_LIBRARY_PATH=$(spack location -i openblas)/lib:$LD_LIBRARY_PATH
+      else
+        echo "Cannot find Spack environment gprat_cpu_gcc_dist. Please run spack-repo/environments/setup_gprat_cpu_gcc_dist.sh" 1>&2
+        exit 1
+      fi
+
+    elif spack env list | grep -q "gprat_cpu_gcc"; then
       echo "Found gprat_cpu_gcc environment, activating it."
       spack env activate gprat_cpu_gcc
       module load gcc/14.1.0
@@ -122,16 +157,54 @@ if [[ -n "$HPX_CMAKE" ]]; then
   HPX_DIR_ARGS=(-DHPX_DIR="$HPX_CMAKE")
 fi
 
-cmake --preset release-linux -DGPRAT_WITH_DISTRIBUTED=ON "${HPX_DIR_ARGS[@]}"
-cmake --build --preset release-linux --target gprat_distributed -j
+# Multi-locality builds use a distinct Spack toolchain (networking=tcp HPX, OpenBLAS-only)
+# from the default single-locality build. Building both into the same build/release-linux
+# directory poisons the CMake cache with paths from whichever toolchain configured it last
+# (e.g. linking against one env's HPX headers while another env's .so is on
+# LD_LIBRARY_PATH), so give multi-locality builds their own build directory.
+BUILD_DIR="build/release-linux"
+if [[ "$GPRAT_DIST_MULTI_LOCALITY" == "1" ]]; then
+  BUILD_DIR="build/release-linux-dist"
+fi
+
+cmake --preset release-linux -B "$BUILD_DIR" -DGPRAT_WITH_DISTRIBUTED=ON "${HPX_DIR_ARGS[@]}" "${GPRAT_ENABLE_MKL_ARGS[@]}"
+cmake --build "$BUILD_DIR" --target gprat_distributed -j
 
 ###################################################################################################
 # Run code
 ###################################################################################################
 
-echo "Running GPRat distributed benchmark (single locality)"
+GPRAT_DISTRIBUTED_BIN="$GPRAT_ROOT/$BUILD_DIR/examples/gprat_distributed/gprat_distributed"
 
-# Run from GPRAT_ROOT so the default data/data_1024/... paths resolve.
-"$GPRAT_ROOT/build/release-linux/examples/gprat_distributed/gprat_distributed" "$@"
+if [[ "$GPRAT_DIST_MULTI_LOCALITY" == "1" ]]; then
 
-echo "Finished running GPRat distributed benchmark"
+  # Run from GPRAT_ROOT so the default data/data_1024/... paths resolve.
+  for N in ${GPRAT_DIST_LOCALITIES:-1 2 4}; do
+
+    echo "Running GPRat distributed benchmark ($N locality/localities)"
+
+    pids=()
+    "$GPRAT_DISTRIBUTED_BIN" --hpx:localities="$N" --hpx:node=0 \
+      --hpx:ini=hpx.parcel.zero_copy_serialization_threshold=999999999 "$@" &
+    pids+=($!)
+    for ((node = 1; node < N; node++)); do
+      "$GPRAT_DISTRIBUTED_BIN" --hpx:localities="$N" --hpx:node="$node" \
+        --hpx:ini=hpx.parcel.zero_copy_serialization_threshold=999999999 &
+      pids+=($!)
+    done
+    wait "${pids[@]}"
+
+    echo "Finished running GPRat distributed benchmark ($N locality/localities)"
+
+  done
+
+else
+
+  echo "Running GPRat distributed benchmark (single locality)"
+
+  # Run from GPRAT_ROOT so the default data/data_1024/... paths resolve.
+  "$GPRAT_DISTRIBUTED_BIN" "$@"
+
+  echo "Finished running GPRat distributed benchmark"
+
+fi

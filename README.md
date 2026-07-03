@@ -119,8 +119,23 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
     correctness fixture
   - `--output_csv`: where per-run timings are appended (defaults to `examples/gprat_distributed/output.csv`,
     matching the other examples)
-- The script only launches a single HPX locality; running across multiple localities/nodes requires additional
-  HPX network configuration (parcelport, AGAS bootstrap, hostfile/mpirun setup) specific to the target cluster.
+- By default (`GPRAT_DIST_MULTI_LOCALITY=1`, on unless you set it to `0` before running
+  `run_gprat_distributed.sh`) the script runs across multiple localities on one node: it builds a
+  networking-enabled binary and, for each locality count in `GPRAT_DIST_LOCALITIES` (default `"1 2 4"`),
+  launches that many processes itself with `--hpx:localities=N --hpx:node=0..N-1` (node `0` is the console
+  process that receives your CLI options; the others just join), waiting for each round to finish before
+  moving to the next. All arguments you pass are forwarded to node `0`. Set `GPRAT_DIST_MULTI_LOCALITY=0` to
+  opt back into a single-locality run against the default `gprat_cpu_gcc` build.
+  **Important:** HPX's TCP parcelport zero-copy path (`hpx.parcel.zero_copy_serialization_threshold`,
+  8192 bytes by default) reliably hangs once tile sizes exceed it in a multi-locality run, so the script
+  always raises it (`--hpx:ini=hpx.parcel.zero_copy_serialization_threshold=999999999`) for these runs.
+  Running across multiple actual nodes additionally requires cluster-specific network configuration
+  (AGAS bootstrap addresses, hostfile/job-scheduler integration) not set up here.
+  - The default Spack environment (`gprat_cpu_gcc`) builds HPX with `networking=none`, which rejects
+    `--hpx:localities` outright. `GPRAT_DIST_MULTI_LOCALITY=1` instead uses the `gprat_cpu_gcc_dist`
+    Spack environment (`networking=tcp`, OpenBLAS-only — see
+    `spack-repo/environments/setup_gprat_cpu_gcc_dist.sh`) and builds into a separate
+    `build/release-linux-dist` directory to avoid mixing the two toolchains.
 
 ### To run GPflow reference
 

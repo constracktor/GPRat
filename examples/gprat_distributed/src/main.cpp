@@ -222,7 +222,8 @@ HPX_REGISTER_STARTUP_MODULE(GPRAT_NS::check_startup)
 
 int hpx_main(hpx::program_options::variables_map &vm)
 {
-    hpx::get_runtime().get_config().dump(0, std::cerr);
+    // Debugging: dumps the full HPX runtime configuration (AGAS, logging, thread pools, etc.)
+    // hpx::get_runtime().get_config().dump(0, std::cerr);
     std::cerr << "OS Threads: " << hpx::get_os_thread_count() << std::endl;
     std::cerr << "All localities: " << hpx::get_num_localities().get() << std::endl;
     std::cerr << "Root locality: " << hpx::find_root_locality() << std::endl;
