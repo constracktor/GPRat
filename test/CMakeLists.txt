@@ -100,6 +100,11 @@ if(GPRAT_TEST_MULTI_LOCALITY)
                  # The binary resolves its default data/data_1024/... paths relative to the
                  # current working directory, matching run_gprat_distributed.sh's `cd
                  # "$GPRAT_ROOT"` before invoking it.
-                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                 # Node 0 of each run binds HPX's default AGAS/parcel TCP port on localhost;
+                 # running two of these tests concurrently makes the second's bind fail
+                 # ("Address already in use"), which then hangs its orphaned peer processes
+                 # until they hit TIMEOUT. Force them to run one at a time.
+                 RUN_SERIAL TRUE)
   endforeach()
 endif()
