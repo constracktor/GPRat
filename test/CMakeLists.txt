@@ -119,14 +119,19 @@ if(GPRAT_TEST_MULTI_LOCALITY)
                  src/test_data.hpp src/distributed_output_correctness.cpp)
   target_link_libraries(GPRat_test_distributed_output_correctness PRIVATE GPRat::core Boost::boost)
   target_compile_features(GPRat_test_distributed_output_correctness PRIVATE cxx_std_17)
+  # Baked-in default data/ directory, overridable via the GPRAT_ROOT env var (see
+  # test_data.hpp's get_data_directory()) so this always agrees with GPRat_test_output_correctness
+  # on which data_1024/output.json baseline to read/write.
+  target_compile_definitions(
+    GPRat_test_distributed_output_correctness
+    PRIVATE GPRAT_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/data")
 
   foreach(n_localities 1 2 4)
     add_test(
       NAME GPRat_test_distributed_output_correctness_${n_localities}
       COMMAND
         bash "${CMAKE_CURRENT_LIST_DIR}/scripts/run_distributed_multi_locality.sh"
-        "$<TARGET_FILE:GPRat_test_distributed_output_correctness>" ${n_localities} --data_root
-        "${CMAKE_SOURCE_DIR}/data")
+        "$<TARGET_FILE:GPRat_test_distributed_output_correctness>" ${n_localities})
     set_tests_properties(
       GPRat_test_distributed_output_correctness_${n_localities}
       PROPERTIES TIMEOUT 120 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RUN_SERIAL TRUE)

@@ -3,10 +3,26 @@
 #include "gprat/gprat.hpp"
 
 #include <boost/json.hpp>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+
+/**
+ * @brief Resolves the data/ directory to use: the GPRAT_ROOT environment variable if set,
+ *        otherwise `fallback`. Shared so every test binary that reads data/data_1024/... agrees
+ *        on the same directory when GPRAT_ROOT is set, regardless of each binary's own default.
+ */
+inline std::string get_data_directory(const std::string &fallback)
+{
+    const char *env_root = std::getenv("GPRAT_ROOT");
+    if (env_root)
+    {
+        return env_root;
+    }
+    return fallback;
+}
 
 // Struct containing all results we'd like to compare
 struct gprat_results

@@ -88,9 +88,12 @@ bool compare(
 
 }  // namespace
 
-int hpx_main(hpx::program_options::variables_map &vm)
+int hpx_main(hpx::program_options::variables_map & /*vm*/)
 {
-    const auto &root = vm["data_root"].as<std::string>();
+    // GPRAT_TEST_DATA_DIR is baked in at configure time (CMAKE_SOURCE_DIR/data); GPRAT_ROOT, if
+    // set, overrides it -- matching GPRat_test_output_correctness's own resolution so both always
+    // agree on which data/data_1024/output.json baseline they're reading/writing.
+    const auto root = get_data_directory(GPRAT_TEST_DATA_DIR);
 
     const std::size_t tile_size = gprat::compute_train_tile_size(n_train, n_tiles);
     const auto test_tiles = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
@@ -174,14 +177,4 @@ int hpx_main(hpx::program_options::variables_map &vm)
     return ok ? 0 : 1;
 }
 
-int main(int argc, char *argv[])
-{
-    namespace po = hpx::program_options;
-    po::options_description desc("Allowed options");
-    desc.add_options()(
-        "data_root", po::value<std::string>()->default_value("data"), "path to the data/ directory");
-
-    hpx::init_params init_args;
-    init_args.desc_cmdline = desc;
-    return hpx::init(argc, argv, init_args);
-}
+int main(int argc, char *argv[]) { return hpx::init(argc, argv); }

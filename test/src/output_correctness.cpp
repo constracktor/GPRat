@@ -31,18 +31,6 @@ constexpr int OPT_ITER = 3;
 constexpr int gpu_id = 0;
 constexpr int n_streams = 4;
 
-// Utility ////////////////////////////////////////////////////////////////////////////////////////
-
-std::string get_data_directory()
-{
-    const char *env_root = std::getenv("GPRAT_ROOT");
-    if (env_root)
-    {
-        return env_root;
-    }
-    return "../data";
-}
-
 // Test execution /////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -123,7 +111,7 @@ gprat_results run_on_data_gpu(const std::string &train_path, const std::string &
 
 TEST_CASE("GP CPU: results match baseline", "[integration][cpu]")
 {
-    const std::string root = get_data_directory();
+    const std::string root = get_data_directory("../data");
 
     const auto results = run_on_data_cpu(root + "/data_1024/training_input.txt",
                                          root + "/data_1024/training_output.txt",
@@ -189,7 +177,7 @@ TEST_CASE("GP GPU: results match baseline", "[integration][gpu]")
         SKIP("SYCL GPU runtime not functional (oneMath ABI mismatch).");
     }
 
-    const std::string root = get_data_directory();
+    const std::string root = get_data_directory("../data");
 
     const auto results = run_on_data_gpu(root + "/data_1024/training_input.txt",
                                          root + "/data_1024/training_output.txt",
