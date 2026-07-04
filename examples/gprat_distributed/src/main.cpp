@@ -180,10 +180,9 @@ void run(hpx::program_options::variables_map &vm)
                 std::getline(existing, existing_header);
                 if (existing_header != csv_header)
                 {
-                    throw std::runtime_error(
-                        "output_csv '" + csv_path
-                        + "' already exists with a different column layout. Use a different "
-                          "--output_csv path or remove the old file.");
+                    throw std::runtime_error("output_csv '" + csv_path
+                                             + "' already exists with a different column layout. Use a different "
+                                               "--output_csv path or remove the old file.");
                 }
             }
             outfile << hpx::get_locality_id() << "," << n_localities << "," << n_train << "," << n_test << ","
@@ -262,8 +261,7 @@ int main(int argc, char *argv[])
 
     // Default to <example dir>/output.csv, matching gprat_cpp's convention of writing
     // its output next to the example sources regardless of the current working directory.
-    const std::string default_output_csv =
-        (std::filesystem::path(GPRAT_DISTRIBUTED_DIR) / "output.csv").string();
+    const std::string default_output_csv = (std::filesystem::path(GPRAT_DISTRIBUTED_DIR) / "output.csv").string();
 
     // clang-format off
     desc.add_options()

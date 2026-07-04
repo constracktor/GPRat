@@ -22,12 +22,9 @@
 #include "gprat/utils.hpp"
 
 #include "test_data.hpp"
-
 #include <boost/json/src.hpp>
-
-#include <hpx/hpx_init.hpp>
-
 #include <cmath>
+#include <hpx/hpx_init.hpp>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -48,7 +45,8 @@ bool nearly_equal(double a, double b, double eps)
     return std::fabs(a - b) <= eps * (std::max)(std::fabs(a), std::fabs(b));
 }
 
-bool compare(const std::vector<double> &actual, const std::vector<double> &expected, double eps, const std::string &label)
+bool compare(
+    const std::vector<double> &actual, const std::vector<double> &expected, double eps, const std::string &label)
 {
     if (actual.size() != expected.size())
     {
@@ -67,11 +65,10 @@ bool compare(const std::vector<double> &actual, const std::vector<double> &expec
     return ok;
 }
 
-bool compare(
-    const std::vector<std::vector<double>> &actual,
-    const std::vector<std::vector<double>> &expected,
-    double eps,
-    const std::string &label)
+bool compare(const std::vector<std::vector<double>> &actual,
+             const std::vector<std::vector<double>> &expected,
+             double eps,
+             const std::string &label)
 {
     if (actual.size() != expected.size())
     {
@@ -145,15 +142,7 @@ int hpx_main(hpx::program_options::variables_map & /*vm*/)
         test_tiles.second,
         n_reg);
     results.losses = gprat::cpu::optimize(
-        scheduler,
-        training_input.data,
-        training_output.data,
-        n_tiles,
-        tile_size,
-        n_reg,
-        hpar,
-        sek_params,
-        trainable);
+        scheduler, training_input.data, training_output.data, n_tiles, tile_size, n_reg, hpar, sek_params, trainable);
 
     gprat_results expected;
     if (!load_or_create_expected_results(root + "/data_1024/output.json", results, expected))
@@ -171,7 +160,8 @@ int hpx_main(hpx::program_options::variables_map & /*vm*/)
     ok = compare(results.full, expected.full, eps, "full") && ok;
     ok = compare(results.pred, expected.pred, eps, "pred") && ok;
 
-    std::cerr << (ok ? "PASS: distributed results match baseline\n" : "FAIL: distributed results differ from baseline\n");
+    std::cerr << (ok ? "PASS: distributed results match baseline\n"
+                     : "FAIL: distributed results differ from baseline\n");
 
     hpx::finalize();
     return ok ? 0 : 1;
