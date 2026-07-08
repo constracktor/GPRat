@@ -192,7 +192,17 @@ if [[ "$GPRAT_DIST_MULTI_LOCALITY" == "1" ]]; then
         --hpx:ini=hpx.parcel.zero_copy_serialization_threshold=999999999 &
       pids+=($!)
     done
-    wait "${pids[@]}"
+    # `wait pid1 pid2 ...` only reports the exit status of the LAST pid, which would
+    # let a crash of an earlier locality (e.g. node 0, the console process) slip past
+    # `set -e`. Wait on each PID individually and fail if any of them failed.
+    failed=0
+    for pid in "${pids[@]}"; do
+      wait "$pid" || failed=1
+    done
+    if [[ "$failed" != "0" ]]; then
+      echo "At least one locality process failed ($N locality/localities run)" 1>&2
+      exit 1
+    fi
 
     echo "Finished running GPRat distributed benchmark ($N locality/localities)"
 

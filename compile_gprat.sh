@@ -16,6 +16,12 @@ HOSTNAME=$(hostname -s)
 # $3: release/dev
 # $4: mkl/none
 # $5: apex profiling options: steps/cholesky/none
+# $6: distributed support: dist/none
+#     NOTE: "dist" requires an HPX build with networking enabled (e.g. networking=tcp).
+#     The default Spack environment gprat_cpu_gcc builds HPX with networking=none; a
+#     GPRAT_WITH_DISTRIBUTED=ON binary built against it hangs or rejects
+#     --hpx:localities > 1 at runtime. Use the gprat_cpu_gcc_dist environment (see
+#     spack-repo/environments/setup_gprat_cpu_gcc_dist.sh) for distributed builds.
 
 ###################################################################################################
 # Bindings
@@ -85,6 +91,18 @@ elif [[ "$5" == "cholesky" ]]; then
 else
   GPRAT_APEX_STEPS=OFF
   GPRAT_APEX_CHOLESKY=OFF
+fi
+
+###################################################################################################
+# Select distributed support
+###################################################################################################
+if [[ "$6" == "dist" ]]; then
+  GPRAT_WITH_DISTRIBUTED=ON
+  echo "Distributed support enabled. Make sure the active HPX build has networking enabled" \
+    "(e.g. the gprat_cpu_gcc_dist Spack environment); HPX built with networking=none cannot" \
+    "run with --hpx:localities > 1."
+else
+  GPRAT_WITH_DISTRIBUTED=OFF
 fi
 
 ###################################################################################################
@@ -473,7 +491,7 @@ if [[ $PRESET == "release-linux" || $PRESET == "dev-linux" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
-    -DGPRAT_WITH_DISTRIBUTED=ON \
+    -DGPRAT_WITH_DISTRIBUTED=$GPRAT_WITH_DISTRIBUTED \
     -DGPRAT_ENABLE_TESTS=ON \
     -DGPRAT_ENABLE_EXAMPLES=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -489,7 +507,7 @@ elif [[ $PRESET == "release-linux-cuda" || $PRESET == "dev-linux-cuda" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
-    -DGPRAT_WITH_DISTRIBUTED=ON \
+    -DGPRAT_WITH_DISTRIBUTED=$GPRAT_WITH_DISTRIBUTED \
     -DCMAKE_C_COMPILER=$(which clang) \
     -DCMAKE_CXX_COMPILER=$(which clang++) \
     -DCMAKE_CUDA_COMPILER=$(which clang++) \
@@ -512,7 +530,7 @@ elif [[ $PRESET == "release-linux-sycl" || $PRESET == "dev-linux-sycl" ]]; then
     -DGPRAT_ENABLE_MKL=$USE_MKL \
     -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
     -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
-    -DGPRAT_WITH_DISTRIBUTED=ON \
+    -DGPRAT_WITH_DISTRIBUTED=$GPRAT_WITH_DISTRIBUTED \
     -DCMAKE_C_COMPILER=$(which icx) \
     -DCMAKE_CXX_COMPILER=$(which icpx) \
     -DGPRAT_WITH_SYCL=ON \

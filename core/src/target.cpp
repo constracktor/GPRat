@@ -42,6 +42,7 @@ CUDA_GPU::CUDA_GPU(int id, int n_streams) :
     {
         throw std::runtime_error("Requested GPU device is not available.");
     }
+    check_cuda_error(cudaSetDevice(id));
 }
 
 bool CUDA_GPU::is_cpu() { return false; }
@@ -59,6 +60,9 @@ std::string CUDA_GPU::repr() const
 
 void CUDA_GPU::create()
 {
+    // Streams and cuBLAS handles are bound to the device active at creation time,
+    // so make sure the requested device is selected (also on this thread).
+    check_cuda_error(cudaSetDevice(id));
     streams = std::vector<cudaStream_t>(static_cast<std::size_t>(n_streams));
     cublas_handles = std::vector<cublasHandle_t>(static_cast<std::size_t>(n_streams));
     for (size_t i = 0; i < streams.size(); ++i)
@@ -70,6 +74,7 @@ void CUDA_GPU::create()
 
 void CUDA_GPU::destroy()
 {
+    check_cuda_error(cudaSetDevice(id));
     for (size_t i = 0; i < streams.size(); ++i)
     {
         check_cuda_error(cudaStreamDestroy(streams[i]));

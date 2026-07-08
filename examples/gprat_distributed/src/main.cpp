@@ -46,6 +46,17 @@ void run(hpx::program_options::variables_map &vm)
     const auto &out_path = vm["train_y_path"].as<std::string>();
     const auto &test_path = vm["test_path"].as<std::string>();
 
+    // The sweep below is multiplicative (start *= STEP); it never advances when
+    // START == 0 or STEP <= 1 and would loop forever.
+    if (START == 0)
+    {
+        throw std::runtime_error("--start must be > 0 (multiplicative training-size sweep).");
+    }
+    if (STEP <= 1)
+    {
+        throw std::runtime_error("--step must be > 1 (multiplicative training-size sweep).");
+    }
+
     tiled_scheduler_sma scheduler;
     const auto n_localities = hpx::get_num_localities().get();
 
@@ -185,7 +196,9 @@ void run(hpx::program_options::variables_map &vm)
                                                "--output_csv path or remove the old file.");
                 }
             }
-            outfile << hpx::get_locality_id() << "," << n_localities << "," << n_train << "," << n_test << ","
+            // "Cores" reports the number of HPX worker (OS) threads on this locality,
+            // matching what gprat_cpp/gprat_python write in their "Cores" column.
+            outfile << hpx::get_os_thread_count() << "," << n_localities << "," << n_train << "," << n_test << ","
                     << n_tiles << "," << n_reg << "," << OPT_ITER << "," << total_timer.elapsed() << "," << init_time
                     << "," << cholesky_time << "," << opt_time << "," << predict_with_uncertainty_time << ","
                     << predict_with_full_cov_time << "," << predict_time << "," << l << "\n";

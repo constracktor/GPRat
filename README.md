@@ -1,4 +1,4 @@
-# [GPRat: Gaussian Process Regression using Asynchronous Tasks]()
+# GPRat: Gaussian Process Regression using Asynchronous Tasks
 
 <img align="right" width="15%" src="data/images/ratward_icon.jpg">
 GPRat is an open-source library for Gaussian Process Regression.
@@ -40,6 +40,10 @@ cmake --build --preset=dev-linux
 ctest --preset=dev-linux
 ```
 
+`GPRAT_ENABLE_MKL` defaults to `ON` for a standalone build (see the option table below), which requires Intel
+oneMKL to be installed. If you are using OpenBLAS instead, add `-DGPRAT_ENABLE_MKL=OFF` to the `cmake --preset=...`
+command above.
+
 As a developer, you may create a `CMakeUserPresets.json` file at the root of the project that contains additional
 presets local to your machine.
 In addition to the build configuration `dev-linux`, there are `release-linux`, `dev-linux-cuda`, `release-linux-cuda`, `dev-linux-sycl`, and `release-linux-sycl`.
@@ -55,10 +59,12 @@ The following options can be set to include / exclude parts of the project:
 | GPRAT_ENABLE_EXAMPLES          | Enable/Disable example projects                                                      | ON if top-level |
 | GPRAT_ENABLE_TESTS             | Enable/Disable building of unit and integration tests                                | ON if top-level |
 | GPRAT_ENABLE_FORMAT_TARGETS    | Enable/Disable code formatting helper targets                                        | ON if top-level |
-| GPRAT_ENABLE_MKL               | Enable/Disable support for Intel oneMKL                                              | OFF             |
+| GPRAT_ENABLE_BENCHMARK_CACHE_EVICTIONS | Enable/Disable evicting data from caches before running BLAS operations      | ON              |
+| GPRAT_ENABLE_MKL               | Enable/Disable support for Intel oneMKL                                              | ON if top-level |
 | GPRAT_WITH_CUDA                | Enable/disable compilation with CUDA support (NVIDIA GPUs)                           | OFF             |
 | GPRAT_WITH_SYCL                | Enable/disable compilation with SYCL support (Intel and AMD GPUs via oneMath)        | OFF             |
 | GPRAT_WITH_DISTRIBUTED         | Enable/disable distributed GP support via HPX actions                                | OFF             |
+| GPRAT_TEST_MULTI_LOCALITY      | Enable/disable CTest smoke tests that launch the benchmark across multiple localities | OFF             |
 | GPRAT_APEX_STEPS               | Enable/disable compilation for steps duration measurement with APEX                  | OFF             |
 | GPRAT_APEX_CHOLESKY            | Enable/disable compilation for measuring cholesky assembly and computation with APEX | OFF             |
 
@@ -77,9 +83,7 @@ It takes five parameters:
 
 Computations are supported in both single (fp32) and double (fp64) precision.
 
-Respective scripts can be found in this directory.
-
-We also provide a spack package for GPRat in [`spack-repo/packages`](spack-repo/packages) for portable and convenient compilation. When the repository is added to spack, GPRat can be installed with `spack install gprat~cuda~bindings~examples blas={mkl,openblas}`
+We also provide a spack package for GPRat in [`spack-repo/packages`](spack-repo/packages) for portable and convenient compilation. When the repository is added to spack, GPRat can be installed with `spack install gprat~cuda~bindings~examples blas=mkl` (or `blas=openblas`)
 
 ## How To Run
 
@@ -90,9 +94,10 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 ### To run the GPRat C++ code
 
 - Go to [`examples/gprat_cpp`](examples/gprat_cpp/)
-- Set parameters in [`execute.cpp`](examples/gprat_cpp/src/execute.cpp)
+- Set parameters in [`config.json`](examples/gprat_cpp/config.json)
 - The example is built as part of the main project.
-  - Go to `build/` and execute `./gprat_cpp [--use-gpu]` to run the example.
+  - Execute `./build/<preset>/examples/gprat_cpp/gprat_cpp [--use-gpu]` (e.g. `build/dev-linux/...` for the
+    `dev-linux` preset) to run the example.
   - If you want to use an installed GPRat version:
     Run `./run_gprat_cpp.sh [cpu/cuda/sycl] [nvidia/amd/intel]` to build and run the example.
     The second parameter selects the SYCL device and is only required when GPRat was compiled with the SYCL backend.
@@ -106,11 +111,13 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 
 ### To run the distributed GPRat benchmark
 
+- Go to [`examples/gprat_distributed`](examples/gprat_distributed/)
 - Configure the main project with `-DGPRAT_WITH_DISTRIBUTED=ON` to build [`examples/gprat_distributed`](examples/gprat_distributed/).
 - The example is a CLI-driven scaling benchmark (no `config.json`) rather than a single "run one example" tool,
   since it sweeps over training-set sizes rather than running one fixed configuration.
-- Go to `build/` and execute `./gprat_distributed [options]`, or run `./run_gprat_distributed.sh [options]` to
-  build and run it. Useful options:
+- Execute `./build/<preset>/examples/gprat_distributed/gprat_distributed [options]` (e.g.
+  `build/release-linux-dist/...` for a multi-locality build, see below), or run
+  `./run_gprat_distributed.sh [options]` to build and run it. Useful options:
   - `--start`/`--end`/`--step`: training-set sizes to sweep over (e.g. `--start 128 --end 4096 --step 2`)
   - `--tiles`, `--regressors`, `--n_test`, `--opt_iter`, `--loop`: problem size and repetition count
   - `--enabled`: bitmask to select which of cholesky/optimize/predict/predict_with_uncertainty/predict_with_full_cov to run
