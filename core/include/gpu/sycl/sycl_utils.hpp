@@ -50,7 +50,7 @@ inline double *copy_to_device(const std::vector<double> &h_vector, gprat::SYCL_D
  * @param vector The vector of shared futures to free
  * @param queue The SYCL queue to use for freeing the memory
  */
-inline void free(std::vector<hpx::shared_future<double *>> &vector, const sycl::queue &queue)
+inline void free(std::vector<hpx::shared_future<double *>> &vector, sycl::queue queue)
 {
     try
     {

@@ -24,7 +24,7 @@
  *
  * @return factorized, lower triangular matrix f_L, in-place update of f_A
  */
-double *potrf(const sycl::queue &queue, double *f_A, const std::size_t N);
+double *potrf(sycl::queue queue, double *f_A, const std::size_t N);
 
 /**
  * @brief In-place solve A(^T) * X = B or X * A(^T) = B for lower triangular A
@@ -39,7 +39,7 @@ double *potrf(const sycl::queue &queue, double *f_A, const std::size_t N);
  *
  * @return solution matrix f_X, in-place update of f_B
  */
-double *trsm(const sycl::queue &queue,
+double *trsm(sycl::queue queue,
              double *f_A,
              double *f_B,
              const std::size_t M,
@@ -57,7 +57,7 @@ double *trsm(const sycl::queue &queue,
  *
  * @return updated matrix f_A, in-place update
  */
-double *syrk(const sycl::queue &queue, double *f_A, double *f_C, const std::size_t N);
+double *syrk(sycl::queue queue, double *f_A, double *f_C, const std::size_t N);
 
 /**
  * @brief General matrix-matrix multiplication: C = C - A(^T) * B(^T)
@@ -74,7 +74,7 @@ double *syrk(const sycl::queue &queue, double *f_A, double *f_C, const std::size
  *
  * @return updated matrix f_C, in-place update
  */
-double *gemm(const sycl::queue &queue,
+double *gemm(sycl::queue queue,
              double *f_A,
              double *f_B,
              double *f_C,
@@ -97,7 +97,7 @@ double *gemm(const sycl::queue &queue,
  *
  * @return solution vector f_x, in-place update of b
  */
-double *trsv(const sycl::queue &queue,
+double *trsv(sycl::queue queue,
              double *f_A,
              double *f_b,
              const std::size_t N,
@@ -116,7 +116,7 @@ double *trsv(const sycl::queue &queue,
  *
  * @return updated vector f_y, in-place update
  */
-double *gemv(const sycl::queue &queue,
+double *gemv(sycl::queue queue,
              double *f_A,
              double *f_x,
              double *f_y,
@@ -136,7 +136,7 @@ double *gemv(const sycl::queue &queue,
  *
  * @return vector f_b, in-place update
  */
-double *ger(const sycl::queue &queue, double *f_A, double *f_x, double *f_y, const std::size_t N);
+double *ger(sycl::queue queue, double *f_A, double *f_x, double *f_y, const std::size_t N);
 
 /**
  * @brief Vector update with diagonal SYRK: r = r + diag(A^T * A)
@@ -149,7 +149,7 @@ double *ger(const sycl::queue &queue, double *f_A, double *f_x, double *f_y, con
  *
  * @return vector f_r, in-place update
  */
-double *dot_diag_syrk(const sycl::queue &queue, double *f_A, double *f_r, const std::size_t M, const std::size_t N);
+double *dot_diag_syrk(sycl::queue queue, double *f_A, double *f_r, const std::size_t M, const std::size_t N);
 
 /**
  * @brief Kernel class for vector update with diagonal SYRK
@@ -194,7 +194,7 @@ class DotDiagSyrkKernel
  * @return updated vector f_r, in-place update
  */
 double *dot_diag_gemm(
-    const sycl::queue &queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N);
+    sycl::queue queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N);
 
 /**
  * @brief Kernel class for vector update with diagonal GEMM
@@ -239,7 +239,7 @@ class DotDiagGemmKernel
  * @param N vector length
  * @return f_a * f_b
  */
-double *dot(const sycl::queue &queue, double *f_a, double *f_b, const std::size_t N);
+double *dot(sycl::queue queue, double *f_a, double *f_b, const std::size_t N);
 
 // HELPER FUNCTIONS ///////////////////////////////////////////////////////////////////////////////////////////////////
 

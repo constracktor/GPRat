@@ -2,7 +2,7 @@
 
 // BLAS LEVEL 3 OPERATIONS ////////////////////////////////////////////////////////////////////////////////////////////
 
-double *potrf(const sycl::queue &queue, double *f_A, const std::size_t N)
+double *potrf(sycl::queue queue, double *f_A, const std::size_t N)
 {
     std::int64_t scratchpad_size = oneapi::math::lapack::potrf_scratchpad_size<double>(
         queue, oneapi::math::uplo::upper, static_cast<std::int64_t>(N), static_cast<std::int64_t>(N));
@@ -40,7 +40,7 @@ double *potrf(const sycl::queue &queue, double *f_A, const std::size_t N)
     return f_A;
 }
 
-double *trsm(const sycl::queue &queue,
+double *trsm(sycl::queue queue,
              double *f_A,
              double *f_B,
              const std::size_t M,
@@ -85,7 +85,7 @@ double *trsm(const sycl::queue &queue,
     return f_B;
 }
 
-double *syrk(const sycl::queue &queue, double *f_A, double *f_C, const std::size_t N)
+double *syrk(sycl::queue queue, double *f_A, double *f_C, const std::size_t N)
 {
     // SYRK constants
     const double alpha = -1.0;
@@ -121,7 +121,7 @@ double *syrk(const sycl::queue &queue, double *f_A, double *f_C, const std::size
     return f_C;
 }
 
-double *gemm(const sycl::queue &queue,
+double *gemm(sycl::queue queue,
              double *f_A,
              double *f_B,
              double *f_C,
@@ -165,7 +165,7 @@ double *gemm(const sycl::queue &queue,
 
 // BLAS LEVEL 2 OPERATIONS ////////////////////////////////////////////////////////////////////////////////////////////
 
-double *trsv(const sycl::queue &queue,
+double *trsv(sycl::queue queue,
              double *f_A,
              double *f_b,
              const std::size_t N,
@@ -196,7 +196,7 @@ double *trsv(const sycl::queue &queue,
     return f_b;
 }
 
-double *gemv(const sycl::queue &queue,
+double *gemv(sycl::queue queue,
              double *f_A,
              double *f_x,
              double *f_y,
@@ -238,7 +238,7 @@ double *gemv(const sycl::queue &queue,
     return f_y;
 }
 
-double *ger(const sycl::queue &queue, double *f_A, double *f_x, double *f_y, const std::size_t N)
+double *ger(sycl::queue queue, double *f_A, double *f_x, double *f_y, const std::size_t N)
 {
     // GER constants
     const double alpha = -1.0;
@@ -288,7 +288,7 @@ void DotDiagSyrkKernel::operator()(const sycl::id<1> &id) const
     d_r[id] += dot_product;
 }
 
-double *dot_diag_syrk(const sycl::queue &queue, double *f_A, double *f_r, const std::size_t M, const std::size_t N)
+double *dot_diag_syrk(sycl::queue queue, double *f_A, double *f_r, const std::size_t M, const std::size_t N)
 {
     // r = r + diag(A^T * A)
 
@@ -324,7 +324,7 @@ void DotDiagGemmKernel::operator()(const sycl::id<1> &id) const
 }
 
 double *
-dot_diag_gemm(const sycl::queue &queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N)
+dot_diag_gemm(sycl::queue queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N)
 {
     // r = r + diag(A * B)
     auto event = queue.submit(
@@ -340,7 +340,7 @@ dot_diag_gemm(const sycl::queue &queue, double *f_A, double *f_B, double *f_r, c
 
 // BLAS LEVEL 1 OPERATIONS ////////////////////////////////////////////////////////////////////////////////////////////
 
-double *dot(const sycl::queue &queue, double *f_a, double *f_b, const std::size_t N)
+double *dot(sycl::queue queue, double *f_a, double *f_b, const std::size_t N)
 {
     double *result = sycl::malloc_device<double>(1, queue);
     queue.fill(result, 0, 1).wait();
