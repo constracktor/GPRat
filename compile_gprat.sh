@@ -328,10 +328,8 @@ if command -v spack &>/dev/null; then
 
     fi
 
-  # pcsgs04 with Intel GPU ########################################################################
+  # pcsgs04 with Intel GPU (Arc B580) #############################################################
   elif [[ "$HOSTNAME" == "pcsgs04" ]]; then
-
-    echo "Caution: Intel GPU support couldn't be tested and is in an experimental state."
 
     # Check whether the gprat_gpu_clang environment exists
     if spack env list | grep -q "gprat_gpu_clang"; then
@@ -340,6 +338,23 @@ if command -v spack &>/dev/null; then
       spack env activate gprat_gpu_clang
 
       if [[ "$2" == "sycl" ]]; then # GPRat on Intel GPUs with SYCL
+
+        # icpx is not provided by the gprat_gpu_clang Spack environment on this host; it comes
+        # from the system oneAPI install. Source it if icpx isn't already on PATH.
+        # Pin to the compiler version the oneMath install below was built with (2025.3) -
+        # newer icpx releases (e.g. 2026.0, the "latest" default) changed SYCL queue/BLAS
+        # header signatures and fail to compile against this oneMath install.
+        if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
+        fi
+
+        # The Level-Zero GPU backend needs libumf (Unified Memory Framework) on
+        # LD_LIBRARY_PATH; without it, GPU platform enumeration silently returns
+        # zero devices (no error) and GPRat fails at runtime with
+        # "Requested GPU device is not available."
+        if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/umf/latest/env/vars.sh
+        fi
 
         if command -v icpx --version &>/dev/null; then
 
