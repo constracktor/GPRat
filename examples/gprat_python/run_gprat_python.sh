@@ -1,6 +1,9 @@
 #!/bin/bash
 # Input $1: Specify how GPRat was compiled, options:	cpu/cuda/sycl
-# Input $2: If GPRat was compiled with SYCL backend:	nvidia/amd/intel 
+# Input $2: If GPRat was compiled with SYCL backend:	nvidia/amd/intel
+
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cd "$SCRIPT_DIR"
 
 # Set --use-gpu flag
 if [[ -z "$1" ]]; then
@@ -12,9 +15,10 @@ elif [[ "$1" == "cuda" || "$1" == "sycl" ]]; then
 		"$HOSTNAME" != "simcl1n1" && \
 		"$HOSTNAME" != "simcl1n2" && \
 		"$HOSTNAME" != "simcl1n3" && \
-		"$HOSTNAME" != "simcl1n4" ]]; 
+		"$HOSTNAME" != "simcl1n4" && \
+		"$HOSTNAME" != "pcsgs04" ]];
 	then
-		echo "GPU execution with this script is only supported on simcl1n1, simcl1n2, simcl1n3, and simcl1n4." 1>&2
+		echo "GPU execution with this script is only supported on simcl1n1, simcl1n2, simcl1n3, simcl1n4, and pcsgs04." 1>&2
 		exit 1
 	fi
 elif [[ "$1" != "cpu" ]]; then
@@ -111,10 +115,69 @@ fi
 
 ### PCSGS04 #######################################################################################
 
+# SITE-SPECIFIC: paths below are hardcoded for the pcsgs04 cluster. Adjust
+# them to match your local installation before running on a different machine.
 if [[ $(hostname) == "pcsgs04" ]]; then
 
-	echo "The Intel setup is not supported yet." 1>&2
-	exit 1
+	spack_destination="/scratch/grafml/gprat-spack/spack/"
+	source $spack_destination/share/spack/setup-env.sh
+
+	if [[ "$1" == "cuda" || "$1" == "sycl" ]]; then
+
+		if spack env list | grep -q "gprat_gpu_clang"; then
+
+			echo "Found gprat_gpu_clang environment, activating it."
+			spack env activate gprat_gpu_clang
+			LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
+
+			if [[ "$1" == "sycl" ]]; then
+
+				if [[ "$2" != "intel" ]]; then
+
+					echo "pcsgs04 only has an Intel GPU. Please specify gpu vendor: intel" 1>&2
+					exit 1
+
+				fi
+
+				# icpx is not provided by the gprat_gpu_clang Spack environment on this host;
+				# it comes from the system oneAPI install. Source it if not already on PATH.
+				if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
+					source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
+				fi
+
+				# The Level-Zero GPU backend needs libumf (Unified Memory Framework) on
+				# LD_LIBRARY_PATH; without it, GPU platform enumeration silently returns
+				# zero devices and the example fails at runtime with
+				# "Requested GPU device is not available."
+				if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
+					source /opt/intel/oneapi/umf/latest/env/vars.sh
+				fi
+
+				# The compiled gprat Python extension links against the system MKL 2025.3
+				# (matching the oneMath install it was built against) and TBB 2022.3 -
+				# not the older MKL/TBB bundled in the gprat_gpu_clang Spack environment.
+				# Without these on LD_LIBRARY_PATH, importing the extension fails with
+				# undefined-symbol errors.
+				if [[ -f /opt/intel/oneapi/mkl/2025.3/env/vars.sh ]]; then
+					source /opt/intel/oneapi/mkl/2025.3/env/vars.sh
+				fi
+				LD_LIBRARY_PATH="/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:$LD_LIBRARY_PATH"
+
+				# SITE-SPECIFIC: update this path to your local oneMath install prefix.
+				ONEMATH_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install/lib"
+				LD_LIBRARY_PATH="$ONEMATH_PATH:$LD_LIBRARY_PATH"
+
+			fi
+
+		else
+
+			echo \
+				"Cannot find Spack environment gprat_gpu_clang. Please run spack-repo/environments/setup_gprat_gpu_clang.sh" 1>&2
+			exit 1
+
+		fi
+
+	fi
 
 fi
 
