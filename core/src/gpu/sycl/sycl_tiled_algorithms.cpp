@@ -72,16 +72,14 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                          const std::size_t n_tiles,
                          gprat::SYCL_DEVICE &sycl_device)
 {
-    double *result;
-
     for (std::size_t k = 0; k < n_tiles; ++k)
     {
         // TRSM: Solve L * x = a
-        result = trsv(sycl_device.next_queue(),
-                      ft_tiles[k * n_tiles + k].get(),
-                      ft_rhs[k].get(),
-                      n_tile_size,
-                      oneapi::math::transpose::nontrans);
+        double *result = trsv(sycl_device.next_queue(),
+                              ft_tiles[k * n_tiles + k].get(),
+                              ft_rhs[k].get(),
+                              n_tile_size,
+                              oneapi::math::transpose::nontrans);
 
         ft_rhs[k] = hpx::make_ready_future(result);
 
@@ -90,16 +88,14 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
         for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             // GEMV: b = b - A * a
-            result = gemv(gemv_queue,
-                          ft_tiles[m * n_tiles + k].get(),
-                          result,
-                          ft_rhs[m].get(),
-                          n_tile_size,
-                          n_tile_size,
-                          -1,
-                          oneapi::math::transpose::nontrans);
-
-            ft_rhs[m] = hpx::make_ready_future(result);
+            ft_rhs[m] = hpx::make_ready_future(gemv(gemv_queue,
+                                                    ft_tiles[m * n_tiles + k].get(),
+                                                    result,
+                                                    ft_rhs[m].get(),
+                                                    n_tile_size,
+                                                    n_tile_size,
+                                                    -1,
+                                                    oneapi::math::transpose::nontrans));
         }
     }
 }
