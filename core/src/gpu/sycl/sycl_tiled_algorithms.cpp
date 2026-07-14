@@ -389,11 +389,12 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
                              const std::size_t m_tile_size,
                              const std::size_t m_tiles)
 {
-    // oneMath dispatches omatadd on a single-row matrix (M=1, as used below) to
-    // an internal "batch" kernel variant. JIT-compiling that variant crashes on
-    // this driver the first few times it happens concurrently across the
-    // per-tile calls below; forcing one synchronous compile here first avoids
-    // it, since the compiled binary is then cached for later calls.
+#ifdef GPRAT_SYCL_INTEL_GPU
+    // The first-ever JIT compile of any not-yet-seen kernel type crashes on
+    // Intel Level-Zero drivers (confirmed on an Arc B580) when it happens amid
+    // the concurrent per-tile dataflow below. Force one synchronous compile in
+    // isolation first; the compiled binary is then cached and reused by every
+    // later call. Not needed on NVIDIA/AMD SYCL backends.
     static std::once_flag warm_up_flag;
     std::call_once(
         warm_up_flag,
@@ -405,6 +406,7 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
             sycl::free(dummy, queue);
             sycl::free(result, queue);
         });
+#endif
 
     for (std::size_t i = 0; i < m_tiles; i++)
     {
@@ -417,8 +419,8 @@ void matrix_diagonal_tiled(std::vector<hpx::shared_future<double *>> &ft_priorK,
                            const std::size_t m_tile_size,
                            const std::size_t m_tiles)
 {
-    // See vector_difference_tiled: omatcopy on a single-row matrix hits the
-    // same crashing "batch" JIT-compile path; warm it up once, synchronously.
+#ifdef GPRAT_SYCL_INTEL_GPU
+    // See vector_difference_tiled.
     static std::once_flag warm_up_flag;
     std::call_once(
         warm_up_flag,
@@ -430,6 +432,7 @@ void matrix_diagonal_tiled(std::vector<hpx::shared_future<double *>> &ft_priorK,
             sycl::free(dummy, queue);
             sycl::free(result, queue);
         });
+#endif
 
     for (std::size_t i = 0; i < m_tiles; i++)
     {

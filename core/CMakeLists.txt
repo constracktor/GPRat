@@ -156,6 +156,7 @@ if(GPRAT_WITH_SYCL)
   elseif(GPRAT_SYCL_INTEL)
 
     set(SYCL_FLAGS ${SYCL_FLAGS} -fsycl -fsycl-targets=spir64)
+    target_compile_definitions(gprat_core PUBLIC GPRAT_SYCL_INTEL_GPU)
 
   else()
 
