@@ -573,4 +573,15 @@ void free_lower_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_
     }
 }
 
+void free_full_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_tiles, const std::size_t n_tiles)
+{
+    for (std::size_t i = 0; i < n_tiles; ++i)
+    {
+        for (std::size_t j = 0; j < n_tiles; ++j)
+        {
+            check_cuda_error(cudaFree(d_tiles[i * n_tiles + j].get()));
+        }
+    }
+}
+
 }  // end of namespace gpu

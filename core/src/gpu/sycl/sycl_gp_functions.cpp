@@ -387,7 +387,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
     gprat::sycl_backend::free(d_alpha_tiles, queue);
 
-    gprat::sycl_backend::free_lower_tiled_matrix(d_prior_K_tiles, static_cast<std::size_t>(m_tiles), sycl_device);
+    gprat::sycl_backend::free_full_tiled_matrix(d_prior_K_tiles, static_cast<std::size_t>(m_tiles), sycl_device);
     gprat::sycl_backend::free(d_cross_covariance_tiles, queue);
     gprat::sycl_backend::free(d_t_cross_covariance_tiles, queue);
     gprat::sycl_backend::free(d_prediction_tiles, queue);

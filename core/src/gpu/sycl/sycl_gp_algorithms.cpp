@@ -537,4 +537,28 @@ void free_lower_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_
     }
 }
 
+void free_full_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_tiles,
+                            const std::size_t n_tiles,
+                            gprat::SYCL_DEVICE &sycl_device)
+{
+    try
+    {
+        sycl::queue queue = sycl_device.next_queue();
+
+        for (std::size_t i = 0; i < n_tiles; ++i)
+        {
+            for (std::size_t j = 0; j < n_tiles; ++j)
+            {
+                sycl::free(d_tiles[i * n_tiles + j].get(), queue);
+            }
+        }
+
+        queue.wait();
+    }
+    catch (const sycl::exception &e)
+    {
+        std::cout << "SYCL exception: " << e.what() << "\n";
+    }
+}
+
 }  // namespace gprat::sycl_backend

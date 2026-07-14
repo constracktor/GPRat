@@ -325,6 +325,22 @@ void free_lower_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_
                              const std::size_t n_tiles,
                              gprat::SYCL_DEVICE &sycl_device);
 
+/**
+ * @brief Frees the device memory of all tiles of a fully populated tiled matrix.
+ *
+ * Unlike free_lower_tiled_matrix, this frees every tile (both triangles), for
+ * matrices such as the ones produced by assemble_prior_K_tiles_full where the
+ * upper triangle holds distinct device allocations rather than aliases of the
+ * lower triangle.
+ *
+ * @param d_tiles The tiles on the device
+ * @param n_tiles The number of tiles
+ * @param sycl_device SYCL target for computations
+ */
+void free_full_tiled_matrix(const std::vector<hpx::shared_future<double *>> &d_tiles,
+                            const std::size_t n_tiles,
+                            gprat::SYCL_DEVICE &sycl_device);
+
 }  // end of namespace gprat::sycl_backend
 
 #endif  // end of SYCL_GP_ALGORITHMS_H

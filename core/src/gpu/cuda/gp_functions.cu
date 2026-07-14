@@ -336,7 +336,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
     check_cuda_error(cudaFree(d_test_input));
     free_lower_tiled_matrix(d_K_tiles, n_tiles);
     free(d_alpha_tiles);
-    free_lower_tiled_matrix(d_prior_K_tiles, m_tiles);
+    free_full_tiled_matrix(d_prior_K_tiles, m_tiles);
     free(d_cross_covariance_tiles);
     free(d_t_cross_covariance_tiles);
     free(d_prediction_tiles);
