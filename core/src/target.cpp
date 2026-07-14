@@ -176,11 +176,21 @@ void SYCL_DEVICE::create()
 {
     try
     {
+        // Every GP object creates and destroys its own SYCL_DEVICE, and the example
+        // scripts construct a fresh GP per sweep iteration. Building each queue from
+        // a bare selector (no explicit context) creates a brand-new Level-Zero
+        // context per queue; across hundreds of create()/destroy() cycles in one
+        // process, the driver accumulates command-lists/event-pools until it runs
+        // out of resources (UR_RESULT_ERROR_OUT_OF_RESOURCES / DEVICE_LOST). Sharing
+        // one process-wide context across all queues avoids the per-call churn.
+        static const sycl::device shared_device(sycl::gpu_selector_v);
+        static const sycl::context shared_context(shared_device);
+
         queues = std::vector<sycl::queue>(n_queues);
 
         for (size_t i = 0; i < n_queues; ++i)
         {
-            queues[i] = sycl::queue(sycl::gpu_selector_v);
+            queues[i] = sycl::queue(shared_context, shared_device);
         }
     }
     catch (const sycl::exception &e)
