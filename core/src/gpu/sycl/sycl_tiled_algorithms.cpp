@@ -75,11 +75,12 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
     for (std::size_t k = 0; k < n_tiles; ++k)
     {
         // TRSM: Solve L * x = a
-        double *result = trsv(sycl_device.next_queue(),
-                              ft_tiles[k * n_tiles + k].get(),
-                              ft_rhs[k].get(),
-                              n_tile_size,
-                              oneapi::math::transpose::nontrans);
+        double *result =
+            trsv(sycl_device.next_queue(),
+                 ft_tiles[k * n_tiles + k].get(),
+                 ft_rhs[k].get(),
+                 n_tile_size,
+                 oneapi::math::transpose::nontrans);
 
         ft_rhs[k] = hpx::make_ready_future(result);
 
@@ -88,14 +89,15 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
         for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             // GEMV: b = b - A * a
-            ft_rhs[m] = hpx::make_ready_future(gemv(gemv_queue,
-                                                    ft_tiles[m * n_tiles + k].get(),
-                                                    result,
-                                                    ft_rhs[m].get(),
-                                                    n_tile_size,
-                                                    n_tile_size,
-                                                    -1,
-                                                    oneapi::math::transpose::nontrans));
+            ft_rhs[m] = hpx::make_ready_future(gemv(
+                gemv_queue,
+                ft_tiles[m * n_tiles + k].get(),
+                result,
+                ft_rhs[m].get(),
+                n_tile_size,
+                n_tile_size,
+                -1,
+                oneapi::math::transpose::nontrans));
         }
     }
 }
@@ -392,16 +394,15 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
     // isolation first; the compiled binary is then cached and reused by every
     // later call. Not needed on NVIDIA/AMD SYCL backends.
     static std::once_flag warm_up_flag;
-    std::call_once(
-        warm_up_flag,
-        []()
-        {
-            sycl::queue queue(sycl::gpu_selector_v);
-            double *dummy = sycl::malloc_device<double>(1, queue);
-            double *result = diag_posterior(dummy, dummy, 1);
-            sycl::free(dummy, queue);
-            sycl::free(result, queue);
-        });
+    std::call_once(warm_up_flag,
+                   []()
+                   {
+                       sycl::queue queue(sycl::gpu_selector_v);
+                       double *dummy = sycl::malloc_device<double>(1, queue);
+                       double *result = diag_posterior(dummy, dummy, 1);
+                       sycl::free(dummy, queue);
+                       sycl::free(result, queue);
+                   });
 #endif
 
     for (std::size_t i = 0; i < m_tiles; i++)
@@ -418,16 +419,15 @@ void matrix_diagonal_tiled(std::vector<hpx::shared_future<double *>> &ft_priorK,
 #ifdef GPRAT_SYCL_INTEL_GPU
     // See vector_difference_tiled.
     static std::once_flag warm_up_flag;
-    std::call_once(
-        warm_up_flag,
-        []()
-        {
-            sycl::queue queue(sycl::gpu_selector_v);
-            double *dummy = sycl::malloc_device<double>(1, queue);
-            double *result = diag_tile(dummy, 1);
-            sycl::free(dummy, queue);
-            sycl::free(result, queue);
-        });
+    std::call_once(warm_up_flag,
+                   []()
+                   {
+                       sycl::queue queue(sycl::gpu_selector_v);
+                       double *dummy = sycl::malloc_device<double>(1, queue);
+                       double *result = diag_tile(dummy, 1);
+                       sycl::free(dummy, queue);
+                       sycl::free(result, queue);
+                   });
 #endif
 
     for (std::size_t i = 0; i < m_tiles; i++)
