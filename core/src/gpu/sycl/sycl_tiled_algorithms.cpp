@@ -388,11 +388,9 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
                              const std::size_t m_tiles)
 {
 #ifdef GPRAT_SYCL_INTEL_GPU
-    // The first-ever JIT compile of any not-yet-seen kernel type crashes on
-    // Intel Level-Zero drivers (confirmed on an Arc B580) when it happens amid
-    // the concurrent per-tile dataflow below. Force one synchronous compile in
-    // isolation first; the compiled binary is then cached and reused by every
-    // later call. Not needed on NVIDIA/AMD SYCL backends.
+    // First-ever JIT compile of a kernel crashes on Intel Level-Zero drivers
+    // (Arc B580) if it happens amid the concurrent dataflow below, so warm it
+    // up synchronously once. Not needed on NVIDIA/AMD backends.
     static std::once_flag warm_up_flag;
     std::call_once(warm_up_flag,
                    []()
