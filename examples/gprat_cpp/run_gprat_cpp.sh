@@ -36,8 +36,8 @@ elif [[ "$3" == "amd" ]]; then
 
 elif [[ "$3" == "intel" ]]; then
 
-  # SITE-SPECIFIC: update this path to your local oneMath install prefix, or
-  # set CMAKE_PREFIX_PATH before invoking this script to override it.
+  # SITE-SPECIFIC: update to your local oneMath install prefix, or set
+  # CMAKE_PREFIX_PATH before invoking this script to override it.
   CMAKE_PREFIX_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install:${CMAKE_PREFIX_PATH:-}"
 
 fi
@@ -58,8 +58,7 @@ if [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n2" || "$HOSTNAME" == "
 fi
 
 # Set Spack if on pcsgs04
-# SITE-SPECIFIC: spack_destination is hardcoded for the pcsgs04 cluster.
-# Adjust this path to match your local Spack installation before running on a different machine.
+# SITE-SPECIFIC: spack_destination is hardcoded for pcsgs04; adjust for other machines.
 if [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
   spack_destination="/scratch/grafml/gprat-spack/spack/"
@@ -191,28 +190,19 @@ if command -v spack &>/dev/null; then
 
       if [[ "$1" == "sycl" ]]; then
 
-        # icpx is not provided by the gprat_gpu_clang Spack environment on this host; it comes
-        # from the system oneAPI install. Source it if icpx isn't already on PATH.
-        # Pin to the compiler version the oneMath install below was built with (2025.3) -
-        # newer icpx releases changed SYCL queue/BLAS header signatures and fail to compile
-        # against this oneMath install.
+        # icpx isn't in the gprat_gpu_clang env; source it from the system
+        # oneAPI install, pinned to 2025.3 (newer releases break this oneMath build).
         if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
           source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
         fi
 
-        # The Level-Zero GPU backend needs libumf (Unified Memory Framework) on
-        # LD_LIBRARY_PATH; without it, GPU platform enumeration silently returns zero
-        # devices and the example fails at runtime with "Requested GPU device is not available."
+        # libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
         if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
           source /opt/intel/oneapi/umf/latest/env/vars.sh
         fi
 
-        # oneMath's Level-Zero libmkl_sycl_lapack/blas.so were built against the
-        # system MKL 2025.3, not the older MKL 2024.2 bundled in the
-        # gprat_gpu_clang Spack environment. Source it (and matching TBB) so
-        # CMake's find_package(MKL) and the runtime linker resolve against the
-        # matching version - otherwise linking fails with undefined references
-        # like mkl_lapack_dpotrf_batch_strided.
+        # oneMath's Level-Zero libs need system MKL 2025.3 (and matching TBB),
+        # not the older MKL/TBB bundled in gprat_gpu_clang.
         if [[ -f /opt/intel/oneapi/mkl/2025.3/env/vars.sh ]]; then
           source /opt/intel/oneapi/mkl/2025.3/env/vars.sh
         fi
@@ -220,11 +210,8 @@ if command -v spack &>/dev/null; then
           source /opt/intel/oneapi/tbb/latest/env/vars.sh
         fi
 
-        # The gprat_gpu_clang Spack environment bundles its own, older TBB
-        # (2021.13) whose libtbb.so is missing symbols oneMath's MKL libraries
-        # need (e.g. get_thread_reference_vertex). LD_LIBRARY_PATH alone isn't
-        # enough since the linker's own -L search uses LIBRARY_PATH; prepend
-        # the matching oneAPI TBB there too so it's found first at link time.
+        # gprat_gpu_clang's bundled TBB is missing symbols oneMath's MKL needs;
+        # prepend the matching oneAPI TBB to LIBRARY_PATH for the linker.
         if [[ -n "${TBBROOT:-}" ]]; then
           LIBRARY_PATH="$TBBROOT/lib:${LIBRARY_PATH:-}"
         fi
@@ -236,8 +223,8 @@ if command -v spack &>/dev/null; then
           GPRAT_WITH_CUDA=OFF
           GPRAT_WITH_SYCL=ON
 
-          # SITE-SPECIFIC: update this path to your local oneMath install prefix, or
-          # set CMAKE_PREFIX_PATH before invoking this script to override it.
+          # SITE-SPECIFIC: update to your local oneMath install prefix, or set
+          # CMAKE_PREFIX_PATH before invoking this script to override it.
           CMAKE_PREFIX_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install:${CMAKE_PREFIX_PATH:-}"
 
         else
@@ -282,11 +269,8 @@ rm -rf build && mkdir build && cd build && mkdir run_gprat_cpp && cd run_gprat_c
 
 # Configure the project
 #
-# On pcsgs04, the gprat_gpu_clang Spack environment's RPATH is searched by the
-# linker ahead of oneMath's own RPATH, so its bundled (older) TBB shadows the
-# one oneMath's MKL libraries actually need. Force an explicit -L for the
-# correct TBB (set above via TBBROOT when $1=sycl on pcsgs04) so the linker
-# resolves the transitive libtbb.so.12 dependency there first.
+# On pcsgs04, gprat_gpu_clang's RPATH shadows oneMath's own TBB; force an
+# explicit rpath-link to the correct TBB (set above via TBBROOT) first.
 if [[ -n "${TBBROOT:-}" ]]; then
   EXTRA_LINKER_FLAGS="-Wl,-rpath-link,${TBBROOT}/lib"
 fi

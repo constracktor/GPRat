@@ -115,8 +115,7 @@ fi
 
 ### PCSGS04 #######################################################################################
 
-# SITE-SPECIFIC: paths below are hardcoded for the pcsgs04 cluster. Adjust
-# them to match your local installation before running on a different machine.
+# SITE-SPECIFIC: paths below are hardcoded for pcsgs04; adjust for other machines.
 if [[ $(hostname) == "pcsgs04" ]]; then
 
 	spack_destination="/scratch/grafml/gprat-spack/spack/"
@@ -139,31 +138,24 @@ if [[ $(hostname) == "pcsgs04" ]]; then
 
 				fi
 
-				# icpx is not provided by the gprat_gpu_clang Spack environment on this host;
-				# it comes from the system oneAPI install. Source it if not already on PATH.
+				# icpx isn't in the gprat_gpu_clang env; source it from the system oneAPI install.
 				if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
 					source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
 				fi
 
-				# The Level-Zero GPU backend needs libumf (Unified Memory Framework) on
-				# LD_LIBRARY_PATH; without it, GPU platform enumeration silently returns
-				# zero devices and the example fails at runtime with
-				# "Requested GPU device is not available."
+				# libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
 				if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
 					source /opt/intel/oneapi/umf/latest/env/vars.sh
 				fi
 
-				# The compiled gprat Python extension links against the system MKL 2025.3
-				# (matching the oneMath install it was built against) and TBB 2022.3 -
-				# not the older MKL/TBB bundled in the gprat_gpu_clang Spack environment.
-				# Without these on LD_LIBRARY_PATH, importing the extension fails with
-				# undefined-symbol errors.
+				# The compiled extension needs system MKL 2025.3 and TBB 2022.3 on
+				# LD_LIBRARY_PATH, not the older versions bundled in gprat_gpu_clang.
 				if [[ -f /opt/intel/oneapi/mkl/2025.3/env/vars.sh ]]; then
 					source /opt/intel/oneapi/mkl/2025.3/env/vars.sh
 				fi
 				LD_LIBRARY_PATH="/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:$LD_LIBRARY_PATH"
 
-				# SITE-SPECIFIC: update this path to your local oneMath install prefix.
+				# SITE-SPECIFIC: update to your local oneMath install prefix.
 				ONEMATH_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install/lib"
 				LD_LIBRARY_PATH="$ONEMATH_PATH:$LD_LIBRARY_PATH"
 

@@ -99,8 +99,7 @@ then
 fi
 
 # Set Spack if on psgs04
-# SITE-SPECIFIC: spack_destination is hardcoded for the pcsgs04 cluster.
-# Adjust this path to match your local Spack installation before running on a different machine.
+# SITE-SPECIFIC: spack_destination is hardcoded for pcsgs04; adjust for other machines.
 if [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
   spack_destination="/scratch/grafml/gprat-spack/spack/"
@@ -339,19 +338,13 @@ if command -v spack &>/dev/null; then
 
       if [[ "$2" == "sycl" ]]; then # GPRat on Intel GPUs with SYCL
 
-        # icpx is not provided by the gprat_gpu_clang Spack environment on this host; it comes
-        # from the system oneAPI install. Source it if icpx isn't already on PATH.
-        # Pin to the compiler version the oneMath install below was built with (2025.3) -
-        # newer icpx releases (e.g. 2026.0, the "latest" default) changed SYCL queue/BLAS
-        # header signatures and fail to compile against this oneMath install.
+        # icpx isn't in the gprat_gpu_clang env here; source it from the system
+        # oneAPI install, pinned to 2025.3 (newer releases break this oneMath build).
         if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
           source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
         fi
 
-        # The Level-Zero GPU backend needs libumf (Unified Memory Framework) on
-        # LD_LIBRARY_PATH; without it, GPU platform enumeration silently returns
-        # zero devices (no error) and GPRat fails at runtime with
-        # "Requested GPU device is not available."
+        # libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
         if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
           source /opt/intel/oneapi/umf/latest/env/vars.sh
         fi
@@ -365,9 +358,8 @@ if command -v spack &>/dev/null; then
           # Set GPRat build options for SYCL on Intel GPUs
           GPRAT_SYCL_INTEL=ON
 
-          # Add oneMath installation to CMAKE_PREFIX_PATH.
-          # SITE-SPECIFIC: update this path to your local oneMath install prefix,
-          # or set CMAKE_PREFIX_PATH before invoking this script to override it.
+          # SITE-SPECIFIC: update to your local oneMath install prefix, or set
+          # CMAKE_PREFIX_PATH before invoking this script to override it.
           CMAKE_PREFIX_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install:${CMAKE_PREFIX_PATH:-}"
 
         else
