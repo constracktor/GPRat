@@ -17,7 +17,7 @@ else
 fi
 
 # Find GCC compiler with spack
-spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+spack_destination="$HOME"
 source $spack_destination/spack/share/spack/setup-env.sh
 spack compiler find
 

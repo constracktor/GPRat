@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-# Script to setup GPU spack environment for GPRat on simcl1n1-2
+# Script to setup GPU spack environment for GPRat
 
 # Create environment and copy config file
-spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+spack_destination="$HOME"
 source $spack_destination/spack/share/spack/setup-env.sh
 
 spack env create gprat_gpu_clang
