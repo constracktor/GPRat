@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Site-specific installation roots shared by compile_gprat.sh, create_python_package.sh,
+# Site-specific installation roots shared by compile_gprat.sh,
 # examples/gprat_cpp/run_gprat_cpp.sh, and examples/gprat_python/run_gprat_python.sh.
 # Update the paths below if an installation moves; every script that sources this
 # file picks up the change.
