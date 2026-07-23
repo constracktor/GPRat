@@ -2,6 +2,12 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/site_paths.sh"
+
+# Get current hostname
+HOSTNAME=$(hostname -s)
+
 ###################################################################################################
 # Parameters
 ###################################################################################################
@@ -93,16 +99,15 @@ if [[ \
   "$HOSTNAME" == "simcl1n4" ]]; 
 then
 
-  spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+  spack_destination="$SIMCL1_SPACK_ROOT"
   source $spack_destination/spack/share/spack/setup-env.sh
 
 fi
 
 # Set Spack if on psgs04
-# SITE-SPECIFIC: spack_destination is hardcoded for pcsgs04; adjust for other machines.
 if [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
-  spack_destination="/scratch/grafml/gprat-spack/spack/"
+  spack_destination="$PCSGS04_SPACK_ROOT"
   source $spack_destination/share/spack/setup-env.sh
 
 fi
@@ -115,8 +120,6 @@ fi
 if command -v spack &>/dev/null; then
   
   echo "Spack command found, checking for environments..."
-
-  HOSTNAME=$(hostname -s)
 
   # ipvs-epyc1 ####################################################################################
   if [[ "$HOSTNAME" == "ipvs-epyc1" ]]; then
@@ -205,7 +208,7 @@ if command -v spack &>/dev/null; then
             GPRAT_SYCL_NVIDIA=ON
 
             # Add oneMath installation to CMAKE_PREFIX_PATH
-            CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+            CMAKE_PREFIX_PATH="${ONEMATH_NVIDIA_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
           else
 
@@ -277,7 +280,7 @@ if command -v spack &>/dev/null; then
             HIP_TARGETS="gfx90a"
 
             # Add oneMath installation to CMAKE_PREFIX_PATH
-            CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_amd/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+            CMAKE_PREFIX_PATH="${ONEMATH_AMD_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
           else
 
@@ -358,9 +361,7 @@ if command -v spack &>/dev/null; then
           # Set GPRat build options for SYCL on Intel GPUs
           GPRAT_SYCL_INTEL=ON
 
-          # SITE-SPECIFIC: update to your local oneMath install prefix, or set
-          # CMAKE_PREFIX_PATH before invoking this script to override it.
-          CMAKE_PREFIX_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install:${CMAKE_PREFIX_PATH:-}"
+          CMAKE_PREFIX_PATH="${ONEMATH_INTEL_ROOT}:${CMAKE_PREFIX_PATH:-}"
 
         else
 

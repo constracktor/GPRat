@@ -3,7 +3,11 @@
 # Input $2: If GPRat was compiled with SYCL backend:	nvidia/amd/intel
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/../../site_paths.sh"
 cd "$SCRIPT_DIR"
+
+# Get current hostname
+HOSTNAME=$(hostname -s)
 
 # Set --use-gpu flag
 if [[ -z "$1" ]]; then
@@ -29,7 +33,7 @@ fi
 ### SVEN0 AND SVEN1 ###############################################################################
 
 # Setup LD_LIBRARY_PATH on sven0 and sven1
-if [[ $(hostname -s) == "sven0" || $(hostname -s) == "sven1" ]]; then
+if [[ "$HOSTNAME" == "sven0" || "$HOSTNAME" == "sven1" ]]; then
 
 	export LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/hpx/lib64:$LD_LIBRARY_PATH
 	export LD_LIBRARY_PATH=$HOME/git_workspace/build-scripts/build/boost/lib:$LD_LIBRARY_PATH
@@ -47,7 +51,7 @@ if [[ \
 then
 
 	# Setup Spack
-	spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+	spack_destination="$SIMCL1_SPACK_ROOT"
 	source $spack_destination/spack/share/spack/setup-env.sh
 
 	# GPU setup
@@ -75,12 +79,12 @@ then
 			# Add oneMath installation to LD_LIBRARY_PATH if gpu is specified
 			if [[ "$2" == "nvidia" ]]; then
 
-				ONEMATH_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/"
+				ONEMATH_PATH="${ONEMATH_NVIDIA_ROOT}/lib/"
 				LD_LIBRARY_PATH="$ONEMATH_PATH:$LD_LIBRARY_PATH"
 
 			elif [[ "$2" == "amd" ]]; then
 
-				ONEMATH_PATH="/scratch-simcl1/grafml/Programs/oneMath_amd/oneMath/install/lib/"
+				ONEMATH_PATH="${ONEMATH_AMD_ROOT}/lib/"
 				LD_LIBRARY_PATH="$ONEMATH_PATH:$LD_LIBRARY_PATH"
 
 			elif [[ "$2" == "intel" ]]; then
@@ -115,10 +119,9 @@ fi
 
 ### PCSGS04 #######################################################################################
 
-# SITE-SPECIFIC: paths below are hardcoded for pcsgs04; adjust for other machines.
-if [[ $(hostname) == "pcsgs04" ]]; then
+if [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
-	spack_destination="/scratch/grafml/gprat-spack/spack/"
+	spack_destination="$PCSGS04_SPACK_ROOT"
 	source $spack_destination/share/spack/setup-env.sh
 
 	if [[ "$1" == "cuda" || "$1" == "sycl" ]]; then
@@ -155,8 +158,7 @@ if [[ $(hostname) == "pcsgs04" ]]; then
 				fi
 				LD_LIBRARY_PATH="/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:$LD_LIBRARY_PATH"
 
-				# SITE-SPECIFIC: update to your local oneMath install prefix.
-				ONEMATH_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install/lib"
+				ONEMATH_PATH="${ONEMATH_INTEL_ROOT}/lib"
 				LD_LIBRARY_PATH="$ONEMATH_PATH:$LD_LIBRARY_PATH"
 
 			fi
