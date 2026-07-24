@@ -26,17 +26,8 @@ gen_tile_grad_l_trans(std::size_t N, const hpx::shared_future<double *> f_grad_l
         auto event = queue.submit(
             [&](sycl::handler &cgh)
             {
-                cgh.parallel_for(sycl::nd_range<2>(global_range, local_range),
-                                 [=](sycl::nd_item<2> item)
-                                 {
-                                     std::size_t row = item.get_global_id(0);
-                                     std::size_t col = item.get_global_id(1);
-
-                                     if (row < N && col < N)
-                                     {
-                                         transposed[row * N + col] = d_grad_l_tile[col * N + row];
-                                     }
-                                 });
+                auto kernel = TransposeKernel(transposed, d_grad_l_tile, N, N, cgh);
+                cgh.parallel_for(sycl::nd_range<2>(global_range, local_range), kernel);
             });
 
         event.wait();

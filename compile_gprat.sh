@@ -2,6 +2,12 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/site_paths.sh"
+
+# Get current hostname
+HOSTNAME=$(hostname -s)
+
 ###################################################################################################
 # Parameters
 ###################################################################################################
@@ -93,17 +99,15 @@ if [[ \
   "$HOSTNAME" == "simcl1n4" ]]; 
 then
 
-  spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+  spack_destination="$SIMCL1_SPACK_ROOT"
   source $spack_destination/spack/share/spack/setup-env.sh
 
 fi
 
 # Set Spack if on psgs04
-# SITE-SPECIFIC: spack_destination is hardcoded for the pcsgs04 cluster.
-# Adjust this path to match your local Spack installation before running on a different machine.
 if [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
-  spack_destination="/scratch/grafml/gprat-spack/spack/"
+  spack_destination="$PCSGS04_SPACK_ROOT"
   source $spack_destination/share/spack/setup-env.sh
 
 fi
@@ -116,8 +120,6 @@ fi
 if command -v spack &>/dev/null; then
   
   echo "Spack command found, checking for environments..."
-
-  HOSTNAME=$(hostname -s)
 
   # ipvs-epyc1 ####################################################################################
   if [[ "$HOSTNAME" == "ipvs-epyc1" ]]; then
@@ -206,7 +208,7 @@ if command -v spack &>/dev/null; then
             GPRAT_SYCL_NVIDIA=ON
 
             # Add oneMath installation to CMAKE_PREFIX_PATH
-            CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+            CMAKE_PREFIX_PATH="${ONEMATH_NVIDIA_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
           else
 
@@ -278,7 +280,7 @@ if command -v spack &>/dev/null; then
             HIP_TARGETS="gfx90a"
 
             # Add oneMath installation to CMAKE_PREFIX_PATH
-            CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_amd/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+            CMAKE_PREFIX_PATH="${ONEMATH_AMD_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
           else
 
@@ -328,10 +330,8 @@ if command -v spack &>/dev/null; then
 
     fi
 
-  # pcsgs04 with Intel GPU ########################################################################
+  # pcsgs04 with Intel GPU (Arc B580) #############################################################
   elif [[ "$HOSTNAME" == "pcsgs04" ]]; then
-
-    echo "Caution: Intel GPU support couldn't be tested and is in an experimental state."
 
     # Check whether the gprat_gpu_clang environment exists
     if spack env list | grep -q "gprat_gpu_clang"; then
@@ -340,6 +340,17 @@ if command -v spack &>/dev/null; then
       spack env activate gprat_gpu_clang
 
       if [[ "$2" == "sycl" ]]; then # GPRat on Intel GPUs with SYCL
+
+        # icpx isn't in the gprat_gpu_clang env here; source it from the system
+        # oneAPI install, pinned to 2025.3 (newer releases break this oneMath build).
+        if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
+        fi
+
+        # libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
+        if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/umf/latest/env/vars.sh
+        fi
 
         if command -v icpx --version &>/dev/null; then
 
@@ -350,10 +361,7 @@ if command -v spack &>/dev/null; then
           # Set GPRat build options for SYCL on Intel GPUs
           GPRAT_SYCL_INTEL=ON
 
-          # Add oneMath installation to CMAKE_PREFIX_PATH.
-          # SITE-SPECIFIC: update this path to your local oneMath install prefix,
-          # or set CMAKE_PREFIX_PATH before invoking this script to override it.
-          CMAKE_PREFIX_PATH="/scratch/grafml/oneMath_intel_v0.9/oneMath/install:${CMAKE_PREFIX_PATH:-}"
+          CMAKE_PREFIX_PATH="${ONEMATH_INTEL_ROOT}:${CMAKE_PREFIX_PATH:-}"
 
         else
 

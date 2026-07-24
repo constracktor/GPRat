@@ -4,6 +4,7 @@
 #include "gpu/sycl/sycl_gp_optimizer.hpp"
 #include "gpu/sycl/sycl_gp_uncertainty.hpp"
 #include <hpx/algorithm.hpp>
+#include <mutex>
 
 namespace gprat::sycl_backend
 {
@@ -71,16 +72,15 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
                          const std::size_t n_tiles,
                          gprat::SYCL_DEVICE &sycl_device)
 {
-    double *result;
-
     for (std::size_t k = 0; k < n_tiles; ++k)
     {
         // TRSM: Solve L * x = a
-        result = trsv(sycl_device.next_queue(),
-                      ft_tiles[k * n_tiles + k].get(),
-                      ft_rhs[k].get(),
-                      n_tile_size,
-                      oneapi::math::transpose::nontrans);
+        double *result =
+            trsv(sycl_device.next_queue(),
+                 ft_tiles[k * n_tiles + k].get(),
+                 ft_rhs[k].get(),
+                 n_tile_size,
+                 oneapi::math::transpose::nontrans);
 
         ft_rhs[k] = hpx::make_ready_future(result);
 
@@ -89,16 +89,15 @@ void forward_solve_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
         for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             // GEMV: b = b - A * a
-            result = gemv(gemv_queue,
-                          ft_tiles[m * n_tiles + k].get(),
-                          result,
-                          ft_rhs[m].get(),
-                          n_tile_size,
-                          n_tile_size,
-                          -1,
-                          oneapi::math::transpose::nontrans);
-
-            ft_rhs[m] = hpx::make_ready_future(result);
+            ft_rhs[m] = hpx::make_ready_future(gemv(
+                gemv_queue,
+                ft_tiles[m * n_tiles + k].get(),
+                result,
+                ft_rhs[m].get(),
+                n_tile_size,
+                n_tile_size,
+                -1,
+                oneapi::math::transpose::nontrans));
         }
     }
 }
@@ -388,6 +387,22 @@ void vector_difference_tiled(std::vector<hpx::shared_future<double *>> &ft_prior
                              const std::size_t m_tile_size,
                              const std::size_t m_tiles)
 {
+#ifdef GPRAT_SYCL_INTEL_GPU
+    // First-ever JIT compile of a kernel crashes on Intel Level-Zero drivers
+    // (Arc B580) if it happens amid the concurrent dataflow below, so warm it
+    // up synchronously once. Not needed on NVIDIA/AMD backends.
+    static std::once_flag warm_up_flag;
+    std::call_once(warm_up_flag,
+                   []()
+                   {
+                       sycl::queue queue(sycl::gpu_selector_v);
+                       double *dummy = sycl::malloc_device<double>(1, queue);
+                       double *result = diag_posterior(dummy, dummy, 1);
+                       sycl::free(dummy, queue);
+                       sycl::free(result, queue);
+                   });
+#endif
+
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_vector[i] = hpx::dataflow(hpx::unwrapping(&diag_posterior), ft_priorK[i], ft_inter[i], m_tile_size);
@@ -399,6 +414,20 @@ void matrix_diagonal_tiled(std::vector<hpx::shared_future<double *>> &ft_priorK,
                            const std::size_t m_tile_size,
                            const std::size_t m_tiles)
 {
+#ifdef GPRAT_SYCL_INTEL_GPU
+    // See vector_difference_tiled.
+    static std::once_flag warm_up_flag;
+    std::call_once(warm_up_flag,
+                   []()
+                   {
+                       sycl::queue queue(sycl::gpu_selector_v);
+                       double *dummy = sycl::malloc_device<double>(1, queue);
+                       double *result = diag_tile(dummy, 1);
+                       sycl::free(dummy, queue);
+                       sycl::free(result, queue);
+                   });
+#endif
+
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_vector[i] = hpx::dataflow(hpx::unwrapping(&diag_tile), ft_priorK[i * m_tiles + i], m_tile_size);

@@ -176,11 +176,17 @@ void SYCL_DEVICE::create()
 {
     try
     {
+        // Each fresh GP object creates its own queue from a bare selector, which
+        // creates a new Level-Zero context; hundreds of cycles exhaust driver
+        // resources (DEVICE_LOST). Share one context process-wide instead.
+        static const sycl::device shared_device(sycl::gpu_selector_v);
+        static const sycl::context shared_context(shared_device);
+
         queues = std::vector<sycl::queue>(n_queues);
 
         for (size_t i = 0; i < n_queues; ++i)
         {
-            queues[i] = sycl::queue(sycl::gpu_selector_v);
+            queues[i] = sycl::queue(shared_context, shared_device);
         }
     }
     catch (const sycl::exception &e)

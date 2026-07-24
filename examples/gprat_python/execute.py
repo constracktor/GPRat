@@ -209,6 +209,7 @@ def gprat_run(
 
     if not is_warmup:
         output_file.write(row_data)
+        output_file.flush()
         logger.info(row_data)
 
 # EXECUTE ###############################################################################

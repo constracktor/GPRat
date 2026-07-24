@@ -4,9 +4,6 @@
 #include "gpu/sycl/sycl_utils.hpp"
 #include "target.hpp"
 
-// oneMath
-#include <oneapi/math.hpp>
-
 namespace gprat::sycl_backend
 {
 
@@ -16,21 +13,8 @@ double *diag_posterior(double *A, double *B, std::size_t M)
 
     double *tile = sycl::malloc_device<double>(M, queue);
 
-    // tile = 1.0*A + (-1.0)*B
-    oneapi::math::blas::column_major::omatadd(
-        queue,
-        oneapi::math::transpose::nontrans,
-        oneapi::math::transpose::nontrans,
-        1,
-        static_cast<int64_t>(M),
-        1.0,
-        A,
-        1,
-        -1.0,
-        B,
-        1,
-        tile,
-        1);
+    // tile = A - B
+    queue.parallel_for(sycl::range<1>(M), [=](sycl::id<1> i) { tile[i] = A[i] - B[i]; });
 
     queue.wait();
 
@@ -43,16 +27,8 @@ double *diag_tile(double *A, std::size_t M)
 
     double *diag_tile = sycl::malloc_device<double>(M, queue);
 
-    oneapi::math::blas::column_major::omatcopy(
-        queue,
-        oneapi::math::transpose::nontrans,
-        1,
-        static_cast<int64_t>(M),
-        1.0,
-        A,
-        static_cast<int64_t>(M) + 1,
-        diag_tile,
-        1);
+    // diag_tile = diagonal of the MxM matrix A (leading dimension M)
+    queue.parallel_for(sycl::range<1>(M), [=](sycl::id<1> i) { diag_tile[i] = A[i * (M + 1)]; });
 
     queue.wait();
 

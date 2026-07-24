@@ -1,6 +1,6 @@
 # [GPRat: Gaussian Process Regression using Asynchronous Tasks]()
 
-<img align="right" width="15%" src="/data/images/ratward_icon.jpg">
+<img align="right" width="15%" src="data/images/ratward_icon.jpg">
 GPRat is an open-source library for Gaussian Process Regression.
 Leveraging the asynchronous many-task runtime HPX, we aim to combine the performance of asynchronous parallelism in C++
 with the ease of use of commonly available Python libraries.
@@ -35,8 +35,8 @@ ctest --preset=dev-linux
 
 As a developer, you may create a `CMakeUserPresets.json` file at the root of the project that contains additional
 presets local to your machine.
-In addition to the build configuration `dev-linux`, there are `release-linux`, `dev-linux-gpu`, `release-linux-gpu`, `dev-linux-sycl`, and `release-linux-sycl`.
-The configurations suffixed with `-gpu` build the library with CUDA for NVIDIA GPUs, and those suffixed with `-sycl` build it with SYCL support for Intel and AMD GPUs.
+In addition to the build configuration `dev-linux`, there are `release-linux`, `dev-linux-cuda`, `release-linux-cuda`, `dev-linux-sycl`, and `release-linux-sycl`.
+The configurations suffixed with `-cuda` build the library with CUDA for NVIDIA GPUs, and those suffixed with `-sycl` build it with SYCL support for Intel and AMD GPUs.
 
 GPRat can be build with or without Python bindings.
 The following options can be set to include / exclude parts of the project:
@@ -47,7 +47,7 @@ The following options can be set to include / exclude parts of the project:
 | GPRAT_BUILD_BINDINGS           | Enable/Disable building of the Python bindings                                       | ON              |
 | GPRAT_ENABLE_FORMAT_TARGETS    | Enable/Disable code formatting helper targets                                        | ON if top-level |
 | GPRAT_ENABLE_EXAMPLES          | Enable/Disable example projects                                                      | ON if top-level |
-| GPRAT_USE_MKL                  | Enable/Disable usage of MKL library                                                  | OFF             |
+| GPRAT_ENABLE_MKL               | Enable/Disable usage of MKL library                                                  | OFF             |
 | GPRAT_WITH_CUDA                | Enable/disable compilation with CUDA support (NVIDIA GPUs)                           | OFF             |
 | GPRAT_WITH_SYCL                | Enable/disable compilation with SYCL support (Intel and AMD GPUs via oneMath)        | OFF             |
 | GPRAT_APEX_STEPS               | Enable/disable compilation for steps duration measurement with APEX                  | OFF             |
@@ -68,15 +68,15 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 - Go to [`examples/gprat_cpp`](examples/gprat_cpp/)
 - Set parameters in [`execute.cpp`](examples/gprat_cpp/src/execute.cpp)
 - The example is built as part of the main project.
-  - Go to `build/` and execute `./gprat_cpp [--use_gpu]` to run the example.
+  - Go to `build/` and execute `./gprat_cpp [--use-gpu]` to run the example.
   - If you want to use an installed GPRat version:
-    Run `./run_gprat_cpp.sh [cpu/gpu] [x86/arm/riscv]` to build and run the example.
+    Run `./run_gprat_cpp.sh [cpu/cuda/sycl] [mkl/none] [nvidia/amd/intel]` to build and run the example.
 
 ### To run GPRat with Python
 
 - Go to [`examples/gprat_python`](examples/gprat_python/)
 - Set parameters in [`config.json`](examples/gprat_python/config.json)
-- Run `./run_gprat_python.sh [cpu/gpu]` to run the example
+- Run `./run_gprat_python.sh [cpu/cuda/sycl]` to run the example
 
 ### To run GPflow reference
 
@@ -84,7 +84,7 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 - Set parameters in [`config.json`](examples/gpflow_reference/config.json)
 - Run `./run_gpflow.sh [cpu/gpu/arm]` to run example
 
-### To run GPflow reference
+### To run GPyTorch reference
 
 - Go to [`examples/gpytorch_reference`](examples/gpytorch_reference/)
 - Set parameters in [`config.json`](examples/gpytorch_reference/config.json)

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
-source $spack_destination/spack/share/spack/setup-env.sh
-
 if command -v spack &> /dev/null; then
     echo "Spack command found, checking for environments..."
 

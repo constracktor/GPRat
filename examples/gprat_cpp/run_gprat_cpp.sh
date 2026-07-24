@@ -7,6 +7,15 @@
 set -e # Exit immediately if a command exits with a non-zero status.
 #set -x  # Print each command before executing it.
 
+# Resolve the example directory itself (independent of the caller's cwd),
+# since we cd into build/run_gprat_cpp below and GPRat_DIR must still point at
+# the already-installed GPRat package under this directory's lib/.
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/../../site_paths.sh"
+
+# Get current hostname
+HOSTNAME=$(hostname -s)
+
 ################################################################################
 # Configurations
 ################################################################################
@@ -14,10 +23,8 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # Set device for computation
 if [[ -z "$1" ]]; then
   echo "Input parameter is missing. Using default: Run computations on CPU"
-elif [[ "$1" == "cuda" ]]; then
-  use_gpu="--use_cuda"
-elif [[ "$1" == "sycl" ]]; then
-  use_gpu="--use_sycl"
+elif [[ "$1" == "cuda" || "$1" == "sycl" ]]; then
+  use_gpu="--use-gpu"
 elif [[ "$1" != "cpu" ]]; then
   echo "Please specify input parameter: cpu/cuda/sycl"
   exit 1
@@ -25,16 +32,15 @@ fi
 
 if [[ "$3" == "nvidia" ]]; then
 
-  CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+  CMAKE_PREFIX_PATH="${ONEMATH_NVIDIA_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
 elif [[ "$3" == "amd" ]]; then
 
-  CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_amd/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+  CMAKE_PREFIX_PATH="${ONEMATH_AMD_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
 elif [[ "$3" == "intel" ]]; then
 
-  echo "The Intel setup is not supported yet." 1>&2
-  exit 1
+  CMAKE_PREFIX_PATH="${ONEMATH_INTEL_ROOT}:${CMAKE_PREFIX_PATH:-}"
 
 fi
 
@@ -48,16 +54,22 @@ fi
 # Set Spack if on simcl1n1, simcl1n2, simcl1n3, or simcl1n4
 if [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n2" || "$HOSTNAME" == "simcl1n3" || "$HOSTNAME" == "simcl1n4" ]]; then
 
-  spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+  spack_destination="$SIMCL1_SPACK_ROOT"
   source $spack_destination/spack/share/spack/setup-env.sh
+
+fi
+
+# Set Spack if on pcsgs04
+if [[ "$HOSTNAME" == "pcsgs04" ]]; then
+
+  spack_destination="$PCSGS04_SPACK_ROOT"
+  source $spack_destination/share/spack/setup-env.sh
 
 fi
 
 if command -v spack &>/dev/null; then
 
   echo "Spack command found, checking for environments..."
-  # Get current hostname
-  HOSTNAME=$(hostname -s)
 
   if [[ "$HOSTNAME" == "ipvs-epyc1" ]]; then
 
@@ -141,7 +153,6 @@ if command -v spack &>/dev/null; then
 
       echo "Found gprat_gpu_clang environment, activating it."
       spack env activate gprat_gpu_clang
-      CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
 
       if [[ "$1" == "sycl" ]]; then
 
@@ -163,10 +174,72 @@ if command -v spack &>/dev/null; then
 
     fi
 
+  # pcsgs04 with Intel GPU (Arc B580) #############################################################
   elif [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
-    echo "Host pcsgs04 is currently not supported." 1>&2
-    exit -1
+    GPRAT_APEX_STEPS=OFF
+    GPRAT_APEX_CHOLESKY=OFF
+
+    # Check if the gprat_gpu_clang environment exists
+    if spack env list | grep -q "gprat_gpu_clang"; then
+
+      echo "Found gprat_gpu_clang environment, activating it."
+      spack env activate gprat_gpu_clang
+
+      if [[ "$1" == "sycl" ]]; then
+
+        # icpx isn't in the gprat_gpu_clang env; source it from the system
+        # oneAPI install, pinned to 2025.3 (newer releases break this oneMath build).
+        if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
+        fi
+
+        # libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
+        if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/umf/latest/env/vars.sh
+        fi
+
+        # oneMath's Level-Zero libs need system MKL 2025.3 (and matching TBB),
+        # not the older MKL/TBB bundled in gprat_gpu_clang.
+        if [[ -f /opt/intel/oneapi/mkl/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/mkl/2025.3/env/vars.sh
+        fi
+        if [[ -f /opt/intel/oneapi/tbb/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/tbb/latest/env/vars.sh
+        fi
+
+        # gprat_gpu_clang's bundled TBB is missing symbols oneMath's MKL needs;
+        # prepend the matching oneAPI TBB to LIBRARY_PATH for the linker.
+        if [[ -n "${TBBROOT:-}" ]]; then
+          LIBRARY_PATH="$TBBROOT/lib:${LIBRARY_PATH:-}"
+        fi
+
+        if command -v icpx --version &>/dev/null; then
+
+          export CXX=icpx
+          export CC=icx
+          GPRAT_WITH_CUDA=OFF
+          GPRAT_WITH_SYCL=ON
+
+          CMAKE_PREFIX_PATH="${ONEMATH_INTEL_ROOT}:${CMAKE_PREFIX_PATH:-}"
+
+        else
+
+          echo \
+            "Intel oneAPI DPC++ compiler (icpx) not found. Please make sure that icpx is available in your PATH." 1>&2
+          exit -1
+
+        fi
+
+      fi
+
+    else
+
+      echo \
+        "Cannot find Spack environment gprat_gpu_clang. Please run spack-repo/environments/setup_gprat_gpu_clang.sh" 1>&2
+      exit -1
+
+    fi
 
   else
 
@@ -187,18 +260,27 @@ export APEX_DISABLE=1
 # Compile code
 ################################################################################
 
+cd "$SCRIPT_DIR"
 rm -rf build && mkdir build && cd build && mkdir run_gprat_cpp && cd run_gprat_cpp
 
 # Configure the project
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-  -DGPRat_DIR=./lib$ADD/cmake/GPRat \
+#
+# On pcsgs04, gprat_gpu_clang's RPATH shadows oneMath's own TBB; force an
+# explicit rpath-link to the correct TBB (set above via TBBROOT) first.
+if [[ -n "${TBBROOT:-}" ]]; then
+  EXTRA_LINKER_FLAGS="-Wl,-rpath-link,${TBBROOT}/lib"
+fi
+
+cmake "$SCRIPT_DIR" -DCMAKE_BUILD_TYPE=Release \
+  -DGPRat_DIR=${SCRIPT_DIR}/lib$ADD/cmake/GPRat \
   -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA} \
   -DGPRAT_WITH_SYCL=${GPRAT_WITH_SYCL} \
   -DGPRAT_APEX_STEPS=${GPRAT_APEX_STEPS} \
   -DGPRAT_APEX_CHOLESKY=${GPRAT_APEX_CHOLESKY} \
   -DHPX_DIR=$HPX_CMAKE \
   -DUSE_MKL=$USE_MKL \
-  -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH
+  -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+  -DCMAKE_EXE_LINKER_FLAGS="${EXTRA_LINKER_FLAGS:-}"
 
 # Build the project
 make -j
@@ -208,7 +290,7 @@ make -j
 ################################################################################
 echo "Running GPRat C++ example"
 
-end_cores=$(python3 -c "import json; print(json.load(open('config.json'))['END_CORES'])")
+end_cores=$(python3 -c "import json; print(json.load(open('${SCRIPT_DIR}/config.json'))['END_CORES'])")
 core_count=$((end_cores * 2))
 
 taskset -c 0-$core_count:2 ./gprat_cpp $use_gpu

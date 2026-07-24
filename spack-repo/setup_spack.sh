@@ -5,7 +5,7 @@
 set -e
 
 spack_repo_dir=$PWD
-spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+spack_destination="$HOME"
 
 # Clone spack repository
 cd $spack_destination
