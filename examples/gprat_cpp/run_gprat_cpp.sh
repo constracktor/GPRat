@@ -4,6 +4,12 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/../../site_paths.sh"
+
+# Get current hostname
+HOSTNAME=$(hostname -s)
+
 ###################################################################################################
 # Set GPU flag
 ###################################################################################################
@@ -49,8 +55,16 @@ if [[ \
   "$HOSTNAME" == "simcl1n4" ]];
 then
 
-  spack_destination="/scratch-simcl1/grafml/Programs/spack-fp2-simcl1n1"
+  spack_destination="$SIMCL1_SPACK_ROOT"
   source $spack_destination/spack/share/spack/setup-env.sh
+
+fi
+
+# Set Spack if on pcsgs04
+if [[ "$HOSTNAME" == "pcsgs04" ]]; then
+
+  spack_destination="$PCSGS04_SPACK_ROOT"
+  source $spack_destination/share/spack/setup-env.sh
 
 fi
 
@@ -61,8 +75,6 @@ fi
 if command -v spack &>/dev/null; then
 
   echo "Spack command found, checking for environments..."
-
-  HOSTNAME=$(hostname -s)
 
   # ipvs-epyc1 ####################################################################################
   if [[ "$HOSTNAME" == "ipvs-epyc1" ]]; then
@@ -150,7 +162,7 @@ if command -v spack &>/dev/null; then
         if command -v icpx &>/dev/null; then
           export CXX=icpx
           export CC=icx
-          CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_nvidia/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+          CMAKE_PREFIX_PATH="${ONEMATH_NVIDIA_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
         else
           echo "Intel oneAPI DPC++ compiler (icpx) not found. Please make sure that icpx is available in your PATH." 1>&2
           exit 1
@@ -227,7 +239,7 @@ if command -v spack &>/dev/null; then
         if command -v icpx &>/dev/null; then
           export CXX=icpx
           export CC=icx
-          CMAKE_PREFIX_PATH="/scratch-simcl1/grafml/Programs/oneMath_amd/oneMath/install/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
+          CMAKE_PREFIX_PATH="${ONEMATH_AMD_ROOT}/lib/cmake/oneMath:${CMAKE_PREFIX_PATH:-}"
         else
           echo "Intel oneAPI DPC++ compiler (icpx) not found. Please make sure that icpx is available in your PATH." 1>&2
           exit 1
@@ -259,11 +271,60 @@ if command -v spack &>/dev/null; then
       exit 1
     fi
 
-  # pcsgs04 with Intel GPU ########################################################################
+  # pcsgs04 with Intel GPU (Arc B580) #############################################################
   elif [[ "$HOSTNAME" == "pcsgs04" ]]; then
 
-    echo "Host pcsgs04 is currently not supported." 1>&2
-    exit 1
+    if spack env list | grep -q "gprat_gpu_clang"; then
+
+      echo "Found gprat_gpu_clang environment, activating it."
+      spack env activate gprat_gpu_clang
+
+      if [[ "$1" == "sycl" ]]; then
+
+        # icpx isn't in the gprat_gpu_clang env; source it from the system
+        # oneAPI install, pinned to 2025.3 (newer releases break this oneMath build).
+        if ! command -v icpx &>/dev/null && [[ -f /opt/intel/oneapi/compiler/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/compiler/2025.3/env/vars.sh
+        fi
+
+        # libumf is needed on LD_LIBRARY_PATH or GPU enumeration silently finds nothing.
+        if [[ -f /opt/intel/oneapi/umf/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/umf/latest/env/vars.sh
+        fi
+
+        # oneMath's Level-Zero libs need system MKL 2025.3 (and matching TBB),
+        # not the older MKL/TBB bundled in gprat_gpu_clang.
+        if [[ -f /opt/intel/oneapi/mkl/2025.3/env/vars.sh ]]; then
+          source /opt/intel/oneapi/mkl/2025.3/env/vars.sh
+        fi
+        if [[ -f /opt/intel/oneapi/tbb/latest/env/vars.sh ]]; then
+          source /opt/intel/oneapi/tbb/latest/env/vars.sh
+        fi
+
+        # gprat_gpu_clang's bundled TBB is missing symbols oneMath's MKL needs;
+        # prepend the matching oneAPI TBB to LIBRARY_PATH for the linker.
+        if [[ -n "${TBBROOT:-}" ]]; then
+          LIBRARY_PATH="$TBBROOT/lib:${LIBRARY_PATH:-}"
+        fi
+
+        if command -v icpx &>/dev/null; then
+          export CXX=icpx
+          export CC=icx
+          CMAKE_PREFIX_PATH="${ONEMATH_INTEL_ROOT}:${CMAKE_PREFIX_PATH:-}"
+        else
+          echo "Intel oneAPI DPC++ compiler (icpx) not found. Please make sure that icpx is available in your PATH." 1>&2
+          exit 1
+        fi
+
+      fi
+
+    else
+
+      echo \
+        "Cannot find Spack environment gprat_gpu_clang. Please run spack-repo/environments/setup_gprat_gpu_clang.sh" 1>&2
+      exit 1
+
+    fi
 
   # unknown host ##################################################################################
   else
@@ -329,6 +390,13 @@ if [[ ! -d build ]]; then
     )
   fi
 
+  # On pcsgs04, gprat_gpu_clang's RPATH shadows oneMath's own TBB; force an
+  # explicit rpath-link to the correct TBB (set above via TBBROOT) first.
+  EXTRA_LINKER_FLAGS=""
+  if [[ -n "${TBBROOT:-}" ]]; then
+    EXTRA_LINKER_FLAGS="-Wl,-rpath-link,${TBBROOT}/lib"
+  fi
+
   cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DGPRat_DIR=$GPRAT_DIR \
@@ -338,6 +406,7 @@ if [[ ! -d build ]]; then
     -DGPRAT_WITH_SYCL=$GPRAT_WITH_SYCL \
     -DGPRAT_APEX_STEPS=OFF \
     -DGPRAT_APEX_CHOLESKY=OFF \
+    -DCMAKE_EXE_LINKER_FLAGS="${EXTRA_LINKER_FLAGS}" \
     "${SYCL_COMPILER_ARGS[@]}"
 else
   cd build
