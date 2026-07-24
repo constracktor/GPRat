@@ -102,6 +102,99 @@ double *
 trsv(sycl::queue queue, double *f_A, double *f_b, const std::size_t N, const oneapi::math::transpose is_A_transposed);
 
 /**
+ * @brief General matrix-vector multiplication: y = y - A(^T) * x
+ *
+ * @param queue SYCL queue
+ * @param f_A update matrix
+ * @param f_x update vector
+ * @param f_y base vector
+ * @param N matrix dimension
+ * @param alpha add or substract update to base vector
+ * @param is_A_transposed transpose update matrix
+ *
+ * @return updated vector f_y, in-place update
+ */
+double *gemv(sycl::queue queue,
+             double *f_A,
+             double *f_x,
+             double *f_y,
+             const std::size_t M,
+             const std::size_t N,
+             const double alpha,
+             const oneapi::math::transpose is_A_transposed);
+
+/**
+ * @brief General matrix rank-1 update: A = A - x*y^T
+ *
+ * @param queue SYCL queue
+ * @param f_A base matrix
+ * @param f_x first update vector
+ * @param f_y second update vector
+ * @param N matrix dimension
+ *
+ * @return vector f_b, in-place update
+ */
+double *ger(sycl::queue queue, double *f_A, double *f_x, double *f_y, const std::size_t N);
+
+/**
+ * @brief Vector update with diagonal SYRK: r = r + diag(A^T * A)
+ *
+ * @param queue SYCL queue
+ * @param f_A update matrix
+ * @param f_r base vector
+ * @param M number of rows of A
+ * @param N number of columns of A
+ *
+ * @return vector f_r, in-place update
+ */
+double *dot_diag_syrk(sycl::queue queue, double *f_A, double *f_r, const std::size_t M, const std::size_t N);
+
+/**
+ * @brief Kernel class for vector update with diagonal SYRK
+ */
+class DotDiagSyrkKernel
+{
+  private:
+    double *d_A;
+    double *d_r;
+    std::size_t M;
+    std::size_t N;
+
+  public:
+    /**
+     * @brief Constructor for DotDiagSyrkKernel for vector update with diagonal SYRK
+     *
+     * @param A update matrix
+     * @param r base vector
+     * @param M number of rows of A
+     * @param N number of columns of A
+     */
+    explicit DotDiagSyrkKernel(double *A, double *r, const std::size_t M, const std::size_t N);
+
+    /**
+     * @brief The operator() of DotDiagSyrkKernel implements the actual kernel
+     *
+     * @param id global SYCL id of the kernel
+     */
+    void operator()(const sycl::id<1> &id) const;
+};
+
+/**
+ * @brief Vector update with diagonal GEMM: r = r + diag(A * B)
+ *
+ * @param queue SYCL queue
+ * @param f_A first update matrix, of size NxN
+ * @param f_B second update matrix, of size NxM
+ * @param f_r base vector
+ * @param M first matrix dimension
+ * @param N second matrix dimension
+ *
+ * @return updated vector f_r, in-place update
+ */
+double *
+dot_diag_gemm(sycl::queue queue, double *f_A, double *f_B, double *f_r, const std::size_t M, const std::size_t N);
+
+/**
  * @brief Kernel class for vector update with diagonal GEMM
  */
 class DotDiagGemmKernel
