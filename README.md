@@ -40,10 +40,6 @@ cmake --build --preset=dev-linux
 ctest --preset=dev-linux
 ```
 
-`GPRAT_ENABLE_MKL` defaults to `ON` for a standalone build (see the option table below), which requires Intel
-oneMKL to be installed. If you are using OpenBLAS instead, add `-DGPRAT_ENABLE_MKL=OFF` to the `cmake --preset=...`
-command above.
-
 As a developer, you may create a `CMakeUserPresets.json` file at the root of the project that contains additional
 presets local to your machine.
 In addition to the build configuration `dev-linux`, there are `release-linux`, `dev-linux-cuda`, `release-linux-cuda`, `dev-linux-sycl`, and `release-linux-sycl`.
@@ -60,7 +56,7 @@ The following options can be set to include / exclude parts of the project:
 | GPRAT_ENABLE_TESTS             | Enable/Disable building of unit and integration tests                                | ON if top-level |
 | GPRAT_ENABLE_FORMAT_TARGETS    | Enable/Disable code formatting helper targets                                        | ON if top-level |
 | GPRAT_ENABLE_BENCHMARK_CACHE_EVICTIONS | Enable/Disable evicting data from caches before running BLAS operations      | ON              |
-| GPRAT_ENABLE_MKL               | Enable/Disable support for Intel oneMKL                                              | ON if top-level |
+| GPRAT_ENABLE_MKL               | Enable/Disable support for Intel oneMKL                                              | OFF             |
 | GPRAT_WITH_CUDA                | Enable/disable compilation with CUDA support (NVIDIA GPUs)                           | OFF             |
 | GPRAT_WITH_SYCL                | Enable/disable compilation with SYCL support (Intel and AMD GPUs via oneMath)        | OFF             |
 | GPRAT_WITH_DISTRIBUTED         | Enable/disable distributed GP support via HPX actions                                | OFF             |
@@ -151,13 +147,15 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 
 - Go to [`examples/gpflow_reference`](examples/gpflow_reference/)
 - Set parameters in [`config.json`](examples/gpflow_reference/config.json)
-- Run `./run_gpflow.sh [cpu/gpu/arm]` to run example
+- Run `./run_gpflow.sh [cpu/gpu/arm] [nvidia/amd/intel]` to run example.
+  The second parameter selects the GPU vendor and is only required when `gpu` is specified.
 
 ### To run GPyTorch reference
 
 - Go to [`examples/gpytorch_reference`](examples/gpytorch_reference/)
 - Set parameters in [`config.json`](examples/gpytorch_reference/config.json)
-- Run `./run_gpytorch.sh [cpu/gpu/arm]` to run example
+- Run `./run_gpytorch.sh [cpu/gpu/arm] [nvidia/amd/intel]` to run example.
+  The second parameter selects the GPU vendor and is only required when `gpu` is specified.
 
 ## The Team
 
