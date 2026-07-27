@@ -26,7 +26,7 @@ nvidia-nvtx-cu12==12.6.77
 packaging==26.2
 pillow==12.2.0
 sympy==1.14.0
-torch==2.12.0+cu126
-torchvision==0.27.0+cu126
-triton==3.7.0
+torch==2.13.0+cu126
+torchvision==0.28.0+cu126
+triton==3.7.1
 typing_extensions==4.15.0
