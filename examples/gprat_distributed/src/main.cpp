@@ -80,7 +80,9 @@ void run(hpx::program_options::variables_map &vm)
             ////// data loading
             hpx::chrono::high_resolution_timer init_timer;
             GP_data training_input(train_path, n_train, n_reg);
-            GP_data training_output(out_path, n_train, n_reg);
+            // n_reg=1 -> no offset: unlike the input, the training output has no
+            // lookahead padding requirement.
+            GP_data training_output(out_path, n_train, 1);
             GP_data test_input(test_path, n_test, n_reg);
             const auto init_time = init_timer.elapsed();
             finish_step("init", init_time);

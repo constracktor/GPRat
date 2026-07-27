@@ -342,7 +342,9 @@ int main(int argc, char *argv[])
                     auto result = gprat::compute_test_tiles(n_test_st, n_tiles_st, tile_size);
 
                     gprat::GP_data training_input(settings.train_in_file, train_size_st, n_reg_st);
-                    gprat::GP_data training_output(settings.train_out_file, train_size_st, n_reg_st);
+                    // n_reg=1 -> no offset: unlike the input, the training output has no
+                    // lookahead padding requirement.
+                    gprat::GP_data training_output(settings.train_out_file, train_size_st, 1);
                     gprat::GP_data test_input(settings.test_in_file, n_test_st, n_reg_st);
 
                     gprat::example::Runtimes runtimes;

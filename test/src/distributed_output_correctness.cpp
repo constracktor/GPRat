@@ -100,7 +100,9 @@ int hpx_main(hpx::program_options::variables_map & /*vm*/)
     const std::vector<bool> trainable = { true, true, true };
 
     gprat::GP_data training_input(root + "/data_1024/training_input.txt", n_train, n_reg);
-    gprat::GP_data training_output(root + "/data_1024/training_output.txt", n_train, n_reg);
+    // n_reg=1 -> no offset: unlike the input, the training output has no
+    // lookahead padding requirement.
+    gprat::GP_data training_output(root + "/data_1024/training_output.txt", n_train, 1);
     gprat::GP_data test_input(root + "/data_1024/test_input.txt", n_test, n_reg);
 
     gprat::tiled_scheduler_sma scheduler;

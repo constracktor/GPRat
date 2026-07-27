@@ -44,7 +44,9 @@ gprat_results run_on_data_cpu(const std::string &train_path, const std::string &
     gprat::AdamParams hpar = { 0.1, 0.9, 0.999, 1e-8, OPT_ITER };
 
     gprat::GP_data training_input(train_path, n_train, n_reg);
-    gprat::GP_data training_output(out_path, n_train, n_reg);
+    // n_reg=1 -> no offset: unlike the input, the training output has no
+    // lookahead padding requirement.
+    gprat::GP_data training_output(out_path, n_train, 1);
     gprat::GP_data test_input(test_path, n_test, n_reg);
 
     const std::vector<bool> trainable = { true, true, true };
@@ -76,7 +78,9 @@ gprat_results run_on_data_gpu(const std::string &train_path, const std::string &
     const auto test_tiles = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
 
     gprat::GP_data training_input(train_path, n_train, n_reg);
-    gprat::GP_data training_output(out_path, n_train, n_reg);
+    // n_reg=1 -> no offset: unlike the input, the training output has no
+    // lookahead padding requirement.
+    gprat::GP_data training_output(out_path, n_train, 1);
     gprat::GP_data test_input(test_path, n_test, n_reg);
 
     const std::vector<bool> trainable = { true, true, true };

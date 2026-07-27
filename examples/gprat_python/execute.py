@@ -78,7 +78,9 @@ def gprat_run(
     # Load data
     load_t = time.perf_counter()
     train_in = gprat.GP_data(config["TRAIN_IN_FILE"], size_train, config["N_REG"])
-    train_out = gprat.GP_data(config["TRAIN_OUT_FILE"], size_train, config["N_REG"])
+    # n_reg=1 -> no offset: unlike the input, the training output has no
+    # lookahead padding requirement.
+    train_out = gprat.GP_data(config["TRAIN_OUT_FILE"], size_train, 1)
     test_in = gprat.GP_data(config["TEST_IN_FILE"], size_test, config["N_REG"])
     load_t = time.perf_counter() - load_t
 
