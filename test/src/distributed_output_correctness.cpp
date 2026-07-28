@@ -146,27 +146,58 @@ int hpx_main(hpx::program_options::variables_map & /*vm*/)
     results.losses = gprat::cpu::optimize(
         scheduler, training_input.data, training_output.data, n_tiles, tile_size, n_reg, hpar, sek_params, trainable);
 
+    const double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
+    bool ok = true;
+
+    // Locality-count invariance, checked live rather than against a static file: gprat::GP always
+    // uses tiled_scheduler_local (locality-oblivious, runs entirely on locality 0, the only
+    // locality hpx_main executes on) regardless of how many localities this process was launched
+    // with. Comparing its output against the tiled_scheduler_sma-based `results` above -- computed
+    // fresh in this same run, not loaded from data_1024/output.json -- verifies the distributed
+    // dispatch path agrees with the local path at whatever n_localities this binary is running
+    // with (1, 2, or 4; see the GPRat_test_distributed_output_correctness_{1,2,4} CTest entries),
+    // without relying on the baseline file being current.
+    {
+        gprat::GP local_gp(training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 },
+                           trainable);
+
+        gprat_results local;
+        local.cholesky = to_vector(local_gp.cholesky());
+        local.sum = local_gp.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
+        local.full = local_gp.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
+        local.pred = local_gp.predict(test_input.data, test_tiles.first, test_tiles.second);
+        local.losses = local_gp.optimize(hpar);
+
+        ok = compare(results.cholesky, local.cholesky, eps, "cholesky vs local scheduler") && ok;
+        ok = compare(results.losses, local.losses, eps, "losses vs local scheduler") && ok;
+        ok = compare(results.sum, local.sum, eps, "sum vs local scheduler") && ok;
+        ok = compare(results.full, local.full, eps, "full vs local scheduler") && ok;
+        ok = compare(results.pred, local.pred, eps, "pred vs local scheduler") && ok;
+
+        std::cerr << (ok ? "PASS: distributed results match a live local-scheduler computation\n"
+                         : "FAIL: distributed results differ from a live local-scheduler computation\n");
+    }
+
     gprat_results expected;
     if (!load_or_create_expected_results(root + "/data_1024/output.json", results, expected))
     {
         std::cerr << "No previous results to compare to. The current results have been saved instead!\n";
         hpx::finalize();
-        return 0;
+        return ok ? 0 : 1;
     }
 
-    const double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
-    bool ok = true;
-    ok = compare(results.cholesky, expected.cholesky, eps, "cholesky") && ok;
-    ok = compare(results.losses, expected.losses, eps, "losses") && ok;
-    ok = compare(results.sum, expected.sum, eps, "sum") && ok;
-    ok = compare(results.full, expected.full, eps, "full") && ok;
-    ok = compare(results.pred, expected.pred, eps, "pred") && ok;
+    bool ok_vs_baseline = true;
+    ok_vs_baseline = compare(results.cholesky, expected.cholesky, eps, "cholesky") && ok_vs_baseline;
+    ok_vs_baseline = compare(results.losses, expected.losses, eps, "losses") && ok_vs_baseline;
+    ok_vs_baseline = compare(results.sum, expected.sum, eps, "sum") && ok_vs_baseline;
+    ok_vs_baseline = compare(results.full, expected.full, eps, "full") && ok_vs_baseline;
+    ok_vs_baseline = compare(results.pred, expected.pred, eps, "pred") && ok_vs_baseline;
 
-    std::cerr << (ok ? "PASS: distributed results match baseline\n"
-                     : "FAIL: distributed results differ from baseline\n");
+    std::cerr << (ok_vs_baseline ? "PASS: distributed results match baseline\n"
+                                 : "FAIL: distributed results differ from baseline\n");
 
     hpx::finalize();
-    return ok ? 0 : 1;
+    return (ok && ok_vs_baseline) ? 0 : 1;
 }
 
 int main(int argc, char *argv[]) { return hpx::init(argc, argv); }
