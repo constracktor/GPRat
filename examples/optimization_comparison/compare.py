@@ -70,7 +70,7 @@ def main():
         print(f"{field}:")
         for a, b in [("gprat", "gpflow"), ("gprat", "gpytorch"), ("gpflow", "gpytorch")]:
             va, vb = results[a][field], results[b][field]
-            rel_diff = abs(va - vb) / abs(va)
+            rel_diff = abs(va - vb) / max(abs(va), abs(vb), 1e-12)
             print(f"  {a:9s} vs {b:9s}: {va:.6f} vs {vb:.6f}  (rel_diff={rel_diff:.2e})")
             ok &= rel_diff < rtol
 

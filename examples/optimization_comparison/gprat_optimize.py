@@ -19,6 +19,7 @@ TRAIN_SIZE = 512
 N_REG = 8
 N_TILES = 4
 OPT_ITER = 300
+KERNEL_PARAMS = [1.0, 1.0, 0.1]  # lengthscale, vertical_lengthscale, noise_variance
 
 train_in = gprat.GP_data(str(DATA_DIR / "training_input.txt"), TRAIN_SIZE, N_REG)
 # n_reg=1 -> no offset: unlike the input, the training output has no
@@ -32,7 +33,7 @@ gp = gprat.GP(
     train_out.data,
     N_TILES,
     n_tile_size,
-    kernel_params=[1.0, 1.0, 0.1],
+    kernel_params=KERNEL_PARAMS,
     n_reg=N_REG,
     trainable=[True, True, True],
 )

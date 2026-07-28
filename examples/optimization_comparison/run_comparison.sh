@@ -31,9 +31,9 @@ elif [[ "$HOSTNAME" == "simcl1n1" || "$HOSTNAME" == "simcl1n2" || \
 		echo "Found gprat_cpu_gcc environment, activating it."
 		spack env activate gprat_cpu_gcc
 		module load gcc/14.1.0
-		LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
-		LD_LIBRARY_PATH=$(spack location -i openblas)/lib:$LD_LIBRARY_PATH
-		LD_LIBRARY_PATH=$(spack location -i intel-oneapi-mkl)/lib:$LD_LIBRARY_PATH
+		export LD_LIBRARY_PATH=$(spack location -i hpx)/lib:$LD_LIBRARY_PATH
+		export LD_LIBRARY_PATH=$(spack location -i openblas)/lib:$LD_LIBRARY_PATH
+		export LD_LIBRARY_PATH=$(spack location -i intel-oneapi-mkl)/lib:$LD_LIBRARY_PATH
 	fi
 
 elif [[ "$HOSTNAME" == "pcsgs04" ]]; then

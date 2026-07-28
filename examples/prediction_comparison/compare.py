@@ -42,7 +42,7 @@ def run_backend(name, cmd):
 def max_diff(a, b):
     assert len(a) == len(b), f"length mismatch: {len(a)} vs {len(b)}"
     abs_diff = max(abs(x - y) for x, y in zip(a, b))
-    rel_diff = max(abs(x - y) / max(abs(x), 1e-12) for x, y in zip(a, b))
+    rel_diff = max(abs(x - y) / max(abs(x), abs(y), 1e-12) for x, y in zip(a, b))
     return abs_diff, rel_diff
 
 
