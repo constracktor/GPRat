@@ -377,6 +377,51 @@ TEST_CASE("GP::predict: output size", "[unit][gp][predict]")
     REQUIRE(pred_cov[1].size() == n_test);
 }
 
+TEST_CASE("GP: results are tile-count invariant", "[unit][gp][predict][tiling]")
+{
+    // Tiling is purely a scheduling/decomposition detail: predictions, uncertainty,
+    // and loss for fixed (untrained) hyperparameters must not depend on n_tiles.
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_reg = 8, n_test = 64;
+    const double eps = std::numeric_limits<double>::epsilon() * 1'000'000;
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, 1);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    hpx_runtime_guard hpx_guard;
+
+    // Baseline: a single tile, i.e. no decomposition at all.
+    const std::size_t baseline_tile_size = gprat::compute_train_tile_size(n, 1);
+    const auto [baseline_m_tiles, baseline_m_tile_size] = gprat::compute_test_tiles(n_test, 1, baseline_tile_size);
+    gprat::GP baseline_gp(
+        train_in.data, train_out.data, 1, baseline_tile_size, n_reg, { 1.0, 1.0, 0.1 }, { false, false, false });
+    const auto baseline_pred = baseline_gp.predict_with_uncertainty(test_in.data, baseline_m_tiles, baseline_m_tile_size);
+    const double baseline_loss = baseline_gp.calculate_loss();
+
+    for (const std::size_t n_tiles : { std::size_t{ 2 }, std::size_t{ 4 }, std::size_t{ 8 } })
+    {
+        const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+        const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+
+        gprat::GP gp(
+            train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { false, false, false });
+        const auto pred = gp.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+
+        for (std::size_t i = 0; i < n_test; ++i)
+        {
+            INFO("n_tiles=" << n_tiles << " mean[" << i << "]");
+            REQUIRE_THAT(pred[0][i], WithinRel(baseline_pred[0][i], eps));
+            INFO("n_tiles=" << n_tiles << " variance[" << i << "]");
+            REQUIRE_THAT(pred[1][i], WithinRel(baseline_pred[1][i], eps));
+        }
+
+        INFO("n_tiles=" << n_tiles << " loss");
+        REQUIRE_THAT(gp.calculate_loss(), WithinRel(baseline_loss, eps));
+    }
+}
+
 TEST_CASE("GP::cholesky: tile structure", "[unit][gp][cholesky]")
 {
     const std::string root = gprat_data_root();
