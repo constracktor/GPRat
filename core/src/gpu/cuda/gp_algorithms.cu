@@ -279,8 +279,12 @@ hpx::shared_future<double *> gen_tile_cross_cov_T(std::size_t n_row_tile_size,
     dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
     dim3 n_blocks((n_column_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE, (n_row_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
+    // transpose(..., width, height) treats `original` as height x width; d_cross_covariance_tile
+    // is n_row_tile_size x n_column_tile_size, so width/height must be passed in that (swapped)
+    // order. Passing them the other way silently produces wrong results whenever the tile is not
+    // square (n_row_tile_size != n_column_tile_size), since the two only coincide for square tiles.
     transpose<<<n_blocks, threads_per_block, 0, stream>>>(
-        transposed, d_cross_covariance_tile, n_row_tile_size, n_column_tile_size);
+        transposed, d_cross_covariance_tile, n_column_tile_size, n_row_tile_size);
 
     check_cuda_error(cudaStreamSynchronize(stream));
 

@@ -941,6 +941,47 @@ TEST_CASE("GP::predict_with_uncertainty: GPU matches CPU", "[gpu][cuda]")
     }
 }
 
+TEST_CASE("GP::predict_with_uncertainty: GPU matches CPU with mismatched tile sizes", "[gpu][cuda]")
+{
+    // Regression test: gen_tile_cross_cov_T's CUDA transpose kernel launch had its width/height
+    // arguments swapped, which only produces wrong results for non-square tiles -- i.e. whenever
+    // the test tile size differs from the training tile size. The test above picks an n_test that
+    // divides evenly into n_tile_size, which compute_test_tiles special-cases to keep
+    // m_tile_size == n_tile_size, so it never exercised the mismatched-size path. n_test=48 does
+    // not divide evenly here (48 % 32 != 0), so compute_test_tiles falls back to
+    // m_tile_size = n_test / n_tiles = 12, genuinely different from n_tile_size = 32.
+    GPRAT_SKIP_IF_NO_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 48;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+    REQUIRE(m_tile_size != tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, 1);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_unc = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+    const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(gpu_unc[0].size() == n_test);
+    REQUIRE(gpu_unc[1].size() == n_test);
+    for (std::size_t i = 0; i < n_test; ++i)
+    {
+        INFO("i=" << i);
+        REQUIRE(gpu_unc[1][i] >= 0.0);
+        REQUIRE_THAT(gpu_unc[0][i], WithinRel(cpu_unc[0][i], 1e-4));
+        REQUIRE_THAT(gpu_unc[1][i], WithinRel(cpu_unc[1][i], 1e-4));
+    }
+}
+
 TEST_CASE("GP::predict_with_full_cov: GPU matches CPU", "[gpu][cuda]")
 {
     GPRAT_SKIP_IF_NO_GPU();
@@ -1659,6 +1700,47 @@ TEST_CASE("GP SYCL::predict_with_uncertainty: GPU matches CPU", "[gpu][sycl]")
     REQUIRE(gpu_unc[1].size() == n_test);
     for (std::size_t i = 0; i < n_test; ++i)
     {
+        REQUIRE_THAT(gpu_unc[0][i], WithinRel(cpu_unc[0][i], 1e-4));
+        REQUIRE_THAT(gpu_unc[1][i], WithinRel(cpu_unc[1][i], 1e-4));
+    }
+}
+
+TEST_CASE("GP SYCL::predict_with_uncertainty: GPU matches CPU with mismatched tile sizes", "[gpu][sycl]")
+{
+    // Regression test: TransposeKernel's width/height constructor args were swapped at the SYCL
+    // call site in gen_tile_cross_cov_T, which only produces wrong results for non-square tiles --
+    // i.e. whenever the test tile size differs from the training tile size. The test above picks
+    // an n_test that divides evenly into n_tile_size, which compute_test_tiles special-cases to
+    // keep m_tile_size == n_tile_size, so it never exercised the mismatched-size path. n_test=48
+    // does not divide evenly here (48 % 32 != 0), so compute_test_tiles falls back to
+    // m_tile_size = n_test / n_tiles = 12, genuinely different from n_tile_size = 32.
+    GPRAT_SKIP_IF_NO_SYCL_GPU();
+
+    const std::string root = gprat_data_root();
+
+    constexpr std::size_t n = 128, n_tiles = 4, n_reg = 8, n_test = 48;
+    const std::size_t tile_size = gprat::compute_train_tile_size(n, n_tiles);
+    const auto [m_tiles, m_tile_size] = gprat::compute_test_tiles(n_test, n_tiles, tile_size);
+    REQUIRE(m_tile_size != tile_size);
+
+    gprat::GP_data train_in(root + "/data_1024/training_input.txt", n, n_reg);
+    gprat::GP_data train_out(root + "/data_1024/training_output.txt", n, 1);
+    gprat::GP_data test_in(root + "/data_1024/test_input.txt", n_test, n_reg);
+
+    gprat::GP gp_cpu(train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true });
+    gprat::GP gp_gpu(
+        train_in.data, train_out.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, { true, true, true }, 0, 1);
+
+    hpx_runtime_guard hpx_guard;
+    const auto cpu_unc = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+    const auto gpu_unc = gp_gpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size);
+
+    REQUIRE(gpu_unc[0].size() == n_test);
+    REQUIRE(gpu_unc[1].size() == n_test);
+    for (std::size_t i = 0; i < n_test; ++i)
+    {
+        INFO("i=" << i);
+        REQUIRE(gpu_unc[1][i] >= 0.0);
         REQUIRE_THAT(gpu_unc[0][i], WithinRel(cpu_unc[0][i], 1e-4));
         REQUIRE_THAT(gpu_unc[1][i], WithinRel(cpu_unc[1][i], 1e-4));
     }

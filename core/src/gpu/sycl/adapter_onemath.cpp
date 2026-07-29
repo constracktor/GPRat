@@ -66,14 +66,19 @@ double *trsm(sycl::queue queue,
     // column-major cuBLAS TRSM for row-major stored A & B
     // for X on opposite side (opposite of side_A)
 
+    // m/n are swapped relative to M/N (matching the cuBLAS adapter's equivalent call): oneMath's
+    // trsm takes the dimensions of the *column-major* view of row-major-stored B, which is N x M,
+    // not M x N. Passing M, N here instead silently solves the wrong-shaped system whenever
+    // M != N (the row-major tile isn't square), while leaving the leading dimensions (lda=M,
+    // ldb=N, describing the actual row-major storage) unchanged.
     oneapi::math::blas::column_major::trsm(
         queue,
         invert_side_operator(is_right),
         oneapi::math::uplo::upper,
         is_transposed,
         oneapi::math::diag::nonunit,
-        static_cast<std::int64_t>(M),
         static_cast<std::int64_t>(N),
+        static_cast<std::int64_t>(M),
         alpha,
         f_A,
         static_cast<std::int64_t>(M),
